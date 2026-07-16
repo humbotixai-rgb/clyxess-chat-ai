@@ -10,7 +10,7 @@ st.set_page_config(page_title="ClyxessChat AI", layout="wide")
 st.markdown("""
 <style>
 .main {max-width: 850px; margin: auto; padding-top: 0rem;}
-.stCodeBlock {max-height: 350px!important; overflow-y: auto!important; border-radius: 8px; background: #1e1e1e!important;}
+.stCodeBlock {max-height: 300px!important; overflow-y: auto!important; border-radius: 8px; background: #1e1e1e!important;}
 [data-testid="stSidebar"] {background-color: #171717;}
 .header {
     position: sticky;
