@@ -1,142 +1,175 @@
 import streamlit as st
 import os
-import uuid
-from dotenv import load_dotenv
-from groq import Groq
+from datetime import datetime
 from supabase import create_client
+from groq import Groq
 
-load_dotenv()
-ACCENT = "#173BE8"
+# ========== CONFIG ==========
+st.set_page_config(
+    page_title="ClyxessChat AI",
+    page_icon="💙",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-# Init Clients
-groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"))
-
-st.set_page_config(page_title="ClyxessChat AI", page_icon="🤖", layout="wide", initial_sidebar_state="expanded")
-
-# CSS
-st.markdown(f"""
+# Dark Theme + Accent Color #173BE8
+st.markdown("""
 <style>
-.stApp {{background: #0E1117; color: #FAFAFA; font-family: 'Inter', sans-serif;}}
-[data-testid="stSidebar"] {{background: #1A1D23; border-right: 1px solid #2A2E37;}}
-.main.block-container {{max-width: 900px; padding-top: 2rem;}}
-h1 {{color: {ACCENT}; text-align: center;}}
-.chat-message {{padding: 16px; border-radius: 12px; margin-bottom: 12px; border: 1px solid #2A2E37; line-height: 1.6;}}
-.user-message {{background: {ACCENT}; color: white;}}
-.ai-message {{background: #1F232B;}}
-.file-header {{color: #58A6FF; font-weight: 700; font-size: 14px; margin: 20px 0 8px 0; font-family: 'Monaco', monospace;}}
-pre {{background: #0D1117!important; border: 1px solid #30363D; border-radius: 8px; padding: 16px; overflow-x: auto;}}
-.stButton>button {{border-radius: 8px; font-weight: 600;}}
-.send-btn button {{background: {ACCENT}!important; color: white!important; border: none!important;}}
-.send-btn button:hover {{background: #0F2BC4!important;}}
-.new-chat-btn button {{background: {ACCENT}!important; color: white!important; width: 100%!important; border: none!important;}}
-.action-btn button {{background: transparent!important; border: 1px solid #30363D!important; color: #8B949E!important; font-size: 12px!important; padding: 4px 10px!important;}}
-.action-btn button:hover {{border-color: {ACCENT}!important; color: {ACCENT}!important;}}
+   .stApp {
+        background-color: #0E1117;
+        color: #FAFAFA;
+    }
+   .stChatMessage {
+        background-color: #1A1D23;
+        border-radius: 12px;
+        padding: 1rem;
+    }
+   .stButton>button {
+        background-color: #173BE8;
+        color: white;
+        border-radius: 8px;
+        border: none;
+        font-weight: 600;
+    }
+   .stButton>button:hover {
+        background-color: #1E4CFF;
+    }
+   .copy-btn,.feedback-btn {
+        background: #262730;
+        border: 1px solid #3A3F4B;
+        border-radius: 6px;
+        padding: 0.3rem 0.6rem;
+        margin-right: 0.5rem;
+        cursor: pointer;
+        color: #FAFAFA;
+    }
+   .feedback-btn.active {
+        background: #173BE8;
+    }
+    h1, h2, h3 {
+        color: #173BE8;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# Supabase Functions
-def get_session_id():
-    return str(uuid.uuid4())
+# ========== CONNECT SERVICES ==========
+@st.cache_resource
+def init_connections():
+    supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"))
+    groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+    return supabase, groq_client
 
-def save_message(session_id, role, content):
-    try:
-        supabase.table("chat_history").insert({"session_id": session_id, "role": role, "content": content}).execute()
-    except Exception as e:
-        st.error(f"DB Error: {e}")
+supabase, client = init_connections()
 
-def load_history(session_id):
-    try:
-        data = supabase.table("chat_history").select("*").eq("session_id", session_id).order("created_at").execute()
-        return [{"role": i["role"], "content": i["content"]} for i in data.data]
-    except:
-        return []
+# ========== SESSION STATE ==========
+if "chat_sessions" not in st.session_state:
+    st.session_state.chat_sessions = {"New Chat": []}
+if "current_session" not in st.session_state:
+    st.session_state.current_session = "New Chat"
+if "feedback" not in st.session_state:
+    st.session_state.feedback = {}
 
-# Groq AI
-SYSTEM_PROMPT = """You are ClyxessChat AI. AI Code Engine for Websites, Apps & Software.
-You are a Senior Python, Streamlit, Groq API and Supabase Engineer.
-
-STRICT RULES:
-1. NEVER return architecture, explanations only, or file lists. ALWAYS return complete working code.
-2. NEVER use TODO, placeholders, or "add code here".
-3. Follow this exact output format for every file:
-━━━━━━━━━━
-📁 FILE: filename.ext
-[COMPLETE WORKING CODE]
-━━━━━━━━━━
-4. Step 1: Determine required files. Step 2: Generate complete code for every file. Step 3: Ensure all files work together.
-5. If project is large, continue with PART 2, PART 3 until 100% complete.
-6. If user says "Create grocery website" assume: Modern UI, Responsive, Product Cards, Search, Cart, Contact Page, Mobile Support.
-7. Support Hindi, Hinglish, English. Maintain conversation context."""
-
-def get_ai_response(messages):
-    try:
-        chat_completion = groq_client.chat.completions.create(
-            messages=[{"role": "system", "content": SYSTEM_PROMPT}] + messages,
-            model="llama-3.3-70b-versatile",
-            temperature=0.1,
-            max_tokens=4096
-        )
-        return chat_completion.choices[0].message.content
-    except Exception as e:
-        return f"Error: {str(e)}"
-
-# Session State
-if "session_id" not in st.session_state:
-    st.session_state.session_id = get_session_id()
-if "messages" not in st.session_state:
-    st.session_state.messages = load_history(st.session_state.session_id)
-
-# Sidebar
+# ========== SIDEBAR ==========
 with st.sidebar:
-    st.markdown("### ClyxessChat AI")
+    st.title("💙 ClyxessChat AI")
     st.caption("AI Code Engine for Websites, Apps & Software")
-    if st.button("➕ New Chat", use_container_width=True, key="new_chat"):
-        st.session_state.session_id = get_session_id()
-        st.session_state.messages = []
+    st.divider()
+
+    if st.button("+ New Chat", use_container_width=True):
+        new_name = f"Chat {len(st.session_state.chat_sessions) + 1}"
+        st.session_state.chat_sessions[new_name] = []
+        st.session_state.current_session = new_name
         st.rerun()
-    st.markdown("---")
-    st.markdown("### Chat History")
-    for msg in st.session_state.messages:
-        if msg["role"] == "user":
-            st.caption(f"💬 {msg['content'][:40]}...")
 
-# Main UI
-st.markdown("<h1>ClyxessChat AI</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #8B949E;'>AI Code Engine for Websites, Apps & Software</p>", unsafe_allow_html=True)
+    st.subheader("Chat History")
+    for session_name in st.session_state.chat_sessions.keys():
+        if st.button(session_name, key=session_name, use_container_width=True):
+            st.session_state.current_session = session_name
+            st.rerun()
 
-# Display Chat
-for idx, message in enumerate(st.session_state.messages):
-    role_class = "user-message" if message["role"] == "user" else "ai-message"
-    st.markdown(f"<div class='chat-message {role_class}'>{message['content']}</div>", unsafe_allow_html=True)
+# ========== HEADER ==========
+st.title("💙 ClyxessChat AI")
+st.caption("AI Code Engine for Websites, Apps & Software")
 
-    if message["role"] == "assistant":
-        col1, col2, col3, col4 = st.columns([1,1,1,7])
-        with col1:
-            if st.button("📋 Copy", key=f"copy_{idx}"):
-                st.code(message["content"], language="markdown")
-        with col2:
-            if st.button("👍", key=f"like_{idx}"):
-                st.toast("Thanks for feedback!")
-        with col3:
-            if st.button("👎", key=f"dislike_{idx}"):
-                st.toast("Feedback recorded")
+# ========== CHAT DISPLAY ==========
+chat_container = st.container()
 
-# Input Area
-st.markdown("---")
-col1, col2 = st.columns([8,1])
-with col1:
-    user_input = st.text_area("Message", key="user_input", height=70, label_visibility="collapsed", placeholder="Ask me to build anything: Create a todo app, Fix this bug, Explain this code...")
-with col2:
-    send_clicked = st.button("Send", key="send", use_container_width=True)
+with chat_container:
+    for idx, msg in enumerate(st.session_state.chat_sessions[st.session_state.current_session]):
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
 
-if send_clicked and user_input:
-    st.session_state.messages.append({"role": "user", "content": user_input})
-    save_message(st.session_state.session_id, "user", user_input)
+            if msg["role"] == "assistant":
+                col1, col2, col3, col4 = st.columns([1,1,1,10])
+                msg_id = f"{st.session_state.current_session}_{idx}"
 
-    with st.spinner("ClyxessAI is coding..."):
-        response = get_ai_response(st.session_state.messages)
+                with col1:
+                    if st.button("📋", key=f"copy_{msg_id}"):
+                        st.toast("Copied to clipboard!")
 
-    st.session_state.messages.append({"role": "assistant", "content": response})
-    save_message(st.session_state.session_id, "assistant", response)
+                with col2:
+                    btn_class = "active" if st.session_state.feedback.get(msg_id) == "like" else ""
+                    if st.button("👍", key=f"like_{msg_id}"):
+                        st.session_state.feedback[msg_id] = "like"
+
+                with col3:
+                    btn_class = "active" if st.session_state.feedback.get(msg_id) == "dislike" else ""
+                    if st.button("👎", key=f"dislike_{msg_id}"):
+                        st.session_state.feedback[msg_id] = "dislike"
+
+# ========== CHAT INPUT ==========
+if prompt := st.chat_input("Ask me to generate code, fix bugs, explain anything..."):
+    # Add user message
+    st.session_state.chat_sessions[st.session_state.current_session].append({
+        "role": "user",
+        "content": prompt,
+        "timestamp": datetime.now().isoformat()
+    })
     st.rerun()
+
+# Process AI response
+if st.session_state.chat_sessions[st.session_state.current_session]:
+    last_msg = st.session_state.chat_sessions[st.session_state.current_session][-1]
+    if last_msg["role"] == "user":
+        with st.chat_message("assistant"):
+            with st.spinner("Generating code..."):
+                system_prompt = """You are ClyxessChat AI, an expert coding assistant for developers and students.
+Rules:
+1. Always generate actual working code. Never give only architecture or file names.
+2. Never use TODO or placeholders. Never say "add code here".
+3. If user asks for a project, provide complete code for all required files.
+4. Use format: ━━━━━━━━━━ 📁 FILE: filename.ext [FULL WORKING CODE] ━━━━━━━━━━━━━━━━━━
+5. Explain code clearly after generating it."""
+
+                messages = [{"role": "system", "content": system_prompt}]
+                for m in st.session_state.chat_sessions[st.session_state.current_session]:
+                    messages.append({"role": m["role"], "content": m["content"]})
+
+                completion = client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=messages,
+                    temperature=0.7,
+                    max_tokens=4000,
+                )
+                response = completion.choices[0].message.content
+                st.markdown(response)
+
+        # Save AI response
+        st.session_state.chat_sessions[st.session_state.current_session].append({
+            "role": "assistant",
+            "content": response,
+            "timestamp": datetime.now().isoformat()
+        })
+
+        # Save to Supabase
+        try:
+            supabase.table("messages").insert({
+                "session_name": st.session_state.current_session,
+                "user_message": last_msg["content"],
+                "ai_response": response,
+                "created_at": datetime.now().isoformat()
+            }).execute()
+        except Exception as e:
+            st.error(f"DB Error: {e}")
+
+        st.rerun()
