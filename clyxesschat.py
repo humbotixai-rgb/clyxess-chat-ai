@@ -109,7 +109,7 @@ Rules: 1. Always generate actual working code. 2. Never use TODO or placeholders
             try:
                 completion = client.chat.completions.create(
                     model="meta-llama/llama-4-scout-17b-16e-instruct",
-                    messages=messages, temperature=0.7, max_tokens=4000,
+                    messages=messages, temperature=0.7, max_tokens=8000,
                 )
                 response = completion.choices[0].message.content
 
