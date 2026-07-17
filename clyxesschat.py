@@ -163,7 +163,7 @@ Kripya turant kisi se baat karo. Main yaha hu sunne ke liye."""
                     model="llama-3.3-70b-versatile", # Lamba code ke liye best
                     messages=messages,
                     temperature=0.3,
-                    max_tokens=16000, # Lamba code
+                    max_tokens=8000, # Lamba code
                 )
                 response = completion.choices[0].message.content
                 st.markdown(response)
