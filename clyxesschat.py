@@ -124,7 +124,7 @@ if prompt := st.chat_input("Message ClyxessChat AI"):
                 model="meta-llama/llama-4-scout-17b-16e-instruct",
                 messages=messages,
                 temperature=0.2,
-                max_tokens=8000,
+                max_tokens=4000,
             )
             response = completion.choices[0].message.content
             st.session_state.messages.append({"role": "assistant", "content": response})
