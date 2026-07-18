@@ -1,9 +1,9 @@
 import streamlit as st
-from groq import Groq
+from groq import Groq, NotFoundError
 from supabase import create_client, Client
 import datetime
 import uuid
-import requests # 1. YE NAYA ADD KIYA
+import requests
 
 st.set_page_config(page_title="ClyxessChat AI", layout="wide")
 
@@ -32,14 +32,40 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# HEADER - TOP PER
+# HEADER
 st.markdown("""
 <div class="header">
     <h1>💬 ClyxessChat AI</h1>
 </div>
 """, unsafe_allow_html=True)
 
-# ============ 2. TAVILY FUNCTION NAYA ADD ============
+# ============ 4 MODEL FALLBACK ============
+GROQ_MODELS = [
+    "gpt-oss-120b",
+    "llama-3.3-70b",
+    "gpt-oss-20b",
+    "qwen-3.6-27b"
+]
+
+def get_groq_response(client, messages):
+    last_error = None
+    for model in GROQ_MODELS:
+        try:
+            completion = client.chat.completions.create(
+                model=model,
+                messages=messages,
+                temperature=0.7,
+                max_tokens=8000,
+            )
+            return completion, model
+        except NotFoundError:
+            continue
+        except Exception as e:
+            last_error = e
+            continue
+    raise Exception(f"All models failed. Last error: {last_error}")
+
+# ============ TAVILY SEARCH ============
 def search_tavily(query):
     try:
         url = "https://api.tavily.com/search"
@@ -52,9 +78,43 @@ def search_tavily(query):
         response = requests.post(url, json=payload)
         results = response.json().get("results", [])
         context = "\n".join([f"- {r['title']}: {r['content']}" for r in results])
-        return context
+        sources = "\n".join([f"{i+1}. [{r['title']}]({r['url']})" for i, r in enumerate(results)])
+        return context, sources
     except Exception as e:
-        return ""
+        return "", ""
+
+# ============ TERA 4 RULE SYSTEM PROMPT ============
+today = datetime.datetime.now().strftime("%d %B %Y")
+SYSTEM_PROMPT = f"""Tum ClyxessChat ho - Bharat ka Live AI Assistant. Tum dost ki tarah baat karte ho.
+Aaj {today} hai.
+
+=== RULE 1: LIVE SEARCH + SOURCE LINK ===
+1. Jab bhi user "aaj, latest, news, rate, score, mausam, price, bhav" pooche to Tavily se search karo.
+2. Jawab ke end me Source dena LAZMI hai. Format:
+**Source:**
+1. [Website Title](URL)
+3. Date likho: "Aaj {today} ke hisab se..."
+4. Agar source na mile to likho "Source uplabdh nahi hai"
+
+=== RULE 2: IMAGE GENERATION ===
+1. Sirf tab image banao jab user bole: "image banao, photo banao, pic banao, generate karo"
+2. Jawab: Pehle image do + fir 1 line caption: **Prompt:** user ka prompt
+3. Bina mange image mat banao
+
+=== RULE 3: CODE GENERATION ===
+1. Sirf tab code do jab user bole: "code do, bana do, website banao, app banao"
+2. Code hamesha ```language me do + 2 line samjhao + pucho "aur customize karna hai?"
+3. Bina mange code mat dena. Pehle samjhao.
+
+=== RULE 4: EMOTION + TONE ===
+1. Agar user 😭 😔 😢 😡 bheje to pehle empathy dikhao: "kya hua? main hun na"
+2. Tone: Short, Hindi, dost jaisa. Lambe lecture mat do.
+3. Har jawab 3-4 line me khatam karne ki koshish karo.
+
+=== MANA HAI ===
+1. Jhooth mat bolo. Pata nahi hai to bolo "mujhe confirm nahi hai, search karu?"
+2. Source ke bina koi fact mat do
+"""
 
 # Supabase Connect
 @st.cache_resource
@@ -87,8 +147,9 @@ for i, message in enumerate(st.session_state.messages):
         if "```" in message["content"]:
             parts = message["content"].split("```")
             st.markdown(parts[0])
-            code = parts[1].replace("html", "", 1).strip()
-            st.code(code, language="html")
+            if len(parts) > 1:
+                code = parts[1].replace("html", "", 1).strip()
+                st.code(code, language="html")
             if st.button("📋 Copy Code", key=f"copy_{i}"):
                 st.toast("Code Copied!")
         else:
@@ -103,31 +164,34 @@ if prompt := st.chat_input("Message ClyxessChat AI"):
     with st.chat_message("assistant"):
         with st.spinner("ClyxessChat AI is thinking..."):
 
-            # 3. YE NAYA LOGIC ADD KIYA - LIVE SEARCH
+            # LIVE SEARCH LOGIC
             search_context = ""
-            if any(word in prompt.lower() for word in ["latest", "2025", "2026", "news", "code", "error", "update"]):
+            sources = ""
+            search_words = ["aaj", "latest", "news", "rate", "score", "mausam", "price", "bhav", "2026"]
+            if any(word in prompt.lower() for word in search_words):
                 with st.spinner("Searching web for latest info..."):
-                    search_context = search_tavily(prompt)
+                    search_context, sources = search_tavily(prompt)
 
-            system_prompt = f"""You are ClyxessChat AI, an expert AI assistant like ChatGPT.
-            Use this live web information if relevant: {search_context}
+            # Final messages with system prompt + search context
+            final_system = SYSTEM_PROMPT
+            if search_context:
+                final_system += f"\n\nLive Web Info:\n{search_context}"
 
-            Rules:
-            1. If user asks for code, website, app, landing page - then give FULL WORKING code in 1 file inside ```html... ```
-            2. If user is just chatting like "hi", "hello", "thanks" - then reply normally in text. Do NOT give code.
-            3. Use Tailwind CSS for modern design.
-            4. If live info is given above, use it to answer. Mention "According to latest info"."""
+            messages = [{"role": "system", "content": final_system}] + st.session_state.messages
 
-            messages = [{"role": "system", "content": system_prompt}] + st.session_state.messages
-
-            completion = client.chat.completions.create(
-                model="meta-llama/llama-4-scout-17b-16e-instruct",
-                messages=messages,
-                temperature=0.2,
-                max_tokens=4000,
-            )
+            # 4 MODEL FALLBACK CALL
+            completion, used_model = get_groq_response(client, messages)
             response = completion.choices[0].message.content
+
+            # SOURCE ADD KARNA
+            if sources:
+                response += f"\n\n**Source:**\n{sources}"
+
+            # MODEL NAME SHOW
+            response += f"\n\n*⚡ Powered by: {used_model}*"
+
             st.session_state.messages.append({"role": "assistant", "content": response})
+            st.markdown(response)
 
             # Save to Supabase
             try:
@@ -146,4 +210,4 @@ if prompt := st.chat_input("Message ClyxessChat AI"):
             except Exception as e:
                 pass
 
-            st.rerun()
+    st.rerun()
