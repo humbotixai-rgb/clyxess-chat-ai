@@ -4,6 +4,7 @@ from supabase import create_client, Client
 import datetime
 import uuid
 import requests
+import replicate # NEW LINE 1
 
 st.set_page_config(page_title="ClyxessChat AI", layout="wide")
 
@@ -67,6 +68,19 @@ def get_groq_response(client, messages):
         st.code("\n".join(errors))
     return None, None
 
+# ============ NEW FUNCTION: IMAGE GENERATE ============
+def generate_image(prompt):
+    try:
+        with st.spinner("🎨 Image bana raha hun..."):
+            output = replicate.run(
+                "black-forest-labs/flux-schnell", # Free + Fast model
+                input={"prompt": prompt}
+            )
+        return output[0] # image url
+    except Exception as e:
+        st.error(f"Image Error: {e}")
+        return None
+
 # ============ TAVILY SEARCH ============
 def search_tavily(query):
     try:
@@ -102,8 +116,9 @@ Today is {today}.
 
 === RULE 2: IMAGE GENERATION ===
 1. Only generate image if user says: "make image, create image, generate, banao, photo banao"
-2. Reply: First show image + then 1 line: **Prompt:** user prompt
-3. Don't generate image without asking
+2. If user asks for image, FIRST reply "Ruko 2 sec, image bana raha hun" then generate image
+3. After image, write: **Prompt:** user prompt
+4. Don't generate image without asking
 
 === RULE 3: CODE GENERATION ===
 1. Only give code if user says: "code do, make code, build website, app banao"
@@ -152,7 +167,11 @@ if "messages" not in st.session_state:
 # Chat display
 for i, message in enumerate(st.session_state.messages):
     with st.chat_message(message["role"]):
-        if "```" in message["content"]:
+        if message["role"] == "assistant" and "IMAGE_URL:" in message["content"]:
+            parts = message["content"].split("IMAGE_URL:")
+            st.markdown(parts[0])
+            st.image(parts[1]) # IMAGE DIKHAO
+        elif "```" in message["content"]:
             parts = message["content"].split("```")
             st.markdown(parts[0])
             if len(parts) > 1:
@@ -171,6 +190,20 @@ if prompt := st.chat_input("Message ClyxessChat AI"):
 
     with st.chat_message("assistant"):
         with st.spinner("ClyxessChat AI is thinking..."):
+
+            # ============ NEW LOGIC: CHECK IMAGE REQUEST ============
+            image_words = ["image banao", "photo banao", "generate image", "create image", "picture banao"]
+            if any(word in prompt.lower() for word in image_words):
+                img_url = generate_image(prompt)
+                if img_url:
+                    response = f"Ye rahi aapki image 👇\n\n**Prompt:** {prompt}\n\nIMAGE_URL:{img_url}"
+                else:
+                    response = "Image banane me dikkat aa gayi. Dobara try karein?"
+                st.session_state.messages.append({"role": "assistant", "content": response})
+                st.markdown(response.split("IMAGE_URL:")[0])
+                st.image(img_url)
+                st.stop()
+            # ============ IMAGE LOGIC END ============
 
             # LIVE SEARCH LOGIC
             search_context = ""
