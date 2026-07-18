@@ -41,10 +41,10 @@ st.markdown("""
 
 # ============ 4 MODEL FALLBACK ============
 GROQ_MODELS = [
-    "gpt-oss-120b",
-    "llama-3.3-70b",
-    "gpt-oss-20b",
-    "qwen-3.6-27b"
+    "llama-3.1-70b-versatile", # 1. Sabse stable
+    "llama-3.1-8b-instant", # 2. Sabse tez
+    "mixtral-8x7b-32768", # 3. Backup
+    "gemma2-9b-it" # 4. Last backup
 ]
 
 def get_groq_response(client, messages):
