@@ -195,9 +195,6 @@ if prompt := st.chat_input("Message ClyxessChat AI"):
     if sources:
         response += f"\n\n**Source:**\n{sources}"
 
-    # MODEL NAME SHOW - YE LINE THEEK KI
-    response += f"\n\n*⚡ Powered by: ClyxessChat AI*"
-
     st.session_state.messages.append({"role": "assistant", "content": response})
             st.markdown(response)
 
