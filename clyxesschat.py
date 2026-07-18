@@ -1,5 +1,5 @@
 import streamlit as st
-from groq import Groq, NotFoundError
+from groq import Groq
 from supabase import create_client, Client
 import datetime
 import uuid
@@ -39,16 +39,16 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ============ 4 MODEL FALLBACK ============
+# ============ 4 MODEL FALLBACK - STABLE WALE ============
 GROQ_MODELS = [
-    "llama-3.1-70b-versatile", # 1. Sabse stable
-    "llama-3.1-8b-instant", # 2. Sabse tez
+    "llama-3.1-70b-versatile", # 1. Main - Sabse stable + Hindi best
+    "llama-3.1-8b-instant", # 2. Fast
     "mixtral-8x7b-32768", # 3. Backup
     "gemma2-9b-it" # 4. Last backup
 ]
 
 def get_groq_response(client, messages):
-    last_error = None
+    errors = []
     for model in GROQ_MODELS:
         try:
             completion = client.chat.completions.create(
@@ -58,12 +58,14 @@ def get_groq_response(client, messages):
                 max_tokens=8000,
             )
             return completion, model
-        except NotFoundError:
-            continue
         except Exception as e:
-            last_error = e
+            errors.append(f"{model}: {str(e)}")
             continue
-    raise Exception(f"All models failed. Last error: {last_error}")
+
+    # Agar sab fail ho jaye to app crash na ho
+    st.error("❌ Groq API se connect nahi ho pa raha.\n\n**Reason:** API Key galat hai ya Quota khatam\n**Solution:** 1. `GROQ_API_KEY` check karo 2. 10 min baad try karo")
+    st.code("\n".join(errors))
+    return None, None
 
 # ============ TAVILY SEARCH ============
 def search_tavily(query):
@@ -181,6 +183,10 @@ if prompt := st.chat_input("Message ClyxessChat AI"):
 
             # 4 MODEL FALLBACK CALL
             completion, used_model = get_groq_response(client, messages)
+
+            if completion is None: # Agar sab fail
+                st.stop()
+
             response = completion.choices[0].message.content
 
             # SOURCE ADD KARNA
