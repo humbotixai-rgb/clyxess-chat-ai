@@ -55,7 +55,7 @@ def get_groq_response(client, messages):
                 model=model,
                 messages=messages,
                 temperature=0.7,
-                max_tokens=4000, # 8000 se kam kiya warna TPM error
+                max_tokens=4000,
             )
             return completion, model
         except Exception as e:
@@ -85,7 +85,7 @@ def search_tavily(query):
     except Exception as e:
         return "", ""
 
-# ============ TERA 4 RULE SYSTEM PROMPT - MULTI LANGUAGE FIXED ============
+# ============ FINAL SYSTEM PROMPT - NO LANGUAGE MIX + NO FAKE SOURCE ============
 today = datetime.datetime.now().strftime("%d %B %Y")
 SYSTEM_PROMPT = f"""You are ClyxessChat AI - A friendly, helpful assistant for everyone.
 Today is {today}.
@@ -98,6 +98,7 @@ Today is {today}.
 1. [Website Title](URL)
 4. Add date: "As of {today}..."
 5. If no source found, say "Source not available"
+6. IMPORTANT: Only add "Source:" section if you actually did a web search. For normal chat like "how are you", "hello", don't add Source at all.
 
 === RULE 2: IMAGE GENERATION ===
 1. Only generate image if user says: "make image, create image, generate, banao, photo banao"
@@ -111,12 +112,12 @@ Today is {today}.
 
 === RULE 4: MULTI-LANGUAGE MASTER RULE ===
 1. MOST IMPORTANT: Reply in the EXACT SAME LANGUAGE the user used.
-   User writes English → Reply English
-   User writes Hindi → Reply Hindi
-   User writes Hinglish → Reply Hinglish
-   User writes any other language → Reply in that language
-2. Be empathetic if user uses 😭 😔 😢 😡. Start with "I’m here for you" / "kya hua?"
-3. Keep answers short, 3-4 lines max. Friendly, like a dost.
+   User writes English → Reply 100% English
+   User writes Hindi → Reply 100% Hindi
+   User writes any other language → Reply 100% in that language
+2. DO NOT mix languages in one reply. No "Kya hua?" in English reply.
+3. Be empathetic if user uses 😭 😔 😢 😡.
+4. Keep answers short, 3-4 lines max. Friendly, like a dost.
 
 === STRICTLY FORBIDDEN ===
 1. Never lie. If unsure, say "I’m not sure, should I search?"
@@ -196,7 +197,7 @@ if prompt := st.chat_input("Message ClyxessChat AI"):
 
             response = completion.choices[0].message.content
 
-            # SOURCE ADD KARNA
+            # SOURCE ADD KARNA - SIRF TAB JAB SEARCH HUA HO
             if sources:
                 response += f"\n\n**Source:**\n{sources}"
 
