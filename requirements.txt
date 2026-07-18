@@ -2,4 +2,3 @@ streamlit
 groq
 supabase
 python-dotenv  
-replicate
