@@ -39,12 +39,12 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ============ 4 MODEL FALLBACK - STABLE WALE ============
+# ============ 4 MODEL FALLBACK - LATEST 2026 ============
 GROQ_MODELS = [
-    "llama-3.1-70b-versatile", # 1. Main - Sabse stable + Hindi best
-    "llama-3.1-8b-instant", # 2. Fast
-    "mixtral-8x7b-32768", # 3. Backup
-    "gemma2-9b-it" # 4. Last backup
+    "llama-3.3-70b-versatile", # 1. Main - Hindi + Smart
+    "llama-3.3-8b-instant", # 2. Fast
+    "deepseek-r1-distill-llama-70b", # 3. Coding King
+    "qwen-qwq-32b" # 4. Backup Multilingual
 ]
 
 def get_groq_response(client, messages):
@@ -55,16 +55,16 @@ def get_groq_response(client, messages):
                 model=model,
                 messages=messages,
                 temperature=0.7,
-                max_tokens=8000,
+                max_tokens=4000, # 8000 se kam kiya warna TPM error
             )
             return completion, model
         except Exception as e:
             errors.append(f"{model}: {str(e)}")
             continue
 
-    # Agar sab fail ho jaye to app crash na ho
-    st.error("❌ Groq API se connect nahi ho pa raha.\n\n**Reason:** API Key galat hai ya Quota khatam\n**Solution:** 1. `GROQ_API_KEY` check karo 2. 10 min baad try karo")
-    st.code("\n".join(errors))
+    st.error("❌ Groq API Error.\n\n**Reason:** API Key galat hai ya Quota khatam\n**Solution:** 1. `GROQ_API_KEY` check karo 2. 10 min baad try karo")
+    with st.expander("Tech Details"):
+        st.code("\n".join(errors))
     return None, None
 
 # ============ TAVILY SEARCH ============
@@ -179,7 +179,9 @@ if prompt := st.chat_input("Message ClyxessChat AI"):
             if search_context:
                 final_system += f"\n\nLive Web Info:\n{search_context}"
 
-            messages = [{"role": "system", "content": final_system}] + st.session_state.messages
+            # FIX: Sirf last 10 messages bhejo warna TPM limit cross
+            recent_messages = st.session_state.messages[-10:]
+            messages = [{"role": "system", "content": final_system}] + recent_messages
 
             # 4 MODEL FALLBACK CALL
             completion, used_model = get_groq_response(client, messages)
