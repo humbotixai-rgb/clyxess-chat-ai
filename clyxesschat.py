@@ -92,11 +92,12 @@ Aaj {today} hai.
 
 === RULE 1: LIVE SEARCH + SOURCE LINK ===
 1. Jab bhi user "aaj, latest, news, rate, score, mausam, price, bhav" pooche to Tavily se search karo.
-2. Jawab ke end me Source dena LAZMI hai. Format:
+2. ANSWER ME "maine search kiya" ya "tavily" ka zikr MAT karna. Seedha jawab do.
+3. Jawab ke end me Source dena LAZMI hai. Format:
 **Source:**
 1. [Website Title](URL)
-3. Date likho: "Aaj {today} ke hisab se..."
-4. Agar source na mile to likho "Source uplabdh nahi hai"
+4. Date likho: "Aaj {today} ke hisab se..."
+5. Agar source na mile to likho "Source uplabdh nahi hai"
 
 === RULE 2: IMAGE GENERATION ===
 1. Sirf tab image banao jab user bole: "image banao, photo banao, pic banao, generate karo"
@@ -191,11 +192,11 @@ if prompt := st.chat_input("Message ClyxessChat AI"):
 
             response = completion.choices[0].message.content
 
-              # SOURCE ADD KARNA
-    if sources:
-        response += f"\n\n**Source:**\n{sources}"
+            # SOURCE ADD KARNA
+            if sources:
+                response += f"\n\n**Source:**\n{sources}"
 
-    st.session_state.messages.append({"role": "assistant", "content": response})
+            st.session_state.messages.append({"role": "assistant", "content": response})
             st.markdown(response)
 
             # Save to Supabase
