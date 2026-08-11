@@ -44,7 +44,7 @@ GROQ_MODELS = [
     "llama-3.3-70b-versatile", # 1. Main - Hindi + Smart
     "llama-3.3-8b-instant", # 2. Fast
     "deepseek-r1-distill-llama-70b", # 3. Coding King
-    "qwen-qwq-32b" # 4. Backup Multilingual
+    "qwen-qwen3-32b" # 4. Backup Multilingual
 ]
 
 def get_groq_response(client, messages):
