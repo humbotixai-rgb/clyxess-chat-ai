@@ -1,223 +1,94 @@
 import streamlit as st
 from groq import Groq
-from supabase import create_client, Client
-import datetime
-import uuid
-import requests
+import base64
+from audio_recorder_streamlit import audio_recorder
 
-st.set_page_config(page_title="ClyxessChat AI", layout="wide")
+# 1. MOBILE FRIENDLY + LOGIN
+st.set_page_config(page_title="ClyxessChat AI", page_icon="🤖", layout="wide", initial_sidebar_state="collapsed")
 
-# CSS for Compact Code + Header
-st.markdown("""
-<style>
-.main {max-width: 850px; margin: auto; padding-top: 0rem;}
-.stCodeBlock {max-height: 300px!important; overflow-y: auto!important; border-radius: 8px; background: #1e1e1e!important;}
-[data-testid="stSidebar"] {background-color: #171717;}
-.header {
-    position: sticky;
-    top: 0;
-    background: #202123;
-    padding: 18px;
-    border-bottom: 1px solid #444;
-    z-index: 999;
-    margin: -1rem -1rem 20px -1rem;
-}
-.header h1 {
-    color: white;
-    font-size: 22px;
-    font-weight: 600;
-    margin: 0;
-    text-align: center;
-}
-</style>
-""", unsafe_allow_html=True)
+# Simple Login
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
 
-# HEADER
-st.markdown("""
-<div class="header">
-    <h1>💬 ClyxessChat AI</h1>
-</div>
-""", unsafe_allow_html=True)
+if not st.session_state.logged_in:
+    st.title("🔐 ClyxessChat AI Login")
+    user = st.text_input("Username")
+    passw = st.text_input("Password", type="password")
+    if st.button("Login"):
+        if user and passw: # abhi koi bhi login kar lega. baad me check lagana
+            st.session_state.logged_in = True
+            st.session_state.username = user
+            st.rerun()
+    st.stop()
 
-# ============ 4 MODEL FALLBACK - LATEST 2026 ============
+# 2. GROQ SETUP - Tera 4 Model wala system
+client = Groq(api_key=st.secrets["GROQ_API_KEY"]) # secrets me key daal de
+
 GROQ_MODELS = [
-    "llama-3.3-70b-versatile", # 1. Main - Hindi + Smart
-    "llama-3.3-8b-instant", # 2. Fast
-    "deepseek-r1-distill-llama-70b", # 3. Coding King
-    "qwen-qwen3-32b" # 4. Backup Multilingual
+    "llama-3.3-70b-versatile", # Main
+    "llama-3.3-8b-instant", # Fast
+    "deepseek-r1-distill-llama-70b", # Coding
+    "qwen-qwen3-32b" # Vision + Backup
 ]
 
-def get_groq_response(client, messages):
-    errors = []
-    for model in GROQ_MODELS:
+def get_groq_response(messages, is_image=False):
+    models = GROQ_MODELS if is_image else GROQ_MODELS[:3] # image ho to 4th wala use ho
+    for model in models:
         try:
-            completion = client.chat.completions.create(
-                model=model,
-                messages=messages,
-                temperature=0.7,
-                max_tokens=4000, # 8000 se kam kiya warna TPM error
-            )
-            return completion, model
-        except Exception as e:
-            errors.append(f"{model}: {str(e)}")
+            completion = client.chat.completions.create(model=model, messages=messages, max_tokens=4000)
+            return completion.choices[0].message.content
+        except:
             continue
+    return "Bhai sabhi model so gaye. Thodi der me try kar."
 
-    st.error("❌ Groq API Error.\n\n**Reason:** API Key galat hai ya Quota khatam\n**Solution:** 1. `GROQ_API_KEY` check karo 2. 10 min baad try karo")
-    with st.expander("Tech Details"):
-        st.code("\n".join(errors))
-    return None, None
-
-# ============ TAVILY SEARCH ============
-def search_tavily(query):
-    try:
-        url = "https://api.tavily.com/search"
-        payload = {
-            "api_key": st.secrets["TAVILY_API_KEY"],
-            "query": query,
-            "search_depth": "advanced",
-            "max_results": 3
-        }
-        response = requests.post(url, json=payload)
-        results = response.json().get("results", [])
-        context = "\n".join([f"- {r['title']}: {r['content']}" for r in results])
-        sources = "\n".join([f"{i+1}. [{r['title']}]({r['url']})" for i, r in enumerate(results)])
-        return context, sources
-    except Exception as e:
-        return "", ""
-
-# ============ TERA 4 RULE SYSTEM PROMPT - MULTI LANGUAGE FIXED ============
-today = datetime.datetime.now().strftime("%d %B %Y")
-SYSTEM_PROMPT = f"""You are ClyxessChat AI - A friendly, helpful assistant for everyone.
-Today is {today}.
-
-=== RULE 1: LIVE SEARCH + SOURCE LINK ===
-1. If user asks about "today, latest, news, rate, score, weather, price, bhav", search using Tavily.
-2. DO NOT mention "I searched" or "tavily". Just give direct answer.
-3. Always add sources at the end in this format:
-**Source:**
-1. [Website Title](URL)
-4. Add date: "As of {today}..."
-5. If no source found, say "Source not available"
-
-=== RULE 2: IMAGE GENERATION ===
-1. Only generate image if user says: "make image, create image, generate, banao, photo banao"
-2. Reply: First show image + then 1 line: **Prompt:** user prompt
-3. Don't generate image without asking
-
-=== RULE 3: CODE GENERATION ===
-1. Only give code if user says: "code do, make code, build website, app banao"
-2. Always give code in ```language block + 2 line explanation + ask "need any customization?"
-3. Don't give code without asking. Explain first.
-
-=== RULE 4: MULTI-LANGUAGE MASTER RULE ===
-1. MOST IMPORTANT: Reply in the EXACT SAME LANGUAGE the user used.
-   User writes English → Reply English
-   User writes Hindi → Reply Hindi
-   User writes Hinglish → Reply Hinglish
-   User writes any other language → Reply in that language
-2. Be empathetic if user uses 😭 😔 😢 😡. Start with "I’m here for you" / "kya hua?"
-3. Keep answers short, 3-4 lines max. Friendly, like a dost.
-
-=== STRICTLY FORBIDDEN ===
-1. Never lie. If unsure, say "I’m not sure, should I search?"
-2. Never give facts without source when search was done
-"""
-
-# Supabase Connect
-@st.cache_resource
-def init_supabase():
-    url = st.secrets["SUPABASE_URL"]
-    key = st.secrets["SUPABASE_KEY"]
-    return create_client(url, key)
-
-supabase = init_supabase()
-
-# Sidebar
-with st.sidebar:
-    st.title("💬 ClyxessChat AI")
-    if st.button("+ New Chat", use_container_width=True):
-        st.session_state.messages = []
-        st.session_state.session_id = str(uuid.uuid4())
-        st.rerun()
-    st.markdown("---")
-    st.caption("Code Engine App Website")
-
-client = Groq(api_key=st.secrets["GROQ_API_KEY"])
-
+# 3. CHAT HISTORY
 if "messages" not in st.session_state:
     st.session_state.messages = []
-    st.session_state.session_id = str(uuid.uuid4())
 
-# Chat display
-for i, message in enumerate(st.session_state.messages):
-    with st.chat_message(message["role"]):
-        if "```" in message["content"]:
-            parts = message["content"].split("```")
-            st.markdown(parts[0])
-            if len(parts) > 1:
-                code = parts[1].replace("html", "", 1).strip()
-                st.code(code, language="html")
-            if st.button("📋 Copy Code", key=f"copy_{i}"):
-                st.toast("Code Copied!")
-        else:
-            st.markdown(message["content"])
+st.title(f"🤖 ClyxessChat AI - Welcome {st.session_state.username}")
 
-# Input
-if prompt := st.chat_input("Message ClyxessChat AI"):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
+# 4. VOICE + IMAGE INPUT
+col1, col2 = st.columns(2)
+with col1:
+    audio_bytes = audio_recorder(text="🎤 Bol ke pucho")
+with col2:
+    uploaded_file = st.file_uploader("📸 Image Upload", type=["png", "jpg", "jpeg"])
 
-    with st.chat_message("assistant"):
-        with st.spinner("ClyxessChat AI is thinking..."):
+user_input = st.chat_input("Yaha type kar ya voice/image use kar")
 
-            # LIVE SEARCH LOGIC
-            search_context = ""
-            sources = ""
-            search_words = ["aaj", "latest", "news", "rate", "score", "mausam", "price", "bhav", "2026"]
-            if any(word in prompt.lower() for word in search_words):
-                with st.spinner("Searching web for latest info..."):
-                    search_context, sources = search_tavily(prompt)
+# Voice ko text me convert
+if audio_bytes:
+    with st.spinner("Sun raha hun..."):
+        transcription = client.audio.transcriptions.create(file=("audio.wav", audio_bytes), model="whisper-large-v3-turbo")
+        user_input = transcription.text
 
-            # Final messages with system prompt + search context
-            final_system = SYSTEM_PROMPT
-            if search_context:
-                final_system += f"\n\nLive Web Info:\n{search_context}"
+# Image ko handle
+messages = []
+is_image = False
+if uploaded_file and user_input:
+    bytes_data = uploaded_file.read()
+    base64_image = base64.b64encode(bytes_data).decode('utf-8')
+    messages = [{
+        "role": "user",
+        "content": [
+            {"type": "text", "text": user_input},
+            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
+        ]
+    }]
+    is_image = True
+    st.image(uploaded_file)
 
-            # FIX: Sirf last 10 messages bhejo warna TPM limit cross
-            recent_messages = st.session_state.messages[-10:]
-            messages = [{"role": "system", "content": final_system}] + recent_messages
+# Chat chalao
+if user_input and not is_image:
+    messages = [{"role": "user", "content": user_input}]
 
-            # 4 MODEL FALLBACK CALL
-            completion, used_model = get_groq_response(client, messages)
+if messages:
+    st.session_state.messages.append({"role": "user", "content": user_input})
+    with st.spinner("Caffeine chal raha hai... soch raha hun"):
+        response = get_groq_response(messages, is_image)
+    st.session_state.messages.append({"role": "assistant", "content": response})
 
-            if completion is None: # Agar sab fail
-                st.stop()
-
-            response = completion.choices[0].message.content
-
-            # SOURCE ADD KARNA
-            if sources:
-                response += f"\n\n**Source:**\n{sources}"
-
-            st.session_state.messages.append({"role": "assistant", "content": response})
-            st.markdown(response)
-
-            # Save to Supabase
-            try:
-                supabase.table("messages").insert({
-                    "session_id": st.session_state.session_id,
-                    "role": "user",
-                    "content": prompt,
-                    "created_at": datetime.datetime.now().isoformat()
-                }).execute()
-                supabase.table("messages").insert({
-                    "session_id": st.session_state.session_id,
-                    "role": "assistant",
-                    "content": response,
-                    "created_at": datetime.datetime.now().isoformat()
-                }).execute()
-            except Exception as e:
-                pass
-
-    st.rerun()
+# Chat dikhao
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.write(msg["content"])
