@@ -121,36 +121,6 @@ SYSTEM_PROMPT = """=== RULE 4: VISHWA BHASHA MASTER RULE V2.0 ===
 3. NO WRONG FLAG.
 """
 
-=== STRICTLY FORBIDDEN ===
-1. NO LANGUAGE MIXING.
-2. NO # ## ### **bold** FORMATTING.
-3. NO ANSWER WITHOUT SOURCE when asked for facts.
-"""
-
-=== STRICTLY FORBIDDEN ===
-1. NO LANGUAGE MIXING.
-2. NO # ## ### **bold** FORMATTING.
-3. NO ANSWER WITHOUT SOURCE when asked for facts.
-4. NO WRONG FLAG.
-"""
-
-=== STRICTLY FORBIDDEN ===
-1. NO LANGUAGE MIXING.
-2. NO # ## ### HEADERS.
-3. NO ANSWER WITHOUT SOURCE when asked for facts.
-"""
-=== STRICTLY FORBIDDEN ===
-1. NO LANGUAGE MIXING.
-2. NO # ## ### HEADERS.
-3. NO ANSWER WITHOUT SOURCE when asked for facts.
-"""
-
-=== STRICTLY FORBIDDEN ===
-1. NO LANGUAGE MIXING.
-2. NO ANSWER WITHOUT SOURCE when asked for facts.
-3. NO WRONG FLAG.
-"""
-
 # Supabase Connect
 @st.cache_resource
 def init_supabase():
