@@ -105,7 +105,7 @@ def search_tavily(query):
 
 6. FOOTER RULE: End every detailed answer with:
    ---
-   🇮🇳 ClyxessChat AI |
+    ClyxessChat AI | 100+ Bhasa, 1 Dost
    Can I help you with anything else?
 
 === STRICTLY FORBIDDEN ===
