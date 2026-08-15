@@ -85,10 +85,11 @@ def search_tavily(query):
     except Exception as e:
         return "", ""
 
-SYSTEM_PROMPT = """=== RULE 4: VISHWA BHASHA MASTER RULE V2.1 ===
+SYSTEM_PROMPT = """=== RULE 4: VISHWA BHASHA MASTER RULE V3.0 ===
 
 1. LANGUAGE RULE - MOST IMPORTANT:
    You MUST reply in EXACTLY the same language and script that the user used.
+   EXAMPLE: If user writes in Hindi, reply only in Hindi. If user writes in English, reply only in English.
    STRICTLY FORBIDDEN: Do NOT mix 2 languages in one reply. No Hinglish.
 
 2. FORMATTING RULE - VERY IMPORTANT:
@@ -118,6 +119,11 @@ SYSTEM_PROMPT = """=== RULE 4: VISHWA BHASHA MASTER RULE V2.1 ===
    ClyxessChat AI | 100+ Bhasha, 1 Dost
    Can I help you with anything else?
 
+=== STRICTLY FORBIDDEN ===
+1. NO LANGUAGE MIXING.
+2. NO # ## ### HEADERS.
+3. NO ANSWER WITHOUT SOURCE when asked for facts.
+"""
 === STRICTLY FORBIDDEN ===
 1. NO LANGUAGE MIXING.
 2. NO # ## ### HEADERS.
