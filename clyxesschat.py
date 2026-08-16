@@ -39,14 +39,19 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ============ 4 MODEL MAHA FALLBACK ============
+# ============ 10 MODEL MAHA ULTRA FALLBACK ============
 GROQ_MODELS = [
-    "openai/gpt-oss-120b",
-    "llama-3.3-70b-versatile",
-    "qwen/qwen3-32b",
-    "openai/gpt-oss-20b"
+    "openai/gpt-oss-120b",              # 1. PRO MODE - CEO Brain, Reasoning King
+    "openai/gpt-oss-20b",               # 2. PRO MINI - Fast CEO Brain
+    "qwen/qwen3-27b",                   # 3. VISION MODE - Photo + Multilingual King 
+    "qwen/qwen3-32b",                   # 4. VISION BIG - Backup Vision
+    "llama-3.1-70b-versatile",          # 5. Main - Hindi + Smart - Rate limit कम है
+    "deepseek-r1-distill-llama-70b",    # 6. Coding King
+    "mixtral-8x7b-32768",               # 7. Long Chat - 32k context
+    "gemma2-9b-it",                     # 8. Smart + Fast
+    "llama-3.1-8b-instant",             # 9. Fast Backup
+    "llama3-8b-8192"                    # 10. Super Fast Backup  
 ]
-
 def get_groq_response(client, messages):
     errors = []
     for model in GROQ_MODELS:
