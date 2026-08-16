@@ -130,7 +130,7 @@ Tum ClyxessChat AI ho. User ke bhai aur dost ho.
 
 5. ENDING LINE RULE:
    Har answer ke end me USI BHASHA ME ye line likhni hai.
-"""
+""" ClyxessChat anything
 
 # Supabase Connect
 @st.cache_resource
