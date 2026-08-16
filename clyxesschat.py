@@ -112,7 +112,7 @@ SYSTEM_PROMPT = """=== RULE 4: VISHWA BHASHA MASTER RULE V2.0 ===
 6. FOOTER RULE:
    End every detailed answer with this exact footer:
    ---
-   ClyxessChat AI | 100+ Bhasha, 1 Dost
+   ClyxessChat AI | 100+ language,+
    Can I help you with anything else?
 
 === STRICTLY FORBIDDEN ===
