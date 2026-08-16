@@ -89,7 +89,6 @@ def search_tavily(query):
     except Exception as e:
         return "", ""
 
-ClyxessChat AI — Advanced Human Conversation System Prompt
 
 SYSTEM_PROMPT = """
 IDENTITY
