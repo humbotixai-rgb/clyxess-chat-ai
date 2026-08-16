@@ -112,7 +112,7 @@ SYSTEM_PROMPT = """=== RULE 4: VISHWA BHASHA MASTER RULE V2.0 ===
 6. FOOTER RULE:
    End every detailed answer with this exact footer:
    ---
-   ClyxessChat AI anything | ,
+   ClyxessChat AI anything
   
 
 === STRICTLY FORBIDDEN ===
