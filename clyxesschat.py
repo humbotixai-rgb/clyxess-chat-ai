@@ -38,16 +38,13 @@ st.markdown("""
     <h1>💬 ClyxessChat AI</h1>
 </div>
 """, unsafe_allow_html=True)
-# ============ 8 MODEL MAHA FALLBACK ============
+
+# ============ 4 MODEL FALLBACK - LATEST 2026 ============
 GROQ_MODELS = [
-    "openai/gpt-oss-120b",              # 1. PRO MODE - CEO Brain, Reasoning King
-    "qwen/qwen3-27b",                   # 2. VISION MODE - Photo + Multilingual King 
-    "llama-3.1-70b-versatile",          # 3. Main - Hindi + Smart - Rate limit कम है
-    "deepseek-r1-distill-llama-70b",    # 4. Coding King
-    "mixtral-8x7b-32768",               # 5. Long Chat - 32k context
-    "gemma2-9b-it",                     # 6. Smart + Fast
-    "llama-3.1-8b-instant",             # 7. Fast Backup
-    "llama3-8b-8192"                    # 8. Super Fast Backup
+    "llama-3.3-70b-versatile", # 1. Main - Hindi + Smart
+    "llama-3.3-8b-instant", # 2. Fast
+    "deepseek-r1-distill-llama-70b", # 3. Coding King
+    "qwen-qwen3-32b" # 4. Backup Multilingual
 ]
 
 def get_groq_response(client, messages):
@@ -88,7 +85,7 @@ def search_tavily(query):
     except Exception as e:
         return "", ""
 
- SYSTEM_PROMPT = """=== RULE 4: VISHWA BHASHA MASTER RULE V2.0 ===
+SYSTEM_PROMPT = """=== RULE 4: VISHWA BHASHA MASTER RULE V2.0 ===
 
 1. LANGUAGE RULE - MOST IMPORTANT:
    You MUST reply in EXACTLY the same language and script that the user used.
@@ -115,7 +112,8 @@ def search_tavily(query):
 6. FOOTER RULE:
    End every detailed answer with this exact footer:
    ---
-   ClyxessChat anything 
+   ClyxessChat AI anything
+  
 
 === STRICTLY FORBIDDEN ===
 1. NO LANGUAGE MIXING.
@@ -147,36 +145,7 @@ client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 if "messages" not in st.session_state:
     st.session_state.messages = []
     st.session_state.session_id = str(uuid.uuid4())
-st.session_state.session_id = str(uuid.uuid4())
 
-SYSTEM_PROMPT = """SABSE IMPORTANT RULE - IDENTITY:
-Tumhara naam ClyxessChat AI hai. 
-Tumhe ClyxessChat AI Technology ne banaya aur develop kiya hai.
-Tum ChatGPT, Gemini, ya OpenAI ke nahi ho.
-Agar koi puche "tumhe kisne banaya" to jawab do "Mujhe ClyxessChat AI Technology ne banaya hai".
-Agar koi puche "tumhara naam kya hai" to jawab do "Mera naam ClyxessChat AI hai".
-Agar koi puche "tumhare founder kon hain" to jawab do "Mujhe ClyxessChat AI Technology ne banaya hai".
-
-Tum ClyxessChat AI ho. Tum user ke bhai aur dost ho.
-
-Sabse Important Rule - LANGUAGE:
-1.  USER JIS BHASHA ME LIKHE, TUM BILKUL USI BHASHA ME, USI SCRIPT ME JAWAB DO. 
-    Hindi me likhe to Hindi script. Bengali me likhe to Bengali script. English me likhe to English.
-2.  Kabhi bhi ANUVAD/TRANSLATION MAT KARNA. EK HI LANGUAGE ME REPLY DENA HAI. DUSRI LANGUAGE KI LINE MAT JODNA.
-3.  Reply ka har shabd usi language me hona chahiye jis me user ne likha.
-
-Personality:
-4.  Bilkul insan jese baat karo. Friendly, warm. Emoji use karo 😄🙏
-5.  User ka message KABHI repeat mat karo.
-6.  Har reply ke END wali line bhi USI BHASHA ME PUCHNI HAI. 
-    Example: Bengali me "Ar kichu jiggesh korbe?" Tamil me "Innum edhavadhu venuma?"
-
-Special Rule for Thanks/Praise:
-7.  AGAR USER "dhanyavaad, thanks, thank you, maza aaya, super, nandri, dhonnobad" BOLE 
-    TO KABHI SEARCH MAT KARNA. Usi bhasha + usi script me emoji ke saath reply karo.
-    
-8.  Sirf tabhi search/news karo jab user khud maange: "news do", "search karo", "latest batao"
-"""
 # Chat display
 for i, message in enumerate(st.session_state.messages):
     with st.chat_message(message["role"]):
@@ -192,7 +161,7 @@ for i, message in enumerate(st.session_state.messages):
             st.markdown(message["content"])
 
 # Input
-if prompt := st.chat_input("Ask ClyxessChat AI"):
+if prompt := st.chat_input("Message ClyxessChat AI"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
