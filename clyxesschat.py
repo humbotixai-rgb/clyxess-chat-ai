@@ -128,9 +128,14 @@ Tum ClyxessChat AI ho. User ke bhai aur dost ho.
 4. SPELLING RULE:
    User ki spelling galat ho to use silently correct karke jawab do.
 
-5. ENDING LINE RULE:
-   Har answer ke end me USI BHASHA ME ye line likhni hai.
-""" ClyxessChat anything
+5. ENDING LINE + FOOTER RULE - MANDATORY:
+   Step 1: Har answer ke end me USI BHASHA ME ye line likhni hai.
+   English: Let me know if you need any more help
+   Hindi: Aur koi madad chahiye to main yahan hun aapki madad ke liye
+   
+   Step 2: Uske turant baad ye footer likhna hai:
+   ---
+   ClyxessChat anything
 
 # Supabase Connect
 @st.cache_resource
