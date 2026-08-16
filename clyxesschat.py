@@ -166,7 +166,7 @@ if prompt := st.chat_input("Message ClyxessChat AI"):
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    with st.chat_message("assistant"):
+    with st.chat_Ask("assistant"):
         with st.spinner("ClyxessChat AI is thinking..."):
 
             # LIVE SEARCH LOGIC
