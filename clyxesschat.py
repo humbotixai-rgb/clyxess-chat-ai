@@ -38,13 +38,14 @@ st.markdown("""
     <h1>💬 ClyxessChat AI</h1>
 </div>
 """, unsafe_allow_html=True)
-
-# ============ 4 MODEL FALLBACK - LATEST 2026 ============
+# ============ 5 MODEL FALLBACK - PRO + VISION ============
 GROQ_MODELS = [
-    "llama-3.3-70b-versatile", # 1. Main - Hindi + Smart
-    "llama-3.3-8b-instant", # 2. Fast
-    "deepseek-r1-distill-llama-70b", # 3. Coding King
-    "qwen-qwen3-32b" # 4. Backup Multilingual
+    "gpt-oss-120b",                    # 1. PRO MODE - CEO Brain, Reasoning King
+    "qwen3-27b",                       # 2. VISION MODE - Photo + Multilingual King 
+    "llama-3.3-70b-versatile",         # 3. Main - Hindi + Smart
+    "llama-3.3-8b-instant",            # 4. Fast
+    "deepseek-r1-distill-llama-70b",   # 5. Coding King
+    "qwen-qwen3-32b"                   # 6. Backup Multilingual
 ]
 
 def get_groq_response(client, messages):
