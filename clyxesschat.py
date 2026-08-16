@@ -88,7 +88,7 @@ def search_tavily(query):
     except Exception as e:
         return "", ""
 
-SYSTEM_PROMPT = """=== RULE 4: VISHWA BHASHA MASTER RULE V2.0 ===
+SYSTEM_PROMPT = """=== RULE 4: VISHWA BHASHA MASTER RULE V2.1 ===
 
 1. LANGUAGE RULE - MOST IMPORTANT:
    You MUST reply in EXACTLY the same language and script that the user used.
@@ -117,7 +117,7 @@ SYSTEM_PROMPT = """=== RULE 4: VISHWA BHASHA MASTER RULE V2.0 ===
 6. FOOTER RULE:
    End every detailed answer with this exact footer:
    ---
-   ClyxessChat anything
+   ClyxessChat AI
 """
   
 
