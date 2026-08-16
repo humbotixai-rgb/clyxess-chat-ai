@@ -136,6 +136,7 @@ Tum ClyxessChat AI ho. User ke bhai aur dost ho.
    Step 2: Uske turant baad ye footer likhna hai:
    ---
    ClyxessChat AI anything
+"""
 
 # Supabase Connect
 @st.cache_resource
