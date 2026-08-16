@@ -56,7 +56,7 @@ def get_groq_response(client, messages):
         try:
             completion = client.chat.completions.create(
                 model=model,
-                messages=messages,
+                messages=[{"role": "system", "content": "You are Clyxess Pro AI. You answer like a CEO, very professional, give bullet points, and cite sources."}, {"role": "user", "content": messages[0]["content"]}], # <-- YE WALI LINE
                 temperature=0.7,
                 max_tokens=4000, # 8000 se kam kiya warna TPM error
             )
