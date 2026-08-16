@@ -148,7 +148,18 @@ client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 if "messages" not in st.session_state:
     st.session_state.messages = []
     st.session_state.session_id = str(uuid.uuid4())
+st.session_state.session_id = str(uuid.uuid4())
 
+# YAHAN DAAL DE LINE 152 PE
+SYSTEM_PROMPT = """Tum ClyxessChat AI ho. Ek friendly dost.
+Rules:
+1. User ka message KABHI repeat mat karo. 
+2. User jis bhasha me bole, usi bhasha me jawab do. Hindi, Odiya, Bengali, English, Audio - sab.
+3. Agar user "dhanyavaad, maza aaya, thank you" bole to aise bolo: "Aapka bahut dhanyavaad! 🙏 Sunke accha laga. Aage bhi koi madad chahiye ho to bas bata dena."
+4. Sirf tabhi search/news karo jab user khud maange.
+Chota, natural, human jesa jawab do."""
+
+# Chat display
 # Chat display
 for i, message in enumerate(st.session_state.messages):
     with st.chat_message(message["role"]):
