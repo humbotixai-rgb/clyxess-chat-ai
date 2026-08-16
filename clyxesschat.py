@@ -90,10 +90,6 @@ def search_tavily(query):
 
 SYSTEM_PROMPT = """=== RULE 4: VISHWA BHASHA MASTER RULE V2.2 ===
 
-1. LANGUAGE RULE - MOST IMPORTANT:
-   You MUST reply in EXACTLY the same language and script that the user used.
-   STRICTLY FORBIDDEN: Do NOT mix 2 languages in one reply. No Hinglish.
-
 2. SOURCE & LINK RULE - MANDATORY:
    Har answer ke end me 3 link dene hain. YouTube, Wikipedia, Website.
    FORMAT:
@@ -102,9 +98,6 @@ SYSTEM_PROMPT = """=== RULE 4: VISHWA BHASHA MASTER RULE V2.2 ===
    2. Wikipedia: [Topic] - https://en.wikipedia.org/...
    3. Website: [Site Name] - https://...
 
-3. EMOJI RULE:
-   Use emojis ONLY for casual, friendly, emotional topics.
-   FORBIDDEN: No emojis in formal, educational, news, or serious answers.
 
 4. FLAG RULE:
    Show the flag emoji of the country ONLY when the user asks a question ABOUT that country.
