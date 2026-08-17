@@ -57,7 +57,7 @@ st.markdown("""
 
 /* Footer chhota */
 .small-footer {
-    font-size: 11px;
+    font-size: 9px;
     color: #888;
     margin-top: 4px;
 }
