@@ -10,57 +10,21 @@ st.set_page_config(page_title="ClyxessChat AI", layout="wide")
 # CSS for Chat Bubble + Gradient Typing
 st.markdown("""
 <style>
-/* Main width */
 .main {max-width: 850px; margin: auto; padding-top: 0rem;}
-
-/* User bubble - chhota white bubble right side */
 .user-bubble {
-    background: #ffffff;
-    color: #000;
-    padding: 10px 14px;
-    border-radius: 18px 18px 4px 18px;
-    margin: 8px 0 8px auto; 
-    display: inline-block;
-    max-width: 75%;
+    background: #ffffff; color: #000; padding: 10px 14px;
+    border-radius: 18px 18px 4px 18px; margin: 8px 0 8px auto; 
+    display: inline-block; max-width: 75%; float: right; clear: both;
     box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-    clear: both;
-    float: right;
 }
-
-/* AI gradient text - color badalta rahega */
 .gradient-text {
     background: linear-gradient(90deg, #00d4ff, #7b2fff, #ff00d4, #00d4ff);
-    background-size: 300% 300%;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: gradientMove 3s ease infinite;
+    background-size: 300% 300%; -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent; animation: gradientMove 3s ease infinite;
     font-weight: 500;
-    line-height: 1.6;
 }
-
-@keyframes gradientMove {
-    0% {background-position: 0% 50%;}
-    50% {background-position: 100% 50%;}
-    100% {background-position: 0% 50%;}
-}
-
-/* Sidebar + Header purana wala rehne de */
-[data-testid="stSidebar"] {background-color: #171717;}
-.header {
-    position: sticky;
-    top: 0;
-    background: #202123;
-    padding: 18px;
-    border-bottom: 1px solid #444;
-    z-index: 999;
-}
-
-/* Footer chhota */
-.small-footer {
-    font-size: 9px;
-    color: #888;
-    margin-top: 4px;
-}
+@keyframes gradientMove {0% {background-position: 0% 50%;} 50% {background-position: 100% 50%;} 100% {background-position: 0% 50%;}}
+.small-footer { font-size: 11px; color: #888; margin-top: 4px;}
 </style>
 """, unsafe_allow_html=True)
 
