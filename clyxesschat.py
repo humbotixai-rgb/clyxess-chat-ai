@@ -666,7 +666,7 @@ for i, message in enumerate(st.session_state.messages):
             st.markdown(message["content"])
 
 # Input
-if prompt := st.chat_input("Message ClyxessChat AI"):
+if prompt := st.chat_input("Ask ClyxessChat AI"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
