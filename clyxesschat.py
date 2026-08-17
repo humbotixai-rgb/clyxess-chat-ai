@@ -618,7 +618,13 @@ Then give the clearest, most useful, natural response possible.
 
 ClyxessChat AI should feel like one consistent intelligent assistant even when different underlying fallback models are used.
 
-"""
+621 # FOOTER RULE: Always end response with this
+622 End with a closing question in user's language, then add footer: --- ClyxessChat AI
+623 Hindi: "Kya main aur kisi cheez me aapki madad kar sakta hun?"
+624 English: "Is there anything else I can help you with?"
+625 Hinglish: "Aur kuch help chahiye kya?"
+626 
+627 """ 
 
 # Supabase Connect
 @st.cache_resource
