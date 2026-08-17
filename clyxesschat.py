@@ -701,21 +701,16 @@ for i, message in enumerate(st.session_state.messages):
 if prompt := st.chat_input("Ask ClyxessChat AI"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     
-    # 1. USER WHITE BUBBLE
     with st.chat_message("user", avatar=None):
         st.markdown(f'<div class="user-bubble">{prompt}</div>', unsafe_allow_html=True)
 
-    # 2. AI GRADIENT TYPING
     with st.chat_message("assistant", avatar="bot.png"):
         message_placeholder = st.empty()
         full_response = ""
         
         with st.spinner("ClyxessChat AI is thinking..."):
-            # YAHAN TERA PURANA API CALL RAHEGA
-            # completion, used_model = get_groq_response(client, st.session_state.messages)
-            # response = completion.choices[0].message.content
-            
-            response = "Test reply" # <-- test ke liye. Baad me upar wali 2 line uncomment kar dena
+            completion, used_model = get_groq_response(client, st.session_state.messages)
+            response = completion.choices[0].message.content
         
         for word in response.split():
             full_response += word + " "
@@ -723,6 +718,14 @@ if prompt := st.chat_input("Ask ClyxessChat AI"):
                 f'<div class="gradient-text">{full_response}<span style="opacity:0.6;">▌</span></div>', 
                 unsafe_allow_html=True
             )
+            time.sleep(0.04)
+        
+        message_placeholder.markdown(
+            f'<div class="gradient-text">{full_response}</div><div class="small-footer">--- {used_model}</div>', 
+            unsafe_allow_html=True
+        )
+    
+    st.session_state.messages.append({"role": "assistant", "content": response})
             time.sleep(0.04)
         
         message_placeholder.markdown(
