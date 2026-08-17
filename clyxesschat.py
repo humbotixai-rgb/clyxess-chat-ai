@@ -7,24 +7,28 @@ import requests
 
 st.set_page_config(page_title="ClyxessChat AI", layout="wide")
 
-# CSS for Chat Bubble + Gradient Typing
+# CSS for Compact Code + Header
 st.markdown("""
 <style>
 .main {max-width: 850px; margin: auto; padding-top: 0rem;}
-.user-bubble {
-    background: #ffffff; color: #000; padding: 10px 14px;
-    border-radius: 18px 18px 4px 18px; margin: 8px 0 8px auto; 
-    display: inline-block; max-width: 75%; float: right; clear: both;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+.stCodeBlock {max-height: 300px!important; overflow-y: auto!important; border-radius: 8px; background: #1e1e1e!important;}
+[data-testid="stSidebar"] {background-color: #171717;}
+.header {
+    position: sticky;
+    top: 0;
+    background: #202123;
+    padding: 18px;
+    border-bottom: 1px solid #444;
+    z-index: 999;
+    margin: -1rem -1rem 20px -1rem;
 }
-.gradient-text {
-    background: linear-gradient(90deg, #00d4ff, #7b2fff, #ff00d4, #00d4ff);
-    background-size: 300% 300%; -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent; animation: gradientMove 3s ease infinite;
-    font-weight: 500;
+.header h1 {
+    color: white;
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0;
+    text-align: center;
 }
-@keyframes gradientMove {0% {background-position: 0% 50%;} 50% {background-position: 100% 50%;} 100% {background-position: 0% 50%;}}
-.small-footer { font-size: 11px; color: #888; margin-top: 4px;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -664,40 +668,11 @@ for i, message in enumerate(st.session_state.messages):
 # Input
 if prompt := st.chat_input("Ask ClyxessChat AI"):
     st.session_state.messages.append({"role": "user", "content": prompt})
-    
-    with st.chat_message("user", avatar=None):
-        st.markdown(f'<div class="user-bubble">{prompt}</div>', unsafe_allow_html=True)
+    with st.chat_message("user"):
+        st.markdown(prompt)
 
-    with st.chat_message("assistant", avatar="bot.png"):
-        message_placeholder = st.empty()
-        full_response = ""
-        
+    with st.chat_message("assistant"):
         with st.spinner("ClyxessChat AI is thinking..."):
-            completion, used_model = get_groq_response(client, st.session_state.messages)
-            response = completion.choices[0].message.content
-        
-        for word in response.split():
-            full_response += word + " "
-            message_placeholder.markdown(
-                f'<div class="gradient-text">{full_response}<span style="opacity:0.6;">▌</span></div>', 
-                unsafe_allow_html=True
-            )
-            time.sleep(0.04)
-        
-        message_placeholder.markdown(
-            f'<div class="gradient-text">{full_response}</div><div class="small-footer">--- {used_model}</div>', 
-            unsafe_allow_html=True
-        )
-    
-    st.session_state.messages.append({"role": "assistant", "content": response})
-            time.sleep(0.04)
-        
-        message_placeholder.markdown(
-            f'<div class="gradient-text">{full_response}</div><div class="small-footer">--- ClyxessChat</div>', 
-            unsafe_allow_html=True
-        )
-    
-    st.session_state.messages.append({"role": "assistant", "content": response})
 
             # LIVE SEARCH LOGIC
             search_context = ""
