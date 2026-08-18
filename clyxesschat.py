@@ -168,7 +168,7 @@ def get_groq_response(client, messages, search_context=""):
     for model in GROQ_MODELS:
         try:
             completion = client.chat.completions.create(
-                model=model, messages=messages_to_send, temperature=0.7, max_tokens=8000,
+                model=model, messages=messages_to_send, temperature=0.7, max_tokens=4000,
             )
             return completion, model
         except Exception as e:
