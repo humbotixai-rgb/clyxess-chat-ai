@@ -94,23 +94,35 @@ Rules:
 
 # ============ TAVILY SEARCH ============
 def search_tavily(query):
-    search_words = ["news", "mausam", "weather", "rate", "price", "score", "aaj", "kal", "today", "latest"]
+    # Force search if user asks about date, news, weather
+    search_words = ["news", "mausam", "weather", "rate", "price", "score", "aaj", "kal", "today", "latest", "18 august", "date"]
+    
+    # Aaj ki date auto add kar do query me
+    today = datetime.datetime.now().strftime("%d %B %Y") # 18 August 2025
+    query_with_date = f"{query} {today}"
+    
     if not any(word in query.lower() for word in search_words):
         return "", ""
+        
     try:
         url = "https://api.tavily.com/search"
         payload = {
             "api_key": st.secrets["TAVILY_API_KEY"],
-            "query": query,
+            "query": query_with_date, # <-- yahan date wali query gayi
             "search_depth": "advanced",
-            "max_results": 3
+            "max_results": 5, # 3 se 5 kiya taaki fresh news mile
+            "include_answer": True,
+            "days": 1 # <-- YE SABSE IMPORTANT HAI. Sirf last 1 din ka data la
         }
-        response = requests.post(url, json=payload, timeout=10)
-        results = response.json().get("results", [])
-        context = "\n".join([f"- {r['title']}: {r['content']}" for r in results])
+        response = requests.post(url, json=payload, timeout=15)
+        data = response.json()
+        
+        context = data.get("answer", "")
+        results = data.get("results", [])
         sources = "\n".join([f"{i+1}. [{r['title']}]({r['url']})" for i, r in enumerate(results)])
         return context, sources
     except Exception as e:
+        print("Tavily Error:", e)
         return "", ""
 
 # ============ SINGLE GROQ FUNCTION ============
