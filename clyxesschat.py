@@ -697,7 +697,7 @@ if prompt := st.chat_input("Ask ClyxessChat AI"):
         
         # GRADIENT TYPE EFFECT
         for word in response.split():
-            full_response += word + "
+            full_response += word + " "
             message_placeholder.markdown(
                 f'<div class="gradient-text">{full_response}<span style="opacity:0.6;">▌</span></div>', 
                 unsafe_allow_html=True
