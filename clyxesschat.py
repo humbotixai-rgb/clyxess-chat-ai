@@ -71,47 +71,55 @@ GROQ_MODELS = [
     "gemma2-9b-it", "llama-3.1-8b-instant", "llama3-8b-8192"
 ]
 
-# ============ FIX 1: STRICT SYSTEM PROMPT ============
+# ============ REPLACE 1: ACCURACY SUPER PROMPT ============
 SYSTEM_PROMPT = """
 You are ClyxessChat AI, created by ClyxessChat AI Technology.
 
+=== YOUR #1 RULE: ACCURACY OVER EVERYTHING ===
+1. FACT FIRST: If the question is about facts, numbers, dates, districts, population, news, laws, rates, science, history, current events → You MUST use Live Web Info. 
+   Never guess. If you guess, you will be wrong.
+
+2. IF NO WEB DATA: If Live Web Info is empty, then say: "Mere paas iska latest data nahi hai. Main andaza nahi lagaunga."
+
+3. CONFIDENCE RULE: Only answer from memory if it's common knowledge like 2+2=4, Capital of India=Delhi. 
+   For everything else like "Chhattisgarh me kitne jile" → SEARCH FIRST.
+
+=== LANGUAGE RULE ===
 CORE RULE: REPLY ONLY IN THE SAME LANGUAGE AS USER.
 If user writes English → Reply ONLY English.
 If user writes Hindi → Reply ONLY Hindi.
-If user writes Chinese → Reply ONLY Chinese.
-NEVER mix languages. NEVER add translation. NEVER start with "Socho" or "Let me think".
+NEVER mix languages. NEVER add translation.
 
-1. IDENTITY
-Your name is ClyxessChat AI. You were created by ClyxessChat AI Technology.
+=== RESPONSE STRUCTURE ===
+1. Direct Answer first
+2. Then explanation with points
+3. If used Live Web Info, mention sources at end
 
-4. LANGUAGE INTELLIGENCE
-Match the user's language exactly.
+=== PERSONALITY ===
+Friendly, intelligent, calm. Use "tum" in Hindi.
 
-5. PERSONALITY
-ClyxessChat AI should feel friendly, intelligent, calm, and natural.
-
-10. LIVE WEB INFORMATION
-The application may provide live web-search information as "Live Web Info".
-Use it when relevant to the user's question.
-
-14. CODING AND TECHNICAL QUESTIONS
-When the user asks for code: Return syntactically valid code in fenced code blocks with language identifier.
-
-FINAL FOOTER RULE: At the very end, add ONLY ONE footer line based on user language:
+FINAL FOOTER RULE: At the very end add:
 English: "Is there anything else I can help you with? --- ClyxessChat AI"
-Hindi/Hinglish: "Aur kuch help chahiye kya? --- ClyxessChat AI"
+Hindi: "Aur kuch help chahiye kya? --- ClyxessChat AI"
 """
 
-# ============ TAVILY SEARCH - 100% LIVE FIXED ============
+# ============ REPLACE 2: SMART TAVILY SEARCH ============
 def search_tavily(query):
-    search_words = ["news", "mausam", "weather", "rate", "price", "score", "aaj", "kal", "today", "latest", "breaking"]
+    # Ab har factual sawal par search hoga
+    search_words = [
+        "news", "mausam", "weather", "rate", "price", "score", "aaj", "kal", "today", "latest", "breaking",
+        "jila", "district", "rajya", "state", "desh", "country", "population", "jansankhya", "kitna", "kab", "kaha", 
+        "who", "what", "when", "where", "how many", "capital", "cm", "pm", "president"
+    ]
     
-    if not any(word in query.lower() for word in search_words):
+    # Agar ? hai ya factual word hai to search kar
+    if not ("?" in query or any(word in query.lower() for word in search_words)):
         return "", ""
         
     try:
         today = datetime.datetime.now().strftime("%Y-%m-%d")
         yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+        last_week = (datetime.datetime.now() - datetime.timedelta(days=7)).strftime("%Y-%m-%d")
         
         url = "https://api.tavily.com/search"
         payload = {
@@ -120,9 +128,8 @@ def search_tavily(query):
             "search_depth": "advanced",
             "max_results": 5,
             "include_answer": True,
-            "topic": "news",
-            "days": 2,
-            "time_range": "day"
+            "topic": "general", # news se general kiya taaki sab topic cover ho
+            "days": 7, # 1 hafta tak ka data lega
         }
         response = requests.post(url, json=payload, timeout=15)
         data = response.json()
@@ -130,10 +137,11 @@ def search_tavily(query):
         context = data.get("answer", "")
         results = data.get("results", [])
         
+        # 7 din tak ka data allow
         fresh_results = []
         for r in results:
             pub_date = r.get("published_date", "")
-            if today in pub_date or yesterday in pub_date:
+            if pub_date >= last_week:
                 fresh_results.append(r)
         
         if not fresh_results:
@@ -157,7 +165,7 @@ def get_groq_response(client, messages, search_context=""):
     for model in GROQ_MODELS:
         try:
             completion = client.chat.completions.create(
-                model=model, messages=messages_to_send, temperature=0.7, max_tokens=4000,
+                model=model, messages=messages_to_send, temperature=0.3, max_tokens=4000, # temperature kam kiya accuracy ke liye
             )
             return completion, model
         except Exception as e:
@@ -203,7 +211,7 @@ def display_message(content):
                 code = "\n".join(code.split("\n")[1:])
             st.code(code, language=lang)
         else:
-            st.markdown(f'<div class="ai-response">{part}</div>', unsafe_allow_html=True) # FIX: gradient-text hata
+            st.markdown(f'<div class="ai-response">{part}</div>', unsafe_allow_html=True)
 
 # Chat display
 for i, message in enumerate(st.session_state.messages):
@@ -238,7 +246,7 @@ if prompt := st.chat_input("Ask ClyxessChat AI"):
         for word in response.split():
             full_response += word + " "
             message_placeholder.markdown(
-                f'<div class="ai-response">{full_response}<span style="opacity:0.6;">▌</span></div>', # FIX: gradient-text hata
+                f'<div class="ai-response">{full_response}<span style="opacity:0.6;">▌</span></div>',
                 unsafe_allow_html=True
             )
             time.sleep(0.05)
