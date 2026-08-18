@@ -3,7 +3,7 @@ from groq import Groq
 from supabase import create_client, Client
 import datetime
 import uuid
-import requests
+import requests 
 
 st.set_page_config(page_title="ClyxessChat AI", layout="wide")
 
@@ -668,12 +668,17 @@ for i, message in enumerate(st.session_state.messages):
 # Input
 if prompt := st.chat_input("Ask ClyxessChat AI"):
     st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
+    
+    # 1. USER WHITE BUBBLE
+    with st.chat_message("user", avatar=None):
+        st.markdown(f'<div class="user-bubble">{prompt}</div>', unsafe_allow_html=True)
 
-    with st.chat_message("assistant"):
+    # 2. AI GRADIENT TYPING + LIVE SEARCH
+    with st.chat_message("assistant", avatar="bot.png"):
+        message_placeholder = st.empty()
+        full_response = ""
+        
         with st.spinner("ClyxessChat AI is thinking..."):
-
             # LIVE SEARCH LOGIC
             search_context = ""
             sources = ""
@@ -681,6 +686,35 @@ if prompt := st.chat_input("Ask ClyxessChat AI"):
             if any(word in prompt.lower() for word in search_words):
                 with st.spinner("Searching web for latest info..."):
                     search_context, sources = search_tavily(prompt)
+            
+            # AGAR LIVE DATA MILA TO AI KO DO
+            if search_context:
+                st.session_state.messages.append({"role": "system", "content": f"Use this live web data to answer:\n{search_context}"})
+
+            # AI SE JAWAB LO
+            completion, used_model = get_groq_response(client, st.session_state.messages)
+            response = completion.choices[0].message.content
+        
+        # GRADIENT TYPE EFFECT
+        for word in response.split():
+            full_response += word + "
+            message_placeholder.markdown(
+                f'<div class="gradient-text">{full_response}<span style="opacity:0.6;">▌</span></div>', 
+                unsafe_allow_html=True
+            )
+            time.sleep(0.04)
+        
+        # FINAL OUTPUT + SOURCES
+        footer = f'<div class="small-footer">--- {used_model}</div>'
+        if sources:
+            footer += f'<div class="small-footer"><b>Sources:</b><br>{sources}</div>'
+        
+        message_placeholder.markdown(
+            f'<div class="gradient-text">{full_response}</div>{footer}', 
+            unsafe_allow_html=True
+        )
+    
+    st.session_state.messages.append({"role": "assistant", "content": response})
 
             # Final messages with system prompt + search context
             final_system = SYSTEM_PROMPT
