@@ -665,66 +665,40 @@ for i, message in enumerate(st.session_state.messages):
         else:
             st.markdown(message["content"])
 
-# Input
-if prompt := st.chat_input("Ask ClyxessChat AI"):
-    st.session_state.messages.append({"role": "user", "content": prompt})
+with st.spinner("ClyxessChat AI is thinking..."):
+    search_context, sources = search_tavily(prompt)
+    completion, used_model = get_groq_response(client, st.session_state.messages, search_context) # <-- search_context pass karo
+    response = completion.choices[0].message.content
     
-    # 1. USER WHITE BUBBLE
-    with st.chat_message("user", avatar=None):
-        st.markdown(f'<div class="user-bubble">{prompt}</div>', unsafe_allow_html=True)
+   def get_groq_response(client, messages, search_context=""):
+    # Final messages with system prompt + search context
+    final_system = SYSTEM_PROMPT
+    if search_context:
+        final_system += f"\n\nLive Web Info:\n{search_context}"
 
-    # 2. AI GRADIENT TYPING + LIVE SEARCH
-    with st.chat_message("assistant", avatar="bot.png"):
-        message_placeholder = st.empty()
-        full_response = ""
-        
-        with st.spinner("ClyxessChat AI is thinking..."):
-            # LIVE SEARCH LOGIC
-            search_context = ""
-            sources = ""
-            search_words = ["aaj", "latest", "news", "rate", "score", "mausam", "price", "bhav", "2026"]
-            if any(word in prompt.lower() for word in search_words):
-                with st.spinner("Searching web for latest info..."):
-                    search_context, sources = search_tavily(prompt)
-            
-            # AGAR LIVE DATA MILA TO AI KO DO
-            if search_context:
-                st.session_state.messages.append({"role": "system", "content": f"Use this live web data to answer:\n{search_context}"})
+    # FIX: Sirf last 10 messages bhejo warna TPM limit cross
+    recent_messages = messages[-10:]
+    messages_to_send = [{"role": "system", "content": final_system}] + recent_messages
 
-            # AI SE JAWAB LO
-            completion, used_model = get_groq_response(client, st.session_state.messages)
-            response = completion.choices[0].message.content
-        
-        # GRADIENT TYPE EFFECT
-        for word in response.split():
-            full_response += word + " "
-            message_placeholder.markdown(
-                f'<div class="gradient-text">{full_response}<span style="opacity:0.6;">▌</span></div>', 
-                unsafe_allow_html=True
-            )
-            time.sleep(0.04)
-        
-        # FINAL OUTPUT + SOURCES
-        footer = f'<div class="small-footer">--- {used_model}</div>'
-        if sources:
-            footer += f'<div class="small-footer"><b>Sources:</b><br>{sources}</div>'
-        
-        message_placeholder.markdown(
-            f'<div class="gradient-text">{full_response}</div>{footer}', 
-            unsafe_allow_html=True
+    try:
+        completion = client.chat.completions.create(
+            model=PRIMARY_MODEL,
+            messages=messages_to_send,
+            temperature=0.7,
+            max_tokens=2048,
+            stream=False
         )
-    
-    st.session_state.messages.append({"role": "assistant", "content": response})
-
-            # Final messages with system prompt + search context
-            final_system = SYSTEM_PROMPT
-            if search_context:
-                final_system += f"\n\nLive Web Info:\n{search_context}"
-
-            # FIX: Sirf last 10 messages bhejo warna TPM limit cross
-            recent_messages = st.session_state.messages[-10:]
-            messages = [{"role": "system", "content": final_system}] + recent_messages
-
+        return completion, PRIMARY_MODEL
+    except Exception as e:
+        print(f"Primary model failed: {e}")
+        completion = client.chat.completions.create(
+            model=FALLBACK_MODEL,
+            messages=messages_to_send,
+            temperature=0.7,
+            max_tokens=2048,
+            stream=False
+        )
+        return completion, FALLBACK_MODEL
             # 4 MODEL FALLBACK CALL
             completion, used_model = get_groq_response(client, messages)
 
