@@ -42,12 +42,17 @@ st.markdown("""
     margin-bottom: 10px;
     text-align: right;
 }
-/* FIX: ChatGPT wala safed color */
-.ai-response {
-    color: #ECECEC;
-    font-size: 16px;
-    line-height: 1.6;
-    padding: 8px 0;
+.gradient-text {
+    background: linear-gradient(90deg, #ff00cc, #3333ff, #00ffcc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-size: 300% 300%;
+    animation: gradient 3s ease infinite;
+}
+@keyframes gradient {
+    0% {background-position: 0% 50%;}
+    50% {background-position: 100% 50%;}
+    100% {background-position: 0% 50%;}
 }
 .small-footer {
     font-size: 12px;
@@ -150,14 +155,14 @@ def get_groq_response(client, messages, search_context=""):
     final_system = SYSTEM_PROMPT
     if search_context:
         final_system += f"\n\nLive Web Info:\n{search_context}"
-    recent_messages = messages[-6:]
+    recent_messages = messages[-6:] # FIX 4: 10 se 6 kiya token bachane ke liye
     messages_to_send = [{"role": "system", "content": final_system}] + recent_messages
 
     errors = []
     for model in GROQ_MODELS:
         try:
             completion = client.chat.completions.create(
-                model=model, messages=messages_to_send, temperature=0.7, max_tokens=4000,
+                model=model, messages=messages_to_send, temperature=0.7, max_tokens=4000, # FIX 4: 4000
             )
             return completion, model
         except Exception as e:
@@ -191,7 +196,7 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
     st.session_state.session_id = str(uuid.uuid4())
 
-# CODE DISPLAY FUNCTION - FIXED
+# CODE DISPLAY FUNCTION
 def display_message(content):
     code_blocks = re.split(r'(```.*?```)', content, flags=re.DOTALL)
     for part in code_blocks:
@@ -203,7 +208,7 @@ def display_message(content):
                 code = "\n".join(code.split("\n")[1:])
             st.code(code, language=lang)
         else:
-            st.markdown(f'<div class="ai-response">{part}</div>', unsafe_allow_html=True) # FIX: gradient-text hata
+            st.markdown(f'<div class="gradient-text">{part}</div>', unsafe_allow_html=True)
 
 # Chat display
 for i, message in enumerate(st.session_state.messages):
@@ -225,7 +230,7 @@ if prompt := st.chat_input("Ask ClyxessChat AI"):
         message_placeholder = st.empty()
         full_response = ""
         
-        with st.spinner("ClyxessChat AI is responding..."):
+        with st.spinner("ClyxessChat AI is responding..."): # FIX 3: English kiya
             search_context, sources = search_tavily(prompt)
             completion, used_model = get_groq_response(client, st.session_state.messages, search_context)
             
@@ -233,12 +238,13 @@ if prompt := st.chat_input("Ask ClyxessChat AI"):
                 
             response = completion.choices[0].message.content
             if sources: response += f"\n\n**Source:**\n{sources}"
+            # FIX 2: Yahan se footer hataya. AI khud dega
         
-        # Human jaisa typing effect - FIXED COLOR
+        # Human jaisa typing effect
         for word in response.split():
             full_response += word + " "
             message_placeholder.markdown(
-                f'<div class="ai-response">{full_response}<span style="opacity:0.6;">▌</span></div>', # FIX: gradient-text hata
+                f'<div class="gradient-text">{full_response}<span style="opacity:0.6;">▌</span></div>', 
                 unsafe_allow_html=True
             )
             time.sleep(0.05)
