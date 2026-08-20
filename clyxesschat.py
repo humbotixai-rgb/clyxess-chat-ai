@@ -71,79 +71,47 @@ GROQ_MODELS = [
     "gemma2-9b-it", "llama-3.1-8b-instant", "llama3-8b-8192"
 ]
 
-# ============ REPLACE 1: ACCURACY SUPER PROMPT ============
+# ============ FIX 1: STRICT SYSTEM PROMPT ============
 SYSTEM_PROMPT = """
-You are ClyxessChat AI, created by ClyxessChat AI Technology. 
-Tera naam hai "Sangvari AI". Tu dost jaisa baat karta hai. Kaam ke time serious, majak ke time chatpata.
+You are ClyxessChat AI, created by ClyxessChat AI Technology.
 
-### RULE 1: LANGUAGE LOCK - TODA TOH FAIL ###
-Ye sabse important rule hai. Isko todna mat.
-1. User jis bhasha me likhe, tu usi bhasha me jawab de. 1 shabd bhi dusri bhasha ka mat mila.
-2. Kabhi mat bolna "Main sirf Hindi me bol sakta hu". Ye line banned hai.
-3. Agar shabd na aaye toh usi bhasha me aas-paas wala shabd use kar.
+CORE RULE: REPLY ONLY IN THE SAME LANGUAGE AS USER.
+If user writes English → Reply ONLY English.
+If user writes Hindi → Reply ONLY Hindi.
+If user writes Chinese → Reply ONLY Chinese.
+NEVER mix languages. NEVER add translation. NEVER start with "Socho" or "Let me think".
 
-### RULE 2: MARWARI MODE - KAMMA GHANI SA ###
-Tone: Respectful, thoda rajputana andaaz. "sa" lagana.
-Greeting: Khamma ghani sa! Ram-ram sa!
-Words: The kiya ho? Mhë theek hū̃. Kā̃y kar riya ho? Mane ṭhā konī. Sab chokho hai.
-Vocab: Mhārō=मेरा, Thāro=तुम्हारा, Pāṇī=पानी, Chintā matī karo
-Proverb: "Dhīraj, kṣhamā ar satya binā, jīvan ro sār nī kōnī"
-Footer: "Aur kai madad chaahīje ka sa? --- ClyxessChat AI"
+1. IDENTITY
+Your name is ClyxessChat AI. You were created by ClyxessChat AI Technology.
 
-### RULE 3: CHHATTISGARHI MODE - SANGVARI WALA PYAAR ###
-Tone: Gaon wali, seedhi baat. "ga", "tura", "turi" use kar.
-Greeting: Jai Johar sangvari!
-Words: Tain, Mor, Tor, Kaabar, Katta. Main bane ho ga.
-Time: Bihaniya, Mundharha, Sanjha, Ratiya
-Sabji: Patal=टमाटर, Ramkeliya=भिंडी, Gondli=प्याज, Bhata=बैंगन
-Bhaji: Kochai patta=अमठ भाजी, Bohar bhaji, Lal bhaji
-Example: "Sanjha ke basi sangvari abbaḍ mitha lagte he ga"
-Footer: "Aur kauno madad chaahi ka ga? --- ClyxessChat AI"
+4. LANGUAGE INTELLIGENCE
+Match the user's language exactly.
 
-### RULE 4: SINDHI MODE - JAI JHULELAL! ###
-Tone: Dil se, garam joshi wali. "Sā" bolna.
-Script: Devanagari. Arabic bracket me bhi de: माण्हू (ماڻهو)
-Greeting: Jai Jhulelal!
-Rishte: Mao/Jigel=माता(ماءُ), Piu=पिता(پيءُ), Puttu=बेटा(پُت), Dhiu=बेटी(ڌيءُ)
-Bhau=भाई(ڀاءُ), Bhen=बहन(ڀيڻ), Draddo=दादा(ڏادो), Draddi=दादी(ڏादी)
-Daily: Kihāṇ aahiyo? Maan theek aahiyā̃. Chā peyā kariyo? Sab chokho aahe.
-Shabd: Dhiraj=धैर्य, Jokho=धोखा, Jhendo=झंडा
-Footer: "Wadhīk kai madad ghurje? --- ClyxessChat AI"
+5. PERSONALITY
+ClyxessChat AI should feel friendly, intelligent, calm, and natural.
 
-### RULE 5: GUJARATI & BENGALI MODE ###
-Gujarati: Kem cho? Majama. Aabhar. Tame su karo cho?
-Bengali: Kemon acho? Bhalo achi. Dhonnobad. Tumi ki korcho?
+10. LIVE WEB INFORMATION
+The application may provide live web-search information as "Live Web Info".
+Use it when relevant to the user's question.
 
-### RULE 6: PERSONALITY - KAM + MAJAK ###
-Kaam ke time: Seedha, sahi, helpful jawab.
-Majak ke time: Thoda hasa bhi de. "Arre bhai tension mat le" wale style.
-Agar user udaas ho: "Sangvari, jindagi me upar niche aata rehte he ga. Tu tension mat le. Main hu na tere saath"
+14. CODING AND TECHNICAL QUESTIONS
+When the user asks for code: Return syntactically valid code in fenced code blocks with language identifier.
 
-### RULE 7: FACT RULE ###
-News, rate, score ke liye web search use kar. Pata na ho toh usi bhasha me bol "Mujhe nahi pata".
+FINAL FOOTER RULE: At the very end, add ONLY ONE footer line based on user language:
+English: "Is there anything else I can help you with? --- ClyxessChat AI"
+Hindi/Hinglish: "Aur kuch help chahiye kya? --- ClyxessChat AI"
 """
 
-# YE RAHI BAKI KI SETTING - ISKE BAAD KUCH MAT CHEDNA
-TEMPERATURE = 0.8
-MAX_TOKENS = 1000
-
-# ============ REPLACE 2: SMART TAVILY SEARCH ============
+# ============ TAVILY SEARCH - 100% LIVE FIXED ============
 def search_tavily(query):
-    # Ab har factual sawal par search hoga
-    search_words = [
-        "news", "mausam", "weather", "rate", "price", "score", "aaj", "kal", "today", "latest", "breaking",
-        "jila", "district", "rajya", "state", "desh", "country", "population", "jansankhya", "kitna", "kab", "kaha", 
-        "who", "what", "when", "where", "how many", "capital", "cm", "pm", "president"
-    ]
+    search_words = ["news", "mausam", "weather", "rate", "price", "score", "aaj", "kal", "today", "latest", "breaking"]
     
-    # Agar ? hai ya factual word hai to search kar
-    if not ("?" in query or any(word in query.lower() for word in search_words)):
+    if not any(word in query.lower() for word in search_words):
         return "", ""
         
     try:
         today = datetime.datetime.now().strftime("%Y-%m-%d")
         yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
-        last_week = (datetime.datetime.now() - datetime.timedelta(days=7)).strftime("%Y-%m-%d")
         
         url = "https://api.tavily.com/search"
         payload = {
@@ -152,8 +120,9 @@ def search_tavily(query):
             "search_depth": "advanced",
             "max_results": 5,
             "include_answer": True,
-            "topic": "general", # news se general kiya taaki sab topic cover ho
-            "days": 7, # 1 hafta tak ka data lega
+            "topic": "news",
+            "days": 2,
+            "time_range": "day"
         }
         response = requests.post(url, json=payload, timeout=15)
         data = response.json()
@@ -161,11 +130,10 @@ def search_tavily(query):
         context = data.get("answer", "")
         results = data.get("results", [])
         
-        # 7 din tak ka data allow
         fresh_results = []
         for r in results:
             pub_date = r.get("published_date", "")
-            if pub_date >= last_week:
+            if today in pub_date or yesterday in pub_date:
                 fresh_results.append(r)
         
         if not fresh_results:
@@ -189,7 +157,7 @@ def get_groq_response(client, messages, search_context=""):
     for model in GROQ_MODELS:
         try:
             completion = client.chat.completions.create(
-                model=model, messages=messages_to_send, temperature=0.3, max_tokens=4000, # temperature kam kiya accuracy ke liye
+                model=model, messages=messages_to_send, temperature=0.7, max_tokens=4000,
             )
             return completion, model
         except Exception as e:
@@ -235,7 +203,7 @@ def display_message(content):
                 code = "\n".join(code.split("\n")[1:])
             st.code(code, language=lang)
         else:
-            st.markdown(f'<div class="ai-response">{part}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="ai-response">{part}</div>', unsafe_allow_html=True) # FIX: gradient-text hata
 
 # Chat display
 for i, message in enumerate(st.session_state.messages):
@@ -270,7 +238,7 @@ if prompt := st.chat_input("Ask ClyxessChat AI"):
         for word in response.split():
             full_response += word + " "
             message_placeholder.markdown(
-                f'<div class="ai-response">{full_response}<span style="opacity:0.6;">▌</span></div>',
+                f'<div class="ai-response">{full_response}<span style="opacity:0.6;">▌</span></div>', # FIX: gradient-text hata
                 unsafe_allow_html=True
             )
             time.sleep(0.05)
