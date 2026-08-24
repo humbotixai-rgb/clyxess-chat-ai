@@ -1,4 +1,6 @@
 streamlit
 groq
 supabase
-python-dotenv  
+requests
+fpdf2
+python-dotenv
