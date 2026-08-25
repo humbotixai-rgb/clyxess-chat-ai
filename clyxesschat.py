@@ -16,18 +16,19 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- CONFIG ---
+# ============ 10 MODEL MAHA ULTRA FALLBACK ============
 GROQ_MODELS = [
-    "llama-3.3-70b-versatile",
-    "llama-3.1-70b-versatile",
-    "meta-llama/llama-4-maverick-17b-128e-instruct",
-    "qwen/qwen3-32b",
-    "deepseek-r1-distill-llama-70b",
-    "llama-3.1-8b-instant",
-    "gemma2-9b-it",
-    "groq/compound"
+    "openai/gpt-oss-120b",              # 1. PRO MODE - CEO Brain, Reasoning King
+    "openai/gpt-oss-20b",               # 2. PRO MINI - Fast CEO Brain
+    "qwen/qwen3-27b",                   # 3. VISION MODE - Photo + Multilingual King 
+    "qwen/qwen3-32b",                   # 4. VISION BIG - Backup Vision
+    "llama-3.1-70b-versatile",          # 5. Main - Hindi + Smart - Rate limit कम है
+    "deepseek-r1-distill-llama-70b",    # 6. Coding King
+    "mixtral-8x7b-32768",               # 7. Long Chat - 32k context
+    "gemma2-9b-it",                     # 8. Smart + Fast
+    "llama-3.1-8b-instant",             # 9. Fast Backup
+    "llama3-8b-8192"                    # 10. Super Fast Backup  
 ]
-
 # --- IMAGE GEN ---
 def generate_image_url(prompt):
     safe = requests.utils.quote(prompt[:150])
