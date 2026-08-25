@@ -20,13 +20,19 @@ code {font-size: 13.5px!important; white-space: pre-wrap!important; word-break: 
 </style>
 """, unsafe_allow_html=True)
 
-# ============ 10 MODEL MAHA ULTRA FALLBACK ============
+# ===== 10 MODEL FINAL - SAB ACTIVE HAI - NO DECOMMISSIONED =====
 GROQ_MODELS = [
-    "openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3-27b", "qwen/qwen3-32b",
-    "llama-3.1-70b-versatile", "deepseek-r1-distill-llama-70b", "mixtral-8x7b-32768",
-    "gemma2-9b-it", "llama-3.1-8b-instant", "llama3-8b-8192"
+    "llama-3.1-8b-instant",
+    "llama-3.3-70b-versatile",
+    "openai/gpt-oss-20b",
+    "openai/gpt-oss-120b",
+    "qwen/qwen3-32b",
+    "meta-llama/llama-4-scout-17b-16e-instruct",
+    "meta-llama/llama-4-maverick-17b-128e-instruct",
+    "groq/compound-mini",
+    "groq/compound",
+    "moonshotai/kimi-k2-instruct"
 ]
-
 
 def generate_image_url(prompt, is_school_mode, age):
     negative_words = "no person, no girl, no boy, no human face, no woman, no child photo"
