@@ -5,33 +5,28 @@ import uuid, requests, time, json
 
 st.set_page_config(page_title="ClyxessChat AI", layout="centered")
 
-# ===== FINAL ALIGNMENT FIX - ChatGPT 720px =====
+# ===== FINAL ALIGNMENT FIX + CODE BOX FIX + THEME =====
 st.markdown("""
 <style>
 [data-testid="block-container"] {max-width: 720px; margin: auto; padding-top: 0.5rem;}
 .header {position: sticky; top: 0; background: #171717; padding: 14px; border-bottom: 1px solid #2f2f2f; z-index: 999; margin: -1rem -1rem 1rem -1rem; text-align:center;}
 .header h1 {color: white; font-size: 20px; margin: 0;}
 .user-bubble {background: #2f2f2f; color: #ececec; padding: 12px 16px; border-radius: 18px; max-width: 80%; margin-left: auto; line-height: 1.7; white-space: pre-wrap; word-wrap: break-word; text-align: left;}
-.game-card {background: white; padding: 15px; border-radius: 15px; border: 2px solid #eee; color:#111; margin-bottom:10px;}
-.pro-card {background: linear-gradient(135deg, #1f1f1f, #3a3a3a); color: white; padding: 18px; border-radius: 15px; border: 1px solid #555;}
-pre {background: #0d0d0d!important; border: 1px solid #2f2f2f!important; border-radius: 10px!important; padding: 14px!important; overflow-x: auto;}
+.game-card {padding: 15px; border-radius: 15px; margin-bottom:10px;}
+.pro-card {padding: 18px; border-radius: 15px;}
+/* CODE BOX BAHUT BADA WALA FIX */
+pre {background: #0d0d0d!important; border: 1px solid #2f2f2f!important; border-radius: 10px!important; padding: 14px!important; max-width: 100%!important; overflow-x: auto!important;}
 code {font-size: 13.5px!important; white-space: pre-wrap!important; word-break: break-word!important;}
 </style>
 """, unsafe_allow_html=True)
 
-# ===== 10 MODEL - VALID NAMES - BUSY FIX =====
+# ============ 10 MODEL MAHA ULTRA FALLBACK ============
 GROQ_MODELS = [
-    "llama-3.3-70b-versatile",
-    "llama-3.1-70b-versatile",
-    "llama-3.1-8b-instant",
-    "llama3-70b-8192",
-    "llama3-8b-8192",
-    "mixtral-8x7b-32768",
-    "gemma2-9b-it",
-    "qwen-2.5-32b",
-    "qwen-2.5-coder-32b",
-    "deepseek-r1-distill-llama-70b"
+    "openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3-27b", "qwen/qwen3-32b",
+    "llama-3.1-70b-versatile", "deepseek-r1-distill-llama-70b", "mixtral-8x7b-32768",
+    "gemma2-9b-it", "llama-3.1-8b-instant", "llama3-8b-8192"
 ]
+
 
 def generate_image_url(prompt, is_school_mode, age):
     negative_words = "no person, no girl, no boy, no human face, no woman, no child photo"
@@ -46,39 +41,28 @@ def generate_image_url(prompt, is_school_mode, age):
     poll_url = f"https://image.pollinations.ai/prompt/{requests.utils.quote(final_prompt)}?width=512&height=512&nologo=true&seed={uuid.uuid4().int % 10000}"
     return poll_url, "free"
 
-# ===== STRICT LANGUAGE - 100% NO MIX =====
 LANGS = {
-    "Hindi": {"congrats": "🎉 बधाई हो! शाबाश!", "wrong": "गलत! फिर सोचो", "strict": "Reply ONLY in Hindi language. 100% Hindi. Do not use English at all. No Hinglish. Only Hindi."},
-    "English": {"congrats": "🎉 Congratulations!", "wrong": "Wrong! Try again", "strict": "Reply ONLY in English language. 100% English. No other language."},
-    "Marathi": {"congrats": "🎉 अभिनंदन!", "wrong": "चूक!", "strict": "Reply ONLY in Marathi language. 100% Marathi. No Hindi or English mix."},
-    "Bangla": {"congrats": "🎉 অভিনন্দন!", "wrong": "ভুল!", "strict": "Reply ONLY in Bangla language. 100% Bangla. No English."},
-    "Gujarati": {"congrats": "🎉 અભિનંદન!", "wrong": "ખોટું!", "strict": "Reply ONLY in Gujarati language. 100% Gujarati."},
-    "Tamil": {"congrats": "🎉 வாழ்த்துக்கள்!", "wrong": "தவறு!", "strict": "Reply ONLY in Tamil language. 100% Tamil. No English or Hindi."},
-    "Telugu": {"congrats": "🎉 అభినందనలు!", "wrong": "తప్పు!", "strict": "Reply ONLY in Telugu language. 100% Telugu."},
-    "Malayalam": {"congrats": "🎉 അഭിനന്ദനങ്ങൾ!", "wrong": "തെറ്റ്!", "strict": "Reply ONLY in Malayalam language. 100% Malayalam."},
-    "Kannada": {"congrats": "🎉 ಅಭಿನಂದನೆಗಳು!", "wrong": "ತಪ್ಪು!", "strict": "Reply ONLY in Kannada language. 100% Kannada."},
-    "Odia": {"congrats": "🎉 ଅଭିନନ୍ଦନ!", "wrong": "ଭୁଲ!", "strict": "Reply ONLY in Odia language. 100% Odia."},
-    "Chinese": {"congrats": "🎉 恭喜！", "wrong": "错了！", "strict": "Reply ONLY in Chinese language. 100% Chinese."},
-    "Japanese": {"congrats": "🎉 おめでとう！", "wrong": "間違い！", "strict": "Reply ONLY in Japanese language. 100% Japanese."},
+    "Hindi": {"congrats": "🎉 बधाई हो! शाबाश!", "wrong": "गलत! फिर सोचो", "strict": "Reply ONLY in Hindi. 100% Hindi. No English."},
+    "English": {"congrats": "🎉 Congratulations!", "wrong": "Wrong! Try again", "strict": "Reply ONLY in English."},
+    "Marathi": {"congrats": "🎉 अभिनंदन!", "wrong": "चूक!", "strict": "Reply ONLY in Marathi."},
+    "Bangla": {"congrats": "🎉 অভিনন্দন!", "wrong": "ভুল!", "strict": "Reply ONLY in Bangla."},
+    "Gujarati": {"congrats": "🎉 અભિનંદન!", "wrong": "ખોટું!", "strict": "Reply ONLY in Gujarati."},
+    "Tamil": {"congrats": "🎉 வாழ்த்துக்கள்!", "wrong": "தவறு!", "strict": "Reply ONLY in Tamil."},
+    "Telugu": {"congrats": "🎉 అభినందనలు!", "wrong": "తప్పు!", "strict": "Reply ONLY in Telugu."},
+    "Malayalam": {"congrats": "🎉 അഭിനന്ദനങ്ങൾ!", "wrong": "തെറ്റ്!", "strict": "Reply ONLY in Malayalam."},
+    "Kannada": {"congrats": "🎉 ಅಭಿನಂದನೆಗಳು!", "wrong": "ತಪ್ಪು!", "strict": "Reply ONLY in Kannada."},
+    "Odia": {"congrats": "🎉 ଅଭିନନ୍ଦନ!", "wrong": "ଭୁଲ!", "strict": "Reply ONLY in Odia."},
+    "Chinese": {"congrats": "🎉 恭喜！", "wrong": "错了！", "strict": "Reply ONLY in Chinese."},
+    "Japanese": {"congrats": "🎉 おめでとう！", "wrong": "間違い！", "strict": "Reply ONLY in Japanese."},
 }
 
 def fetch_mystery_from_groq(client, level, lang="Hindi"):
     strict_rule = LANGS.get(lang, LANGS["Hindi"])["strict"]
-    system_prompt = (
-        f"You are game engine Level {level}, age 11-20. {strict_rule} "
-        f"Generate mystery Level {level} ONLY in {lang}. No mix. "
-        'JSON only: {"story": "text in selected lang with question", "answer": "1-word or number"}'
-    )
-    for model in GROQ_MODELS[:3]: # top 3 se try
+    system_prompt = f"You are game engine Level {level}. {strict_rule} Generate mystery ONLY in {lang}. JSON: {{\"story\": \"text with question\", \"answer\": \"1-word\"}}"
+    for model in GROQ_MODELS[:4]:
         try:
-            completion = client.chat.completions.create(
-                model=model,
-                messages=[{"role": "system", "content": system_prompt},{"role": "user", "content": f"Generate level {level} puzzle in {lang} only."}],
-                response_format={"type": "json_object"},
-                temperature=0.7
-            )
-            data = json.loads(completion.choices[0].message.content)
-            return data
+            completion = client.chat.completions.create(model=model, messages=[{"role": "system", "content": system_prompt},{"role": "user", "content": f"Level {level} puzzle in {lang}"}], response_format={"type": "json_object"}, temperature=0.7)
+            return json.loads(completion.choices[0].message.content)
         except: continue
     return {"story": f"Level {level} - 12 ka square kya hai?", "answer": "144"}
 
@@ -88,20 +72,38 @@ def practical_game_mode(client):
     if "correct_answer" not in st.session_state: st.session_state.correct_answer = ""
     if "score" not in st.session_state: st.session_state.score = 0
     if "used_q" not in st.session_state: st.session_state.used_q = []
-    if "eng_chat" not in st.session_state: st.session_state.eng_chat = []
+    if "theme" not in st.session_state: st.session_state.theme = "light"
+    if "streak" not in st.session_state: st.session_state.streak = 3
+    if "points" not in st.session_state: st.session_state.points = 120
 
-    c1,c2,c3 = st.columns(3)
+    # ===== DARK/LIGHT BUTTON + AGE + LANG =====
+    c1,c2,c3 = st.columns([1.2,1,0.6])
     with c1: age = st.selectbox("Age", ["1-2 Saal","3-4 Saal","5-6 Saal","6-8 Saal","10-12 Saal","11-15 Saal","16+ Saal","17-18 Saal","19-20 Saal"], key="p_age")
     with c2: sel_lang = st.selectbox("🌐 Language (12)", list(LANGS.keys()), index=0, key="game_lang_final")
-    with c3: mode_type = st.selectbox("Mode", ["🎮 Game (10 Level)","💬 English Chat","🔧 PRO Engine Lab","🕵️ Cyber Detective (Groq Live)"], key="game_mode_type")
+    with c3:
+        st.write("🎨 Theme")
+        if st.toggle("🌙 Dark", value=(st.session_state.theme=="dark"), key="theme_toggle"):
+            st.session_state.theme="dark"
+        else:
+            st.session_state.theme="light"
 
+    # Theme CSS - BACCHO KE LIYE WHITE, BADO KE LIYE BLACK
+    if st.session_state.theme=="dark":
+        st.markdown("<style>.game-card{background:#1e1e1e!important; color:white!important; border:1px solid #333!important;}.pro-card{background: linear-gradient(135deg, #1f1f1f, #3a3a3a)!important; color:white!important; border:1px solid #555!important;}</style>", unsafe_allow_html=True)
+    else:
+        st.markdown("<style>.game-card{background:white!important; color:#111!important; border:2px solid #FFD54F!important; box-shadow:0 4px 12px rgba(0,0,0,0.08);}.pro-card{background: linear-gradient(135deg, #FFF9C4, #FFE082)!important; color:#111!important; border:2px solid #FFCA28!important;}</style>", unsafe_allow_html=True)
+
+    # English Chat HATA DIYA - Sirf 3 mode
+    mode_type = st.selectbox("Mode", ["🎮 Game (10 Level)","🔧 PRO Engine Lab","🕵️ Cyber Detective (Groq Live)"], key="game_mode_type")
+
+    st.markdown(f"🔥 Streak: {st.session_state.streak} Days | ⭐ {st.session_state.points} XP | Score: {st.session_state.score}")
     txt = LANGS[sel_lang]
 
     if "PRO Engine" in mode_type:
-        st.markdown(f"<div class='pro-card'><h2>🔧 Real Engine Lab - {age} - {sel_lang}</h2></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='pro-card'><h2>🔧 Real Engine Lab - {age} - {sel_lang}</h2><p>Real 3D cutaway dikhega, practical!</p></div>", unsafe_allow_html=True)
         part = st.selectbox("Kya seekhna hai?", ["Bike Engine 4-Stroke","Car Engine","Jet Engine","Ship Engine","Electric Motor"])
-        if st.button(f"🔍 {part} dikhao?", type="primary"):
-            steps = [f"{part} all parts open blueprint", f"{part} assembly process", f"{part} cutaway working internal", f"{part} final fitted realistic"]
+        if st.button(f"🔍 {part} ka 3D Cutaway dikhao?", type="primary"):
+            steps = [f"{part} all parts open blueprint", f"{part} assembly process", f"{part} cutaway working internal piston moving", f"{part} final fitted realistic"]
             for i,s in enumerate(steps,1):
                 url = f"https://image.pollinations.ai/prompt/{requests.utils.quote(s)}, highly detailed, engineering diagram, 4k, no person?width=512&height=512&seed={uuid.uuid4().int % 10000}"
                 st.image(url, caption=f"Step {i}: {s}", width=350)
@@ -122,8 +124,8 @@ def practical_game_mode(client):
             with colA:
                 if st.button("🚀 Verify", use_container_width=True, type="primary"):
                     if user_input == st.session_state.correct_answer:
-                        st.balloons(); st.snow(); st.success(f"{txt['congrats']} 🌸")
-                        st.session_state.game_level += 1; st.session_state.score += 10
+                        st.balloons(); st.snow(); st.success(f"{txt['congrats']} 🌸 +20 XP")
+                        st.session_state.game_level += 1; st.session_state.score += 10; st.session_state.points+=20
                         st.session_state.current_story = None; time.sleep(0.5); st.rerun()
                     else: st.error(f"❌ {txt['wrong']} - {st.session_state.correct_answer}")
             with colB:
@@ -135,21 +137,6 @@ def practical_game_mode(client):
                 st.session_state.game_level=1; st.session_state.current_story=None; st.session_state.score=0; st.rerun()
         return
 
-    if "English Chat" in mode_type:
-        st.markdown(f"### 💬 {sel_lang} strict mode")
-        for m in st.session_state.eng_chat:
-            with st.chat_message(m["role"]): st.markdown(m["content"])
-        if p := st.chat_input(f"{sel_lang} me likho..."):
-            st.session_state.eng_chat.append({"role":"user","content":p})
-            with st.chat_message("user"): st.markdown(p)
-            with st.chat_message("assistant"):
-                try:
-                    comp = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"system","content":f"{txt['strict']} You are English teacher. Only in {sel_lang}."},{"role":"user","content":p}], max_tokens=300)
-                    ans = comp.choices[0].message.content
-                except: ans = txt["congrats"]
-                st.markdown(ans); st.session_state.eng_chat.append({"role":"assistant","content":ans})
-        return
-
     SIMPLE_DB = {
         "1-2 Saal": [{"q":"🍎 Laal?","opts":["🍎 Seb","🏍️ Bike"],"ans":"🍎 Seb"}],
         "3-4 Saal": [{"q":"🐄 Moo?","opts":["🐄 Gaay","🐱 Billi"],"ans":"🐄 Gaay"}],
@@ -158,9 +145,9 @@ def practical_game_mode(client):
         "10-12 Saal": [{"q":"Binary 10?","opts":["1010","1000"],"ans":"1010"}],
     }
     base = SIMPLE_DB.get(age, SIMPLE_DB["6-8 Saal"])
-    db_list = (base * 10)[:10] # 10 unique Q
+    db_list = (base * 10)[:10]
     st.progress(len(st.session_state.used_q)/10)
-    st.markdown(f"### {sel_lang} | {age} | Q {len(st.session_state.used_q)+1}/10 | Score {st.session_state.score}")
+    st.markdown(f"### {sel_lang} | {age} | Q {len(st.session_state.used_q)+1}/10")
     if len(st.session_state.used_q)>=10:
         st.balloons(); st.success(f"{txt['congrats']} Complete! 🌸")
         if st.button("Next Age", type="primary"): st.session_state.used_q=[]; st.session_state.score=0; st.rerun()
@@ -173,31 +160,23 @@ def practical_game_mode(client):
     for i,opt in enumerate(cur["opts"]):
         if cols[i%2].button(opt, key=f"s_{idx}_{opt}_{len(st.session_state.used_q)}", use_container_width=True):
             if opt==cur["ans"]:
-                st.session_state.score+=10; st.session_state.used_q.append(idx); st.balloons(); st.success(txt['congrats']); time.sleep(0.4); st.rerun()
+                st.session_state.score+=10; st.session_state.points+=10; st.session_state.used_q.append(idx); st.balloons(); st.success(txt['congrats']); time.sleep(0.4); st.rerun()
             else: st.error(f"{txt['wrong']}")
 
-# ===== PROMPTS - FINAL =====
 NORMAL_SYSTEM_PROMPT = """
 You are ClyxessChat AI, PRO Coder.
-RULES:
 - Reply same language as user.
 - For HTML/CSS/CODE: ALWAYS give code in ```html block with proper line breaks, centered flexbox:
 body{display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;background:#f5f5f5;}
 .login-box{width:320px;padding:28px;background:white;border-radius:14px;box-shadow:0 6px 18px rgba(0,0,0,0.1);}
-- Never write code in single messy line. Always formatted with new lines.
-- After code, 2-3 short points only.
-- Keep ChatGPT clean center alignment.
+- Never single messy line.
 """
 
 def get_school_system_prompt(age):
-    if "1-2" in age:
-        return "You are Didi for 1-2 years. RULE: MAX 4 words + big emoji. No long line. Example: 'A for Apple 🍎'. No paragraph, No ###."
-    elif "3-4" in age:
-        return "You are Didi for 3-4 years. RULE: MAX 1 short line, MAX 7 words, big emoji, rhyme. No paragraph, No ###, No ---. Example: 'B for Ball ⚽ Ball gol hai!'"
-    elif "5-6" in age:
-        return "You are Teacher for 5-6 years. Max 2 short lines. Emoji + Hindi. Story style."
-    else:
-        return f"You are ClyxessChat AI School Mode {age}. Teach practical science, engine theory, coding with clean formatting. Code in ```html blocks centered."
+    if "1-2" in age: return "You are Didi for 1-2 years. MAX 4 words + emoji. Example: 'A for Apple 🍎'."
+    elif "3-4" in age: return "You are Didi for 3-4 years. MAX 1 short line, MAX 7 words, emoji."
+    elif "5-6" in age: return "You are Teacher for 5-6 years. Max 2 short lines. Emoji + Hindi."
+    else: return f"You are ClyxessChat AI School Mode {age}. Clean formatting."
 
 def get_groq_response(client, messages, system_prompt):
     msgs = [{"role":"system","content":system_prompt}] + messages[-6:]
@@ -207,7 +186,7 @@ def get_groq_response(client, messages, system_prompt):
             comp = client.chat.completions.create(model=model, messages=msgs, temperature=0.6, max_tokens=3500)
             return comp, model
         except Exception as e:
-            last_err = str(e)
+            last_err = str(e)[:400]
             continue
     return None, last_err
 
@@ -250,7 +229,6 @@ if prompt := st.chat_input("Apna idea type karein..." if "Creative" in mode else
     st.session_state.messages.append({"role":"user","content":prompt})
     with st.chat_message("user"): st.markdown(f'<div class="user-bubble">{prompt}</div>', unsafe_allow_html=True)
     wants_image = any(w in prompt.lower() for w in ["image","draw","banao","photo","picture","diagram","engine","cutaway","blueprint"])
-
     with st.chat_message("assistant"):
         img_url=None
         if wants_image:
@@ -261,13 +239,13 @@ if prompt := st.chat_input("Apna idea type karein..." if "Creative" in mode else
         placeholder=st.empty(); full=""
         completion,used_model = get_groq_response(client, st.session_state.messages, system_prompt)
         if completion is None:
-            st.error(f"Groq 10 model fail: {used_model[:200]} | 1 min ruko, rate limit hai")
+            st.error(f"Groq 10 model fail: {used_model[:200]} | 1 min ruko")
             st.stop()
         response = completion.choices[0].message.content
         for w in response.split():
             full+=w+" "; placeholder.markdown(full+"▌"); time.sleep(0.012)
         placeholder.markdown(full)
-        st.caption(f"Mode: {mode} | Age: {current_age} | {used_model} | FREE IMG")
+        st.caption(f"Mode: {mode} | Age: {current_age} | {used_model}")
         if img_url: st.session_state.messages.append({"role":"assistant","image_url":img_url,"image_caption":prompt,"content":full})
         else: st.session_state.messages.append({"role":"assistant","content":full})
     st.rerun()
