@@ -129,22 +129,12 @@ with st.sidebar:
         st.session_state.messages = []
         st.session_state.session_id = str(uuid.uuid4())
         st.rerun()
-import streamlit as st
-import random
-import json
-from typing import Dict, List, Any
-
+if "Creative Lab 2.0" in mode:
 # ============================================================
 # CLYXESSCHAT AI
 # PLAY & LEARN
 # Age-Based + Subject-Based + Multilingual Learning Engine
 # ============================================================
-
-st.set_page_config(
-    page_title="ClyxessChat AI - Play & Learn",
-    page_icon="🎮",
-    layout="wide"
-)
 
 # ============================================================
 # CONFIGURATION
