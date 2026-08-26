@@ -130,20 +130,20 @@ with st.sidebar:
         st.session_state.session_id = str(uuid.uuid4())
         st.rerun()
     if "Creative Lab 2.0" in mode:
-    # ============================================================
-    # CLYXESSCHAT AI
-    # PLAY & LEARN
-    # Age-Based + Subject-Based + Multilingual Learning Engine
-    # ============================================================
+        # ============================================================
+        # CLYXESSCHAT AI
+        # PLAY & LEARN
+        # Age-Based + Subject-Based + Multilingual Learning Engine
+        # ============================================================
     
-    # ============================================================
-    # CONFIGURATION
-    # ============================================================
+        # ============================================================
+        # CONFIGURATION
+        # ============================================================
     
-    APP_NAME = "ClyxessChat AI"
-    QUESTIONS_PER_LEVEL = 10
+        APP_NAME = "ClyxessChat AI"
+        QUESTIONS_PER_LEVEL = 10
     
-    AGE_LEVELS = [
+        AGE_LEVELS = [
         "1–2 Years",
         "3–4 Years",
         "5–6 Years",
