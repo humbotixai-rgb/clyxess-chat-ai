@@ -190,3 +190,979 @@ if prompt := st.chat_input("Apna idea type karein ya draw karein..." if "Creativ
         st.session_state.messages.append({"role": "assistant", "content": response})
 
     st.rerun()
+
+# ============================================================
+# CLYXESSCHAT AI
+# PLAY & LEARN
+# Age-Based + Subject-Based + Multilingual Learning Engine
+# ============================================================
+
+st.set_page_config(
+    page_title="ClyxessChat AI - Play & Learn",
+    page_icon="🎮",
+    layout="wide"
+)
+
+# ============================================================
+# CONFIGURATION
+# ============================================================
+
+APP_NAME = "ClyxessChat AI"
+QUESTIONS_PER_LEVEL = 10
+
+AGE_LEVELS = [
+    "1–2 Years",
+    "3–4 Years",
+    "5–6 Years",
+    "6–8 Years",
+    "8–10 Years",
+    "10–11 Years",
+    "11+ Years"
+]
+
+LANGUAGES = {
+    "🇮🇳 हिंदी": "hi",
+    "🇮🇳 मराठी": "mr",
+    "🇮🇳 বাংলা": "bn",
+    "🇮🇳 தமிழ்": "ta",
+    "🇮🇳 తెలుగు": "te",
+    "🇮🇳 ગુજરાતી": "gu",
+    "🇮🇳 ಕನ್ನಡ": "kn",
+    "🇮🇳 മലയാളം": "ml",
+    "🇮🇳 ଓଡ଼ିଆ": "or",
+    "🇬🇧 English": "en",
+    "🇨🇳 中文": "zh",
+    "🇯🇵 日本語": "ja"
+}
+
+# ============================================================
+# AGE → SUBJECT MAP
+# ============================================================
+
+AGE_SUBJECTS = {
+    "1–2 Years": [
+        "Colors",
+        "Shapes",
+        "Animals",
+        "Sounds",
+        "Basic Language",
+        "Memory"
+    ],
+
+    "3–4 Years": [
+        "Numbers",
+        "Language",
+        "Shapes",
+        "Storytelling",
+        "Communication",
+        "Logic"
+    ],
+
+    "5–6 Years": [
+        "Maths",
+        "Science Basics",
+        "Language",
+        "Reading",
+        "Logic",
+        "Creativity"
+    ],
+
+    "6–8 Years": [
+        "Maths",
+        "Science",
+        "English",
+        "General Knowledge",
+        "Logic",
+        "Communication",
+        "Technology Basics"
+    ],
+
+    "8–10 Years": [
+        "Maths",
+        "Science",
+        "English",
+        "Coding Basics",
+        "AI Introduction",
+        "Financial Literacy",
+        "Communication"
+    ],
+
+    "10–11 Years": [
+        "Advanced Maths",
+        "Science",
+        "Technology",
+        "AI Literacy",
+        "Coding",
+        "Financial Literacy",
+        "Critical Thinking"
+    ],
+
+    "11+ Years": [
+        "AI & Technology",
+        "Coding",
+        "Financial Literacy",
+        "Cyber Safety",
+        "Communication",
+        "Entrepreneurship",
+        "Critical Thinking",
+        "Problem Solving"
+    ]
+}
+
+# ============================================================
+# DEMO QUESTION DATABASE
+#
+# Production में यही function AI backend से questions लेगा.
+# ============================================================
+
+QUESTION_BANK = {
+
+    "Maths": [
+        {
+            "question": "What is 7 + 5?",
+            "options": ["10", "12", "14", "15"],
+            "answer": "12",
+            "explanation": "7 + 5 = 12."
+        },
+        {
+            "question": "What is 6 × 4?",
+            "options": ["20", "22", "24", "26"],
+            "answer": "24",
+            "explanation": "6 groups of 4 make 24."
+        }
+    ],
+
+    "Science": [
+        {
+            "question": "Which planet do we live on?",
+            "options": ["Mars", "Earth", "Venus", "Jupiter"],
+            "answer": "Earth",
+            "explanation": "We live on planet Earth."
+        },
+        {
+            "question": "Which organ pumps blood?",
+            "options": ["Brain", "Heart", "Lungs", "Stomach"],
+            "answer": "Heart",
+            "explanation": "The heart pumps blood around the body."
+        }
+    ],
+
+    "Logic": [
+        {
+            "question": "What comes next: 2, 4, 6, 8, ?",
+            "options": ["9", "10", "11", "12"],
+            "answer": "10",
+            "explanation": "The pattern increases by 2."
+        }
+    ],
+
+    "Communication": [
+        {
+            "question": "Someone says 'Thank you'. What is a polite response?",
+            "options": [
+                "You're welcome",
+                "Go away",
+                "No",
+                "Stop"
+            ],
+            "answer": "You're welcome",
+            "explanation": "You're welcome is a polite response."
+        }
+    ],
+
+    "Financial Literacy": [
+        {
+            "question": "If you receive ₹100 and save ₹20, how much is left to spend?",
+            "options": ["₹60", "₹70", "₹80", "₹90"],
+            "answer": "₹80",
+            "explanation": "₹100 - ₹20 = ₹80."
+        }
+    ],
+
+    "Technology Basics": [
+        {
+            "question": "Which device is commonly used to type on a computer?",
+            "options": ["Keyboard", "Speaker", "Camera", "Printer"],
+            "answer": "Keyboard",
+            "explanation": "A keyboard is commonly used to type."
+        }
+    ],
+
+    "AI Introduction": [
+        {
+            "question": "What does AI stand for?",
+            "options": [
+                "Artificial Intelligence",
+                "Automatic Internet",
+                "Advanced Input",
+                "Application Interface"
+            ],
+            "answer": "Artificial Intelligence",
+            "explanation": "AI stands for Artificial Intelligence."
+        }
+    ],
+
+    "AI Literacy": [
+        {
+            "question": "What is a good habit when using AI?",
+            "options": [
+                "Check important information",
+                "Believe everything automatically",
+                "Share passwords",
+                "Share private information"
+            ],
+            "answer": "Check important information",
+            "explanation": "AI can make mistakes, so important information should be checked."
+        }
+    ],
+
+    "Coding": [
+        {
+            "question": "What is code?",
+            "options": [
+                "Instructions given to a computer",
+                "A type of food",
+                "A school bag",
+                "A musical instrument"
+            ],
+            "answer": "Instructions given to a computer",
+            "explanation": "Code contains instructions that computers can execute."
+        }
+    ],
+
+    "Coding Basics": [
+        {
+            "question": "What is a variable used for in programming?",
+            "options": [
+                "Storing information",
+                "Charging a phone",
+                "Printing paper",
+                "Playing music"
+            ],
+            "answer": "Storing information",
+            "explanation": "Variables can store values used by a program."
+        }
+    ],
+
+    "Cyber Safety": [
+        {
+            "question": "Should you share your password with strangers online?",
+            "options": [
+                "Yes",
+                "No"
+            ],
+            "answer": "No",
+            "explanation": "Passwords should be kept private."
+        }
+    ],
+
+    "Critical Thinking": [
+        {
+            "question": "What should you do before believing an important claim online?",
+            "options": [
+                "Check reliable sources",
+                "Share it immediately",
+                "Ignore all evidence",
+                "Send your password"
+            ],
+            "answer": "Check reliable sources",
+            "explanation": "Checking reliable sources helps identify inaccurate information."
+        }
+    ],
+
+    "Problem Solving": [
+        {
+            "question": "If a problem has several possible solutions, what is a good approach?",
+            "options": [
+                "Compare the solutions",
+                "Choose randomly",
+                "Give up immediately",
+                "Ignore the problem"
+            ],
+            "answer": "Compare the solutions",
+            "explanation": "Comparing options can help find a better solution."
+        }
+    ],
+
+    "Entrepreneurship": [
+        {
+            "question": "What is one important part of starting a useful product?",
+            "options": [
+                "Understanding a real problem",
+                "Ignoring customers",
+                "Copying everything",
+                "Never testing the idea"
+            ],
+            "answer": "Understanding a real problem",
+            "explanation": "Good products usually solve a real problem."
+        }
+    ]
+}
+
+# ============================================================
+# UI TRANSLATIONS
+# ============================================================
+
+UI = {
+    "en": {
+        "title": "🎮 Play & Learn",
+        "age": "Select Age",
+        "language": "Select Language",
+        "subject": "Select Subject",
+        "start": "🚀 Start Game",
+        "score": "Score",
+        "question": "Question",
+        "submit": "Submit Answer",
+        "next": "Next Question",
+        "complete": "🎉 Level Complete!",
+        "locked": "🔒 Locked",
+        "retry": "🔄 Try Again",
+        "unlocked": "🔓 Next Level Unlocked!",
+        "correct": "✅ Correct!",
+        "wrong": "❌ Not quite!",
+        "finish": "🏆 Amazing! 10/10 completed!",
+        "progress": "Progress"
+    },
+
+    "hi": {
+        "title": "🎮 खेलो और सीखो",
+        "age": "उम्र चुनें",
+        "language": "भाषा चुनें",
+        "subject": "विषय चुनें",
+        "start": "🚀 गेम शुरू करें",
+        "score": "स्कोर",
+        "question": "सवाल",
+        "submit": "उत्तर जांचें",
+        "next": "अगला सवाल",
+        "complete": "🎉 लेवल पूरा!",
+        "locked": "🔒 लॉक",
+        "retry": "🔄 फिर से खेलें",
+        "unlocked": "🔓 अगला लेवल अनलॉक!",
+        "correct": "✅ बिल्कुल सही!",
+        "wrong": "❌ कोई बात नहीं, फिर कोशिश करो!",
+        "finish": "🏆 शानदार! 10/10 पूरा!",
+        "progress": "प्रगति"
+    }
+}
+
+# ============================================================
+# SESSION STATE
+# ============================================================
+
+DEFAULT_STATE = {
+    "selected_age": AGE_LEVELS[0],
+    "selected_language": "hi",
+    "selected_subject": None,
+    "questions": [],
+    "question_index": 0,
+    "score": 0,
+    "game_started": False,
+    "answered": False,
+    "last_correct": False,
+    "last_explanation": "",
+    "unlocked_levels": [AGE_LEVELS[0]]
+}
+
+for key, value in DEFAULT_STATE.items():
+    if key not in st.session_state:
+        st.session_state[key] = value
+
+
+# ============================================================
+# HELPER FUNCTIONS
+# ============================================================
+
+def get_ui(language: str) -> Dict[str, str]:
+    return UI.get(language, UI["en"])
+
+
+def get_subjects(age: str) -> List[str]:
+    return AGE_SUBJECTS.get(age, [])
+
+
+def is_level_unlocked(age: str) -> bool:
+    return age in st.session_state.unlocked_levels
+
+
+def unlock_next_level(age: str) -> str | None:
+
+    try:
+        current_index = AGE_LEVELS.index(age)
+    except ValueError:
+        return None
+
+    next_index = current_index + 1
+
+    if next_index >= len(AGE_LEVELS):
+        return None
+
+    next_level = AGE_LEVELS[next_index]
+
+    if next_level not in st.session_state.unlocked_levels:
+        st.session_state.unlocked_levels.append(next_level)
+
+    return next_level
+
+
+def build_demo_questions(subject: str) -> List[Dict[str, Any]]:
+
+    bank = QUESTION_BANK.get(subject, [])
+
+    if not bank:
+        return []
+
+    result = []
+
+    for item in bank:
+        result.append({
+            "question": item["question"],
+            "options": list(item["options"]),
+            "answer": item["answer"],
+            "explanation": item.get("explanation", "")
+        })
+
+    random.shuffle(result)
+
+    # Repeat demo questions if database is small
+    while len(result) < QUESTIONS_PER_LEVEL:
+        result.extend(result[:min(
+            len(result),
+            QUESTIONS_PER_LEVEL - len(result)
+        )])
+
+    return result[:QUESTIONS_PER_LEVEL]
+
+
+# ============================================================
+# AI QUESTION GENERATOR HOOK
+# ============================================================
+
+def generate_ai_questions(
+    age: str,
+    language: str,
+    subject: str,
+    count: int = 10
+) -> List[Dict[str, Any]]:
+    """
+    PRODUCTION HOOK
+
+    यहां तुम अपने AI backend/API को connect करोगे.
+
+    AI को ideally यह information भेजनी चाहिए:
+
+    Age
+    Language
+    Subject
+    Difficulty
+    Number of questions
+
+    AI से JSON format में questions वापस लेने चाहिए.
+
+    Example output:
+
+    [
+        {
+            "question": "...",
+            "options": ["A", "B", "C", "D"],
+            "answer": "B",
+            "explanation": "..."
+        }
+    ]
+
+    IMPORTANT:
+    API key कभी भी frontend code में hard-code मत करना.
+    Backend / secrets / server-side function use करना.
+    """
+
+    # अभी safe demo fallback
+    return build_demo_questions(subject)
+
+
+# ============================================================
+# CSS
+# ============================================================
+
+st.markdown(
+    """
+    <style>
+
+    .main-title {
+        padding: 24px;
+        border-radius: 20px;
+        background: linear-gradient(
+            135deg,
+            #0f172a,
+            #172554
+        );
+        color: white;
+        margin-bottom: 25px;
+    }
+
+    .main-title h1 {
+        margin: 0;
+        font-size: 34px;
+    }
+
+    .main-title p {
+        margin-top: 8px;
+        font-size: 17px;
+        opacity: 0.85;
+    }
+
+    .game-card {
+        padding: 25px;
+        border-radius: 20px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        margin: 15px 0;
+    }
+
+    .locked-card {
+        padding: 20px;
+        border-radius: 18px;
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+    }
+
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+
+# ============================================================
+# HEADER
+# ============================================================
+
+st.markdown(
+    """
+    <div class="main-title">
+        <h1>🎮 ClyxessChat AI — Play & Learn</h1>
+        <p>AI-powered learning through games, challenges and conversation.</p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+
+# ============================================================
+# TOP SETTINGS
+# ============================================================
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+
+    selected_age = st.selectbox(
+        "👶 Select Age",
+        AGE_LEVELS,
+        index=AGE_LEVELS.index(
+            st.session_state.selected_age
+        )
+    )
+
+with col2:
+
+    language_label = st.selectbox(
+        "🌐 Select Language",
+        list(LANGUAGES.keys())
+    )
+
+    selected_language = LANGUAGES[language_label]
+
+with col3:
+
+    subjects = get_subjects(selected_age)
+
+    selected_subject = st.selectbox(
+        "📚 Select Subject",
+        subjects
+    )
+
+
+st.session_state.selected_age = selected_age
+st.session_state.selected_language = selected_language
+st.session_state.selected_subject = selected_subject
+
+
+# ============================================================
+# LOCK CHECK
+# ============================================================
+
+if not is_level_unlocked(selected_age):
+
+    st.error(
+        f"🔒 {selected_age} is locked."
+    )
+
+    st.info(
+        "Complete the previous level with 10/10 "
+        "to unlock this level."
+    )
+
+    st.stop()
+
+
+# ============================================================
+# SIDEBAR PROGRESS
+# ============================================================
+
+with st.sidebar:
+
+    st.header("🎮 Learning Progress")
+
+    st.write(
+        f"👶 Age: **{selected_age}**"
+    )
+
+    st.write(
+        f"🌐 Language: **{language_label}**"
+    )
+
+    st.write(
+        f"📚 Subject: **{selected_subject}**"
+    )
+
+    st.divider()
+
+    st.subheader("🔓 Levels")
+
+    for level in AGE_LEVELS:
+
+        if level in st.session_state.unlocked_levels:
+
+            if level == selected_age:
+                st.success(f"⭐ {level}")
+            else:
+                st.write(f"✅ {level}")
+
+        else:
+
+            st.write(f"🔒 {level}")
+
+
+# ============================================================
+# START SCREEN
+# ============================================================
+
+if not st.session_state.game_started:
+
+    st.markdown(
+        '<div class="game-card">',
+        unsafe_allow_html=True
+    )
+
+    st.subheader("🎯 Ready to Learn?")
+
+    st.write(
+        f"**Age:** {selected_age}"
+    )
+
+    st.write(
+        f"**Subject:** {selected_subject}"
+    )
+
+    st.write(
+        f"**Language:** {language_label}"
+    )
+
+    st.info(
+        "🎮 10 questions होंगे। "
+        "10/10 complete करने पर अगला age level unlock होगा."
+    )
+
+    if st.button(
+        "🚀 Start Game",
+        use_container_width=True,
+        type="primary"
+    ):
+
+        with st.spinner(
+            "🤖 Creating your learning challenge..."
+        ):
+
+            questions = generate_ai_questions(
+                age=selected_age,
+                language=selected_language,
+                subject=selected_subject,
+                count=QUESTIONS_PER_LEVEL
+            )
+
+        if not questions:
+
+            st.error(
+                "Questions generate नहीं हो पाए। Please try again."
+            )
+
+        else:
+
+            st.session_state.questions = questions
+            st.session_state.question_index = 0
+            st.session_state.score = 0
+            st.session_state.answered = False
+            st.session_state.last_correct = False
+            st.session_state.last_explanation = ""
+            st.session_state.game_started = True
+
+            st.rerun()
+
+    st.markdown(
+        "</div>",
+        unsafe_allow_html=True
+    )
+
+    st.stop()
+
+
+# ============================================================
+# QUESTION DATA
+# ============================================================
+
+questions = st.session_state.questions
+
+if not questions:
+
+    st.error("No questions available.")
+    st.stop()
+
+question_index = st.session_state.question_index
+
+current = questions[question_index]
+
+question_text = current["question"]
+options = current["options"]
+correct_answer = current["answer"]
+explanation = current.get("explanation", "")
+
+
+# ============================================================
+# PROGRESS
+# ============================================================
+
+progress = (
+    (question_index) /
+    QUESTIONS_PER_LEVEL
+)
+
+st.progress(
+    progress,
+    text=f"Question {question_index + 1}/{QUESTIONS_PER_LEVEL}"
+)
+
+c1, c2 = st.columns(2)
+
+with c1:
+    st.metric(
+        "🎯 Question",
+        f"{question_index + 1}/10"
+    )
+
+with c2:
+    st.metric(
+        "⭐ Score",
+        f"{st.session_state.score}/10"
+    )
+
+
+# ============================================================
+# QUESTION CARD
+# ============================================================
+
+st.markdown(
+    '<div class="game-card">',
+    unsafe_allow_html=True
+)
+
+st.subheader(
+    f"❓ {question_text}"
+)
+
+answer = st.radio(
+    "Choose your answer:",
+    options,
+    key=f"answer_{selected_age}_{selected_subject}_{question_index}"
+)
+
+st.markdown(
+    "</div>",
+    unsafe_allow_html=True
+)
+
+
+# ============================================================
+# SUBMIT
+# ============================================================
+
+ui = get_ui(selected_language)
+
+if not st.session_state.answered:
+
+    if st.button(
+        "✅ Submit Answer",
+        use_container_width=True,
+        type="primary"
+    ):
+
+        if answer == correct_answer:
+
+            st.session_state.score += 1
+            st.session_state.last_correct = True
+            st.session_state.last_explanation = explanation
+
+        else:
+
+            st.session_state.last_correct = False
+            st.session_state.last_explanation = explanation
+
+        st.session_state.answered = True
+
+        st.rerun()
+
+
+# ============================================================
+# FEEDBACK
+# ============================================================
+
+if st.session_state.answered:
+
+    if st.session_state.last_correct:
+
+        st.success(
+            f"{ui['correct']} ⭐ "
+            f"Score: {st.session_state.score}/10"
+        )
+
+    else:
+
+        st.warning(
+            f"{ui['wrong']} "
+            f"Correct answer: **{correct_answer}**"
+        )
+
+    if st.session_state.last_explanation:
+
+        st.info(
+            f"💡 {st.session_state.last_explanation}"
+        )
+
+
+# ============================================================
+# NEXT QUESTION
+# ============================================================
+
+if st.session_state.answered:
+
+    if question_index < QUESTIONS_PER_LEVEL - 1:
+
+        if st.button(
+            "➡️ Next Question",
+            use_container_width=True
+        ):
+
+            st.session_state.question_index += 1
+            st.session_state.answered = False
+            st.session_state.last_correct = False
+            st.session_state.last_explanation = ""
+
+            st.rerun()
+
+    else:
+
+        # ====================================================
+        # LEVEL RESULT
+        # ====================================================
+
+        st.divider()
+
+        final_score = st.session_state.score
+
+        if final_score == 10:
+
+            st.balloons()
+
+            st.success(
+                "🏆 LEVEL COMPLETE!"
+            )
+
+            st.markdown(
+                """
+                ### 🎉 Perfect Score — 10/10
+
+                आपने इस level को successfully complete कर लिया!
+                """
+            )
+
+            next_level = unlock_next_level(
+                selected_age
+            )
+
+            if next_level:
+
+                st.success(
+                    f"🔓 Next Level Unlocked: **{next_level}**"
+                )
+
+                st.info(
+                    "अब बच्चा अपनी क्षमता के अनुसार "
+                    "अगले level का challenge खेल सकता है."
+                )
+
+                if st.button(
+                    f"🚀 Play {next_level}",
+                    use_container_width=True,
+                    type="primary"
+                ):
+
+                    st.session_state.selected_age = next_level
+                    st.session_state.game_started = False
+                    st.session_state.questions = []
+                    st.session_state.question_index = 0
+                    st.session_state.score = 0
+                    st.session_state.answered = False
+
+                    st.rerun()
+
+            else:
+
+                st.success(
+                    "👑 Congratulations! "
+                    "आपने सभी available levels complete कर लिए!"
+                )
+
+        else:
+
+            st.warning(
+                f"⭐ Final Score: {final_score}/10"
+            )
+
+            st.info(
+                "🔒 Next level अभी locked है। "
+                "अगला level unlock करने के लिए 10/10 पूरा करें।"
+            )
+
+            if st.button(
+                "🔄 Retry Level",
+                use_container_width=True,
+                type="primary"
+            ):
+
+                st.session_state.game_started = False
+                st.session_state.questions = []
+                st.session_state.question_index = 0
+                st.session_state.score = 0
+                st.session_state.answered = False
+                st.session_state.last_correct = False
+
+                st.rerun()
+
+
+# ============================================================
+# FOOTER
+# ============================================================
+
+st.divider()
+
+st.caption(
+    "ClyxessChat AI • Play & Learn • "
+    "Learn today, build tomorrow 🚀"
+)
