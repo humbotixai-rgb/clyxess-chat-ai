@@ -5,7 +5,9 @@ import datetime, uuid, requests, time, re, os
 from fpdf import FPDF
 
 st.set_page_config(page_title="ClyxessChat AI", layout="wide")
-
+APP_NAME = "ClyxessChat AI"
+QUESTIONS_PER_LEVEL = 10
+AGE_LEVELS = ["1-2 Years", "3-4 Yrs", "6-8 Yrs", "11+ Yrs"]
 # --- CSS ---
 st.markdown("""
 <style>
