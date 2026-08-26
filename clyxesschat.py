@@ -111,7 +111,7 @@ st.markdown('<div class="header"><h1>💬 ClyxessChat AI</h1></div>', unsafe_all
 # SIDEBAR - MODE SELECTOR
 with st.sidebar:
     st.title("💬 ClyxessChat AI")
-    mode = st.radio("Select Mode", ["Normal Chat", "Creative Lab (School Mode)"], index=0)
+    mode = st.radio("Select Mode", ["Normal Chat", "Creative Lab (School Mode)", "Creative Lab 2.0"], index=0)
     st.markdown("---")
     age_group = "1-2 Yrs"
     if "Creative Lab" in mode:
