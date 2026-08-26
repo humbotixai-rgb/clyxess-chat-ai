@@ -1158,4 +1158,4 @@ if prompt := st.chat_input("Apna idea type karein ya draw karein..." if "Creativ
     if not wants_image:
         st.session_state.messages.append({"role": "assistant", "content": response})
 
-    st.rerun()
+        st.rerun()
