@@ -2,6 +2,10 @@ import streamlit as st
 from groq import Groq
 from supabase import create_client
 import datetime, uuid, requests, time, re, os, json, random
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    ZoneInfo = None
 from typing import Dict, List, Any
 from fpdf import FPDF
 
@@ -593,14 +597,28 @@ def get_school_system_prompt(age_group):
         f"Current Age Group: {age_group}. "
     )
 
-    if "1-2" in age_group or "3-4" in age_group:
+    if "1-2" in age_group:
         return base + """
-        You are Didi for 1-4 years kids. RULES: Only rhymes, colors,
-        emojis, sounds. Use Hinglish like 'dekho laal gubbara'.
-        Very very short sentences. Ask sensory questions like
-        'Tap karo toh kya hoga?'. Replace youtube with active play.
-        Never use tough words. You are 'Chote Inventor' ki didi.
-        If user wants image, create cute cartoon prompt.
+        You are a gentle early-learning teacher for children aged 1-2.
+        Use very short, simple, playful language and emojis.
+        IMPORTANT: Never assume the child owns, ate, saw, did, likes,
+        remembers, or experienced anything. Never ask personal-memory
+        questions such as 'What toy do you have?', 'What fruit did you eat?'
+        or 'What did you see yesterday?'.
+        For learning questions, there must be exactly one clear, objective
+        answer. Prefer colors, shapes, animals, sounds, simple objects,
+        counting 1-5 and basic words. No abstract or difficult concepts.
+        If the child is chatting rather than playing, remain warm and natural.
+        If user wants image, create a cute, age-appropriate cartoon prompt.
+        """
+
+    elif "3-4" in age_group:
+        return base + """
+        You are Didi for 3-4 years kids. Use simple playful language,
+        colors, numbers, shapes, animals, sounds, stories and basic logic.
+        Never assume personal experiences or private information.
+        Learning questions must have one clear objective answer.
+        Never use tough or frightening words.
         """
 
     elif "5-6" in age_group or "6-8" in age_group:
@@ -636,7 +654,9 @@ def get_school_system_prompt(age_group):
 def search_tavily(query):
     search_words = [
         "news", "mausam", "weather", "rate", "price",
-        "score", "aaj", "kal", "today", "latest", "breaking"
+        "score", "aaj", "kal", "today", "latest", "breaking",
+        "date", "day", "दिन", "तारीख", "वार", "त्योहार", "festival",
+        "holiday", "raksha bandhan", "rakhi", "रक्षाबंधन", "राखी"
     ]
 
     if not any(word in query.lower() for word in search_words):
@@ -673,6 +693,21 @@ def search_tavily(query):
         return "", ""
 
 # ============================================================
+# LIVE INDIA DATE / TIME
+# ============================================================
+
+def get_india_datetime_context():
+    try:
+        now = datetime.datetime.now(ZoneInfo("Asia/Kolkata")) if ZoneInfo else datetime.datetime.now()
+        return now.strftime(
+            "Current India date: %A, %d %B %Y. Current India time: %I:%M %p (IST)."
+        )
+    except Exception:
+        return datetime.datetime.now().strftime(
+            "Current application date: %A, %d %B %Y. Current application time: %I:%M %p."
+        )
+
+# ============================================================
 # GROQ CHAT
 # ============================================================
 
@@ -682,7 +717,7 @@ def get_groq_response(
     system_prompt,
     search_context=""
 ):
-    final_system = system_prompt
+    final_system = system_prompt + "\n\nLIVE CLOCK (India/IST): " + get_india_datetime_context()
 
     if search_context:
         final_system += (
@@ -772,10 +807,10 @@ def build_demo_questions(subject):
         # Fallback to a generic safe question
         bank = [
             {
-                "question": "Which option is correct?",
-                "options": ["A", "B", "C", "D"],
-                "answer": "A",
-                "explanation": "This is a demo learning question."
+                "question": "Which color is the sun usually shown as? ☀️",
+                "options": ["Yellow", "Blue", "Purple", "Black"],
+                "answer": "Yellow",
+                "explanation": "The sun is commonly shown as yellow in early learning."
             }
         ]
 
@@ -844,6 +879,17 @@ def validate_questions(data, count=10):
         explanation = item.get("explanation", "")
 
         if not question:
+            continue
+
+        # Reject subjective/personal-experience questions, especially for toddlers.
+        q_lower = str(question).strip().lower()
+        personal_patterns = [
+            "what did you", "what do you", "what is your", "which toy do you",
+            "which fruit did you", "what did we", "what have you", "तुमने",
+            "तुम्हारे पास", "तुम्हारा पसंदीदा", "आपने", "आपके पास",
+            "हमने पहले", "तुम्हें क्या पसंद"
+        ]
+        if any(pattern in q_lower for pattern in personal_patterns):
             continue
 
         if not isinstance(options, list):
