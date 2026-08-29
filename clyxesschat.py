@@ -1,13 +1,17 @@
 import streamlit as st
 from groq import Groq
 from supabase import create_client
-import datetime, uuid, requests, time, re, os, json, random
-try:
-    from zoneinfo import ZoneInfo
-except ImportError:
-    ZoneInfo = None
+import datetime, uuid, requests, time, re, os, json, random, base64, urllib.parse
 from typing import Dict, List, Any
 from fpdf import FPDF
+try:
+    from zoneinfo import ZoneInfo
+except Exception:
+    ZoneInfo = None
+try:
+    from streamlit_mic_recorder import mic_recorder
+except Exception:
+    mic_recorder = None
 
 # ============================================================
 # CLYXESSCHAT AI
@@ -97,6 +101,11 @@ st.markdown("""
     color: #64748b;
     font-size: 13px;
 }
+
+.media-card {max-width:560px;margin:12px auto;}
+.media-card img {max-width:100% !important;width:auto !important;height:auto !important;max-height:520px !important;object-fit:contain;border-radius:14px;display:block;margin:auto;}
+[data-testid="stImage"] img {max-width:560px !important;max-height:520px !important;width:auto !important;height:auto !important;object-fit:contain;margin:auto;display:block;}
+.report-card {padding:18px;border-radius:16px;border:1px solid #334155;background:#0f172a;color:white;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -107,10 +116,7 @@ st.markdown("""
 GROQ_MODELS = [
     "openai/gpt-oss-120b",
     "openai/gpt-oss-20b",
-    "qwen/qwen3-32b",
-    "llama-3.1-70b-versatile",
-    "mixtral-8x7b-32768",
-    "llama-3.1-8b-instant"
+    "qwen/qwen3.6-27b"
 ]
 
 QUESTIONS_PER_LEVEL = 10
@@ -547,38 +553,41 @@ for key, value in DEFAULT_STATE.items():
 # IMAGE FALLBACK FUNCTION
 # ============================================================
 
-def generate_image_url(prompt, is_school_mode, age):
+def build_image_prompt(user_prompt, is_school_mode=False, age="Normal"):
+    p = user_prompt.strip()
+    p = re.sub(r"^(please\s+)?(make|create|generate|draw|banao|banaiye)\s+(an?\s+)?(image|photo|picture|poster|chitra)\s*(of|for|:)?\s*", "", p, flags=re.I)
+    rules = (
+        "Create ONLY what the user explicitly requested. Do not add people, girls, boys, faces, animals, vehicles, characters, logos, brands, objects, scenery or unrelated themes unless explicitly requested. "
+        "Do not invent a story or add a main character. Keep the requested subject dominant and clean. No watermark."
+    )
+    if any(x in p.lower() for x in ["diwali", "दीवाली", "दीपावली"]):
+        rules += " For a Diwali greeting/poster where no person is requested, use diyas, warm festive lights and tasteful Indian decorative motifs; NO PEOPLE. Try to preserve the exact requested greeting text."
     if is_school_mode:
-        if "1-2" in age or "3-4" in age:
-            final_prompt = f"cute baby cartoon, very simple, bright colors, 3d pixar style, {prompt}"
-        else:
-            final_prompt = f"kid friendly educational diagram, colorful, {prompt}"
-    else:
-        final_prompt = f"realistic, cinematic, 4k, {prompt}"
+        rules += f" Keep it safe and age-appropriate for {age}."
+    return f"{rules} User request: {p}."
 
+def generate_image_url(prompt, is_school_mode, age, aspect="1:1"):
+    final_prompt = build_image_prompt(prompt, is_school_mode, age)
+    sizes = {"1:1": (768,768), "16:9": (1024,576), "9:16": (576,1024)}
+    width, height = sizes.get(aspect, (768,768))
     try:
         hf_key = st.secrets.get("HF_API_KEY", "")
         if hf_key:
-            API_URL = "https://api-inference.huggingface.co/models/stabilityai/sdxl-turbo"
-            headers = {"Authorization": f"Bearer {hf_key}"}
             r = requests.post(
-                API_URL,
-                headers=headers,
-                json={"inputs": final_prompt},
-                timeout=20
+                "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0",
+                headers={"Authorization": f"Bearer {hf_key}"},
+                json={"inputs": final_prompt}, timeout=60
             )
-            if r.status_code == 200:
+            if r.status_code == 200 and r.content:
                 return r.content, "huggingface"
     except Exception:
         pass
-
-    poll_url = (
+    url = (
         "https://image.pollinations.ai/prompt/"
         f"{requests.utils.quote(final_prompt)}"
-        f"?width=1024&height=1024&nologo=true"
-        f"&seed={uuid.uuid4().int % 10000}"
+        f"?width={width}&height={height}&nologo=true&seed={uuid.uuid4().int % 100000}"
     )
-    return poll_url, "pollinations"
+    return url, "pollinations"
 
 # ============================================================
 # PROMPTS
@@ -592,60 +601,28 @@ If user asks to generate image, say: "Generating image for: [prompt]"
 """
 
 def get_school_system_prompt(age_group):
-    base = (
-        f"You are ClyxessChat AI - School Mode Creative Lab. "
-        f"Current Age Group: {age_group}. "
-    )
+    base = f"You are ClyxessChat AI School Mode. Current age group: {age_group}."
+    if "1-2" in age_group or "3-4" in age_group:
+        return base + " Reply in the selected language only. Use very short playful sentences. NEVER assume what the child ate, owns, saw, likes, remembers or did. Never ask personal-memory questions. Prefer colors, shapes, animals, sounds, counting and objective learning."
+    if "5-6" in age_group or "6-8" in age_group:
+        return base + " Reply in the selected language only. Use simple stories, logic, colors, numbers and curiosity."
+    if "10-11" in age_group:
+        return base + " Reply in the selected language only. Focus on practical science, technology, coding logic and problem solving."
+    return base + " Reply in the selected language only. Focus on AI literacy, coding, technology, entrepreneurship and critical thinking."
 
-    if "1-2" in age_group:
-        return base + """
-        You are a gentle early-learning teacher for children aged 1-2.
-        Use very short, simple, playful language and emojis.
-        IMPORTANT: Never assume the child owns, ate, saw, did, likes,
-        remembers, or experienced anything. Never ask personal-memory
-        questions such as 'What toy do you have?', 'What fruit did you eat?'
-        or 'What did you see yesterday?'.
-        For learning questions, there must be exactly one clear, objective
-        answer. Prefer colors, shapes, animals, sounds, simple objects,
-        counting 1-5 and basic words. No abstract or difficult concepts.
-        If the child is chatting rather than playing, remain warm and natural.
-        If user wants image, create a cute, age-appropriate cartoon prompt.
-        """
 
-    elif "3-4" in age_group:
-        return base + """
-        You are Didi for 3-4 years kids. Use simple playful language,
-        colors, numbers, shapes, animals, sounds, stories and basic logic.
-        Never assume personal experiences or private information.
-        Learning questions must have one clear objective answer.
-        Never use tough or frightening words.
-        """
+# ============================================================
+# LIVE INDIA CLOCK
+# ============================================================
+def get_india_datetime_context():
+    try:
+        now = datetime.datetime.now(ZoneInfo("Asia/Kolkata")) if ZoneInfo else datetime.datetime.now()
+        return now.strftime("Current India date: %A, %d %B %Y. Current India time: %I:%M %p (IST).")
+    except Exception:
+        return datetime.datetime.now().strftime("Current application date: %A, %d %B %Y. Current application time: %I:%M %p.")
 
-    elif "5-6" in age_group or "6-8" in age_group:
-        return base + """
-        Age 5-8: Focus Curiosity & Basic Logic.
-        Task: Interactive Story-Building & Shape Puzzles.
-        Hint Style: Kahani wala.
-        Eg: 'Sher jungle me kho gaya, pehle kya kare?'.
-        Socratic method - answer with question.
-        """
-
-    elif "10-11" in age_group:
-        return base + """
-        Age 7-10: Focus Maker & Practical Science.
-        Task: Step-by-step DIY Projects & Logic Challenges.
-        Hint Style: Jugaad wala.
-        Eg: 'Rocket banana hai? Socho hawa kaha se niklegi?'.
-        Give steps, not direct answer.
-        """
-
-    else:
-        return base + """
-        Age 11+: Focus Future Tech, AI & App Prototyping.
-        Task: Coding Logic, App Wireframing.
-        Hint Style: Innovator wala.
-        Challenge them to break big problem into 2 small parts.
-        """
+def language_display_name(code):
+    return next((name.split(" ", 1)[-1] for name, value in PLAY_LANGUAGES.items() if value == code), "English")
 
 # ============================================================
 # TAVILY
@@ -654,9 +631,7 @@ def get_school_system_prompt(age_group):
 def search_tavily(query):
     search_words = [
         "news", "mausam", "weather", "rate", "price",
-        "score", "aaj", "kal", "today", "latest", "breaking",
-        "date", "day", "दिन", "तारीख", "वार", "त्योहार", "festival",
-        "holiday", "raksha bandhan", "rakhi", "रक्षाबंधन", "राखी"
+        "score", "aaj", "kal", "today", "latest", "breaking"
     ]
 
     if not any(word in query.lower() for word in search_words):
@@ -693,21 +668,6 @@ def search_tavily(query):
         return "", ""
 
 # ============================================================
-# LIVE INDIA DATE / TIME
-# ============================================================
-
-def get_india_datetime_context():
-    try:
-        now = datetime.datetime.now(ZoneInfo("Asia/Kolkata")) if ZoneInfo else datetime.datetime.now()
-        return now.strftime(
-            "Current India date: %A, %d %B %Y. Current India time: %I:%M %p (IST)."
-        )
-    except Exception:
-        return datetime.datetime.now().strftime(
-            "Current application date: %A, %d %B %Y. Current application time: %I:%M %p."
-        )
-
-# ============================================================
 # GROQ CHAT
 # ============================================================
 
@@ -717,7 +677,7 @@ def get_groq_response(
     system_prompt,
     search_context=""
 ):
-    final_system = system_prompt + "\n\nLIVE CLOCK (India/IST): " + get_india_datetime_context()
+    final_system = system_prompt
 
     if search_context:
         final_system += (
@@ -807,10 +767,10 @@ def build_demo_questions(subject):
         # Fallback to a generic safe question
         bank = [
             {
-                "question": "Which color is the sun usually shown as? ☀️",
-                "options": ["Yellow", "Blue", "Purple", "Black"],
-                "answer": "Yellow",
-                "explanation": "The sun is commonly shown as yellow in early learning."
+                "question": "Which option is correct?",
+                "options": ["A", "B", "C", "D"],
+                "answer": "A",
+                "explanation": "This is a demo learning question."
             }
         ]
 
@@ -881,17 +841,6 @@ def validate_questions(data, count=10):
         if not question:
             continue
 
-        # Reject subjective/personal-experience questions, especially for toddlers.
-        q_lower = str(question).strip().lower()
-        personal_patterns = [
-            "what did you", "what do you", "what is your", "which toy do you",
-            "which fruit did you", "what did we", "what have you", "तुमने",
-            "तुम्हारे पास", "तुम्हारा पसंदीदा", "आपने", "आपके पास",
-            "हमने पहले", "तुम्हें क्या पसंद"
-        ]
-        if any(pattern in q_lower for pattern in personal_patterns):
-            continue
-
         if not isinstance(options, list):
             continue
 
@@ -925,124 +874,65 @@ def validate_questions(data, count=10):
     return valid
 
 
-# ============================================================
-# STRICT MULTILINGUAL 1-2 YEARS FALLBACK
-# ============================================================
-EARLY_TRANSLATIONS = {
- "hi": {"Colors":("कौन सा रंग लाल है? 🔴",["🔴 लाल","🔵 नीला","🟢 हरा","🟡 पीला"],"🔴 लाल","यह लाल रंग है।"),"Shapes":("गोल आकार कौन सा है? ⭕",["⬛ वर्ग","🔺 त्रिभुज","⭕ वृत्त","⭐ तारा"],"⭕ वृत्त","यह गोल आकार है।"),"Animals":("कौन सा जानवर म्याऊँ करता है? 🐱",["🐶 कुत्ता","🐱 बिल्ली","🐮 गाय","🐟 मछली"],"🐱 बिल्ली","बिल्ली म्याऊँ करती है।"),"Counting":("कितने तारे हैं? ⭐⭐",["1","2","3","4"],"2","यहाँ 2 तारे हैं।")},
- "mr": {"Colors":("कोणता रंग लाल आहे? 🔴",["🔴 लाल","🔵 निळा","🟢 हिरवा","🟡 पिवळा"],"🔴 लाल","हा लाल रंग आहे."),"Shapes":("गोल आकार कोणता आहे? ⭕",["⬛ चौकोन","🔺 त्रिकोण","⭕ वर्तुळ","⭐ तारा"],"⭕ वर्तुळ","हा गोल आकार आहे."),"Animals":("कोणता प्राणी म्याऊ करतो? 🐱",["🐶 कुत्रा","🐱 मांजर","🐮 गाय","🐟 मासा"],"🐱 मांजर","मांजर म्याऊ करते."),"Counting":("किती तारे आहेत? ⭐⭐",["1","2","3","4"],"2","इथे 2 तारे आहेत.")},
- "bn": {"Colors":("কোন রংটি লাল? 🔴",["🔴 লাল","🔵 নীল","🟢 সবুজ","🟡 হলুদ"],"🔴 লাল","এটি লাল রং।"),"Shapes":("কোনটি গোল? ⭕",["⬛ বর্গ","🔺 ত্রিভুজ","⭕ বৃত্ত","⭐ তারা"],"⭕ বৃত্ত","এটি গোল আকার।"),"Animals":("কোন প্রাণী মিউ মিউ করে? 🐱",["🐶 কুকুর","🐱 বিড়াল","🐮 গরু","🐟 মাছ"],"🐱 বিড়াল","বিড়াল মিউ মিউ করে।"),"Counting":("কতগুলি তারা আছে? ⭐⭐",["1","2","3","4"],"2","এখানে 2টি তারা আছে।")},
- "ta": {"Colors":("எந்த நிறம் சிவப்பு? 🔴",["🔴 சிவப்பு","🔵 நீலம்","🟢 பச்சை","🟡 மஞ்சள்"],"🔴 சிவப்பு","இது சிவப்பு நிறம்."),"Shapes":("வட்ட வடிவம் எது? ⭕",["⬛ சதுரம்","🔺 முக்கோணம்","⭕ வட்டம்","⭐ நட்சத்திரம்"],"⭕ வட்டம்","இது வட்ட வடிவம்."),"Animals":("எந்த விலங்கு மியாவ் என்று ஒலி செய்யும்? 🐱",["🐶 நாய்","🐱 பூனை","🐮 மாடு","🐟 மீன்"],"🐱 பூனை","பூனை மியாவ் என்று ஒலி செய்யும்."),"Counting":("எத்தனை நட்சத்திரங்கள் உள்ளன? ⭐⭐",["1","2","3","4"],"2","இங்கே 2 நட்சத்திரங்கள் உள்ளன.")},
- "te": {"Colors":("ఏ రంగు ఎరుపు? 🔴",["🔴 ఎరుపు","🔵 నీలం","🟢 ఆకుపచ్చ","🟡 పసుపు"],"🔴 ఎరుపు","ఇది ఎరుపు రంగు."),"Shapes":("గుండ్రని ఆకారం ఏది? ⭕",["⬛ చతురస్రం","🔺 త్రిభుజం","⭕ వృత్తం","⭐ నక్షత్రం"],"⭕ వృత్తం","ఇది గుండ్రని ఆకారం."),"Animals":("ఏ జంతువు మియావ్ అంటుంది? 🐱",["🐶 కుక్క","🐱 పిల్లి","🐮 ఆవు","🐟 చేప"],"🐱 పిల్లి","పిల్లి మియావ్ అంటుంది."),"Counting":("ఎన్ని నక్షత్రాలు ఉన్నాయి? ⭐⭐",["1","2","3","4"],"2","ఇక్కడ 2 నక్షత్రాలు ఉన్నాయి.")},
- "gu": {"Colors":("કયો રંગ લાલ છે? 🔴",["🔴 લાલ","🔵 વાદળી","🟢 લીલો","🟡 પીળો"],"🔴 લાલ","આ લાલ રંગ છે."),"Shapes":("ગોળ આકાર કયો છે? ⭕",["⬛ ચોરસ","🔺 ત્રિકોણ","⭕ વર્તુળ","⭐ તારો"],"⭕ વર્તુળ","આ ગોળ આકાર છે."),"Animals":("કયું પ્રાણી મ્યાઉં કરે છે? 🐱",["🐶 કૂતરો","🐱 બિલાડી","🐮 ગાય","🐟 માછલી"],"🐱 બિલાડી","બિલાડી મ્યાઉં કરે છે."),"Counting":("કેટલા તારા છે? ⭐⭐",["1","2","3","4"],"2","અહીં 2 તારા છે.")},
- "kn": {"Colors":("ಯಾವ ಬಣ್ಣ ಕೆಂಪು? 🔴",["🔴 ಕೆಂಪು","🔵 ನೀಲಿ","🟢 ಹಸಿರು","🟡 ಹಳದಿ"],"🔴 ಕೆಂಪು","ಇದು ಕೆಂಪು ಬಣ್ಣ."),"Shapes":("ದುಂಡಾದ ಆಕಾರ ಯಾವುದು? ⭕",["⬛ ಚೌಕ","🔺 ತ್ರಿಭುಜ","⭕ ವೃತ್ತ","⭐ ನಕ್ಷತ್ರ"],"⭕ ವೃತ್ತ","ಇದು ದುಂಡಾದ ಆಕಾರ."),"Animals":("ಯಾವ ಪ್ರಾಣಿ ಮಿಯಾಂವ್ ಎಂದು ಶಬ್ದ ಮಾಡುತ್ತದೆ? 🐱",["🐶 ನಾಯಿ","🐱 ಬೆಕ್ಕು","🐮 ಹಸು","🐟 ಮೀನು"],"🐱 ಬೆಕ್ಕು","ಬೆಕ್ಕು ಮಿಯಾಂವ್ ಎಂದು ಶಬ್ದ ಮಾಡುತ್ತದೆ."),"Counting":("ಎಷ್ಟು ನಕ್ಷತ್ರಗಳಿವೆ? ⭐⭐",["1","2","3","4"],"2","ಇಲ್ಲಿ 2 ನಕ್ಷತ್ರಗಳಿವೆ.")},
- "ml": {"Colors":("ഏത് നിറമാണ് ചുവപ്പ്? 🔴",["🔴 ചുവപ്പ്","🔵 നീല","🟢 പച്ച","🟡 മഞ്ഞ"],"🔴 ചുവപ്പ്","ഇത് ചുവപ്പ് നിറമാണ്."),"Shapes":("വൃത്താകാരം ഏതാണ്? ⭕",["⬛ ചതുരം","🔺 ത്രികോണം","⭕ വൃത്തം","⭐ നക്ഷത്രം"],"⭕ വൃത്തം","ഇത് വൃത്താകാരമാണ്."),"Animals":("ഏത് മൃഗമാണ് മ്യാവൂ എന്ന് ശബ്ദിക്കുന്നത്? 🐱",["🐶 നായ","🐱 പൂച്ച","🐮 പശു","🐟 മത്സ്യം"],"🐱 പൂച്ച","പൂച്ച മ്യാവൂ എന്ന് ശബ്ദിക്കുന്നു."),"Counting":("എത്ര നക്ഷത്രങ്ങളുണ്ട്? ⭐⭐",["1","2","3","4"],"2","ഇവിടെ 2 നക്ഷത്രങ്ങളുണ്ട്.")},
- "or": {"Colors":("କେଉଁ ରଙ୍ଗଟି ଲାଲ? 🔴",["🔴 ଲାଲ","🔵 ନୀଳ","🟢 ସବୁଜ","🟡 ହଳଦିଆ"],"🔴 ଲାଲ","ଏହା ଲାଲ ରଙ୍ଗ।"),"Shapes":("ଗୋଲ ଆକାର କେଉଁଟି? ⭕",["⬛ ବର୍ଗ","🔺 ତ୍ରିଭୁଜ","⭕ ବୃତ୍ତ","⭐ ତାରା"],"⭕ ବୃତ୍ତ","ଏହା ଗୋଲ ଆକାର।"),"Animals":("କେଉଁ ପଶୁ ମ୍ୟାଉ କରେ? 🐱",["🐶 କୁକୁର","🐱 ବିଲେଇ","🐮 ଗାଈ","🐟 ମାଛ"],"🐱 ବିଲେଇ","ବିଲେଇ ମ୍ୟାଉ କରେ।"),"Counting":("କେତୋଟି ତାରା ଅଛି? ⭐⭐",["1","2","3","4"],"2","ଏଠାରେ 2ଟି ତାରା ଅଛି।")},
- "en": {"Colors":("Which color is red? 🔴",["🔴 Red","🔵 Blue","🟢 Green","🟡 Yellow"],"🔴 Red","This is red."),"Shapes":("Which shape is a circle? ⭕",["⬛ Square","🔺 Triangle","⭕ Circle","⭐ Star"],"⭕ Circle","This is a circle."),"Animals":("Which animal says meow? 🐱",["🐶 Dog","🐱 Cat","🐮 Cow","🐟 Fish"],"🐱 Cat","A cat says meow."),"Counting":("How many stars? ⭐⭐",["1","2","3","4"],"2","There are 2 stars.")},
- "zh": {"Colors":("哪个是红色？🔴",["🔴 红色","🔵 蓝色","🟢 绿色","🟡 黄色"],"🔴 红色","这是红色。"),"Shapes":("哪个是圆形？⭕",["⬛ 正方形","🔺 三角形","⭕ 圆形","⭐ 星形"],"⭕ 圆形","这是圆形。"),"Animals":("哪种动物会喵喵叫？🐱",["🐶 狗","🐱 猫","🐮 牛","🐟 鱼"],"🐱 猫","猫会喵喵叫。"),"Counting":("有几颗星星？⭐⭐",["1","2","3","4"],"2","这里有2颗星星。")},
- "ja": {"Colors":("どの色が赤ですか？🔴",["🔴 赤","🔵 青","🟢 緑","🟡 黄色"],"🔴 赤","これは赤色です。"),"Shapes":("どれが丸ですか？⭕",["⬛ 四角","🔺 三角","⭕ 丸","⭐ 星"],"⭕ 丸","これは丸い形です。"),"Animals":("ニャーと鳴く動物はどれ？🐱",["🐶 犬","🐱 猫","🐮 牛","🐟 魚"],"🐱 猫","猫はニャーと鳴きます。"),"Counting":("星はいくつありますか？⭐⭐",["1","2","3","4"],"2","星は2つあります。")}
-}
-
-def strict_early_fallback(subject, language, count=10):
-    data = EARLY_TRANSLATIONS.get(language, {}).get(subject)
-    if not data: return None
-    q, opts, ans, exp = data
-    one = {"question": q, "options": list(opts), "answer": ans, "explanation": exp}
-    return [dict(one) for _ in range(count)]
-
-def generate_ai_questions(
-    client,
-    age,
-    language,
-    subject,
-    count=10
-):
-    """
-    AI-generated question engine.
-
-    Groq से questions requested language में generate होते हैं.
-    JSON invalid होने पर safe demo fallback चलता है.
-    """
-
-    language_name = next(
-        (
-            name
-            for name, code in PLAY_LANGUAGES.items()
-            if code == language
-        ),
-        "English"
-    )
-
-    prompt = f"""
-Create exactly {count} educational multiple-choice questions
-for a child in age group: {age}.
-
-Subject: {subject}
-Language: {language_name}
-
-Rules:
-1. Questions MUST be age-appropriate.
-2. Use simple, child-friendly language.
-3. Questions must teach, not scare or shame.
-4. Do not ask for personal information.
-5. Do not include dangerous instructions.
-6. Financial Literacy must be educational and age-appropriate.
-7. AI/Technology content must focus on safe and responsible use.
-8. Each question must have exactly 4 options.
-9. Only one option must be correct.
-10. Give a short explanation.
-11. Return ONLY valid JSON.
-12. Do not use markdown.
-13. ALL question text, every option, the answer, and explanation MUST be written in the selected language. Do not translate only the question; translate the complete object.
-14. Never mix English into a non-English selected language.
-15. For age 1-2, never ask about the child's personal life, possessions, memories, preferences, or past experiences.
-
-JSON format:
-[
-  {{
-    "question": "Question",
-    "options": ["A", "B", "C", "D"],
-    "answer": "A",
-    "explanation": "Short explanation"
-  }}
-]
-"""
-
-    messages = [
-        {
-            "role": "user",
-            "content": prompt
-        }
+def _personal_assumption_question(text):
+    q = text.lower()
+    patterns = [
+        r"what did you (eat|see|do|play|have|watch|buy)",
+        r"what (fruit|toy|food) did you",
+        r"do you (have|like|own|remember)",
+        r"what is your (favorite|toy|food)",
+        "तुमने क्या खाया", "तुमने कौन सा फल", "तुम्हारे पास कौन", "तुम्हारा पसंदीदा", "तुमने कल क्या", "तुमने क्या देखा"
     ]
+    return any(re.search(x, q, re.I) for x in patterns)
 
+def generate_ai_questions(client, age, language, subject, count=10):
+    language_name = next((name for name, code in PLAY_LANGUAGES.items() if code == language), "English")
+    prompt = f"""
+Create exactly {count} educational multiple-choice questions for age group {age}.
+Subject: {subject}
+Selected language: {language_name}
+STRICT LANGUAGE LOCK: question, all four options, answer and explanation MUST be entirely in {language_name}.
+Never switch to English. Never use Hinglish or mixed language unless English is selected.
+For ages 1–4, NEVER ask personal-experience questions such as what the child ate, owns, likes, saw, did or remembers.
+Every question must be objective, age-appropriate, safe, and have exactly four options with exactly one correct answer.
+Return ONLY valid JSON with this format:
+[{{"question":"...","options":["A","B","C","D"],"answer":"A","explanation":"..."}}]
+"""
     for model in GROQ_MODELS:
         try:
-            completion = client.chat.completions.create(
-                model=model,
-                messages=messages,
-                temperature=0.7,
-                max_tokens=5000
-            )
-
-            text = completion.choices[0].message.content
-            parsed = json.loads(clean_json_text(text))
-
-            valid = validate_questions(
-                parsed,
-                count
-            )
-
-            if len(valid) == count:
+            completion = client.chat.completions.create(model=model, messages=[{"role":"user","content":prompt}], temperature=0.35, max_tokens=5000)
+            parsed = json.loads(clean_json_text(completion.choices[0].message.content))
+            valid=[]
+            for item in parsed if isinstance(parsed,list) else []:
+                if not isinstance(item,dict): continue
+                q=str(item.get("question","")).strip(); opts=[str(x).strip() for x in item.get("options",[]) if str(x).strip()]
+                ans=str(item.get("answer","")).strip(); exp=str(item.get("explanation","")).strip()
+                if not q or len(opts)!=4 or ans not in opts: continue
+                if ("1–2" in age or "3–4" in age) and _personal_assumption_question(q): continue
+                valid.append({"question":q,"options":opts,"answer":ans,"explanation":exp})
+                if len(valid)==count: break
+            if len(valid)==count:
                 return valid
-
         except Exception:
             continue
-
-    if "1-2" in age:
-        fallback = strict_early_fallback(subject, language, count)
-        if fallback:
-            return fallback
-    return build_demo_questions(subject)
+    # Strict fallback. For non-English languages use language-neutral objective questions rather than mixed English.
+    if language == "hi":
+        pool = [
+            {"question":"1 + 1 = ?","options":["1","2","3","4"],"answer":"2","explanation":"1 + 1 = 2।"},
+            {"question":"2, 4, 6, ?","options":["7","8","9","10"],"answer":"8","explanation":"हर बार 2 बढ़ रहा है।"},
+            {"question":"कौन सा आकार वृत्त है?","options":["⬜","🔺","⭕","⭐"],"answer":"⭕","explanation":"⭕ वृत्त है।"},
+            {"question":"कौन सा रंग लाल है?","options":["🔴","🔵","🟢","🟡"],"answer":"🔴","explanation":"🔴 लाल रंग है।"}
+        ]
+    elif language == "en":
+        pool = build_demo_questions(subject)
+    else:
+        pool = [
+            {"question":"2 + 3 = ?","options":["4","5","6","7"],"answer":"5","explanation":"2 + 3 = 5"},
+            {"question":"1, 2, 3, ?","options":["2","3","4","5"],"answer":"4","explanation":"1, 2, 3, 4"},
+            {"question":"⭕ ?","options":["⬜","🔺","⭕","⭐"],"answer":"⭕","explanation":"⭕"},
+            {"question":"🔴 + 🔴 = ?","options":["2","3","4","5"],"answer":"2","explanation":"2"}
+        ]
+    return (pool * ((count // max(1,len(pool)))+1))[:count]
 
 
 # ============================================================
@@ -1472,322 +1362,293 @@ def render_play_and_learn(client):
 
         st.rerun()
 
+
+# ============================================================
+# EXTRA FEATURES — integrated without creating duplicate core modes
+# ============================================================
+def analyze_image_with_groq(image_bytes, mime, question, selected_language="English"):
+    if not client:
+        return "Groq API key missing."
+    try:
+        b64 = base64.b64encode(image_bytes).decode("utf-8")
+        completion = client.chat.completions.create(
+            model="qwen/qwen3.6-27b",
+            messages=[{"role":"user","content":[
+                {"type":"text","text":f"Reply only in {selected_language}. {question}"},
+                {"type":"image_url","image_url":{"url":f"data:{mime};base64,{b64}"}}
+            ]}], temperature=0.4, max_completion_tokens=1500
+        )
+        return completion.choices[0].message.content
+    except Exception as e:
+        return f"Vision error: {e}"
+
+def save_current_chat_cloud():
+    if not supabase or not st.session_state.messages:
+        return False
+    try:
+        user=supabase.auth.get_user().user
+        if not user: return False
+        supabase.table("chat_sessions").upsert({
+            "id":st.session_state.session_id,
+            "user_id":user.id,
+            "messages":st.session_state.messages,
+            "updated_at":datetime.datetime.utcnow().isoformat()
+        }).execute()
+        return True
+    except Exception:
+        return False
+
+def load_latest_chat_cloud():
+    if not supabase: return
+    try:
+        user=supabase.auth.get_user().user
+        if not user: return
+        r=supabase.table("chat_sessions").select("messages").eq("user_id",user.id).order("updated_at",desc=True).limit(1).execute()
+        if r.data and r.data[0].get("messages"):
+            st.session_state.messages=r.data[0]["messages"]
+    except Exception:
+        pass
+
+def render_login_signup():
+    st.title("🔐 Login / Sign Up")
+    if not supabase:
+        st.warning("Add SUPABASE_URL and SUPABASE_KEY to Streamlit secrets.")
+        return
+    tab1,tab2=st.tabs(["Log In","Sign Up"])
+    with tab1:
+        email=st.text_input("Email",key="login_email")
+        password=st.text_input("Password",type="password",key="login_password")
+        if st.button("Log In",type="primary"):
+            try:
+                r=supabase.auth.sign_in_with_password({"email":email,"password":password})
+                st.session_state.user_email=email
+                load_latest_chat_cloud()
+                st.success("Logged in successfully.")
+                st.rerun()
+            except Exception as e: st.error(f"Login failed: {e}")
+    with tab2:
+        name=st.text_input("Name",key="signup_name")
+        email=st.text_input("Email",key="signup_email")
+        password=st.text_input("Password",type="password",key="signup_password")
+        if st.button("Create Account"):
+            try:
+                supabase.auth.sign_up({"email":email,"password":password,"options":{"data":{"name":name}}})
+                st.success("Account created. Confirm email if your Supabase project requires it.")
+            except Exception as e: st.error(f"Sign up failed: {e}")
+
+def render_image_generator():
+    st.title("🎨 Creative AI Image Generator")
+    prompt=st.text_area("Describe exactly what you want",placeholder="Example: Happy Diwali greeting poster with diyas, no people")
+    aspect=st.selectbox("📐 Format",["1:1","16:9","9:16"])
+    if st.button("🎨 Generate Image",type="primary",use_container_width=True) and prompt.strip():
+        with st.spinner("🎨 Creating only the requested subject..."):
+            data,source=generate_image_url(prompt,False,"Normal",aspect)
+        st.markdown('<div class="media-card">',unsafe_allow_html=True)
+        st.image(data,width=520,caption="Generated image")
+        st.markdown('</div>',unsafe_allow_html=True)
+        st.caption("Display is intentionally compact; the source image can remain high resolution.")
+        if isinstance(data,bytes):
+            st.download_button("⬇️ Save Image",data=data,file_name="clyxesschat_image.png",mime="image/png")
+        else:
+            st.link_button("🔗 Open Full Image",data)
+
+def render_vision_lab():
+    st.title("📷 Vision Lab")
+    f=st.file_uploader("Upload book, homework or diagram",type=["png","jpg","jpeg","webp"])
+    labels=list(PLAY_LANGUAGES.keys()); label=st.selectbox("Answer language",labels)
+    question=st.text_input("What should AI explain?",value="Explain the image simply and solve any visible question.")
+    if f:
+        st.markdown('<div class="media-card">',unsafe_allow_html=True); st.image(f,width=480); st.markdown('</div>',unsafe_allow_html=True)
+        if st.button("🧠 Analyze Image",type="primary",use_container_width=True):
+            st.write(analyze_image_with_groq(f.getvalue(),f.type,question,PLAY_LANGUAGES[label]))
+
+def render_roleplay():
+    st.title("🎭 Peer Roleplay Modes")
+    role=st.selectbox("Role",["Classmate","Teacher","Study Buddy","Interview Partner","Project Teammate"])
+    label=st.selectbox("Language",list(PLAY_LANGUAGES.keys()),key="role_language")
+    prompt=st.text_input("Start the roleplay")
+    if st.button("Start Roleplay",type="primary") and prompt:
+        system=f"Act as {role} for educational practice. Reply ONLY in {PLAY_LANGUAGES[label]}. Be safe, respectful and age-appropriate."
+        ans,_=get_groq_response(client,[{"role":"user","content":prompt}],system,"")
+        st.chat_message("assistant").write(ans.choices[0].message.content if ans else "")
+
+def render_timetable():
+    st.title("📋 AI Daily Timetable")
+    age=st.selectbox("Age/Class",PLAY_AGE_LEVELS)
+    subjects=st.multiselect("Subjects",get_play_subjects(age),default=get_play_subjects(age)[:3])
+    hours=st.slider("Learning hours",1,6,2)
+    if st.button("🗓️ Create Timetable",type="primary"):
+        mins=max(20,int(hours*60/max(1,len(subjects))))
+        st.session_state.timetable="\n".join([f"{i+1}. {sub} — {mins} min" for i,sub in enumerate(subjects)])
+    if st.session_state.get("timetable"): st.code(st.session_state.timetable)
+
+def render_homework_test():
+    st.title("📝 Interactive Homework & Test")
+    subject=st.selectbox("Subject",sorted(set(sum(AGE_SUBJECTS.values(),[]))))
+    if st.button("Generate Test",type="primary"):
+        st.session_state.homework_questions=generate_ai_questions(client,"8–10 Years","en",subject,5)
+        st.session_state.homework_answers={}
+        st.session_state.homework_result=None
+    qs=st.session_state.get("homework_questions",[])
+    if qs:
+        for i,q in enumerate(qs):
+            st.session_state.homework_answers[i]=st.radio(q["question"],q["options"],key=f"hw_{i}")
+        if st.button("Submit Test"):
+            score=sum(st.session_state.homework_answers[i]==q["answer"] for i,q in enumerate(qs))
+            st.session_state.homework_result=f"{score}/{len(qs)}"
+            st.success(f"Score: {st.session_state.homework_result}")
+
+def learning_report():
+    best=max(st.session_state.play_best_scores.values(),default=0)
+    return "\n".join([
+        "ClyxessChat AI — Learning Report",
+        f"Generated: {india_clock_text()}",
+        f"Current Level: {st.session_state.play_age}",
+        f"Language: {next((n for n,c in PLAY_LANGUAGES.items() if c==st.session_state.play_language),'English')}",
+        f"Completed Levels: {len(st.session_state.play_completed_levels)}",
+        f"Best Score: {best}/10",
+        f"Homework/Test: {st.session_state.get('homework_result') or 'Not attempted'}"
+    ])
+
+def render_parent_dashboard():
+    st.title("👨‍👩‍👦 Parent Dashboard")
+    best=max(st.session_state.play_best_scores.values(),default=0)
+    c1,c2,c3=st.columns(3); c1.metric("Completed Levels",len(st.session_state.play_completed_levels)); c2.metric("Best Score",f"{best}/10"); c3.metric("Current Level",st.session_state.play_age)
+    report=learning_report()
+    st.markdown('<div class="report-card">',unsafe_allow_html=True); st.text(report); st.markdown('</div>',unsafe_allow_html=True)
+    st.download_button("📄 Save Report",data=report,file_name="clyxesschat_learning_report.txt",mime="text/plain")
+    st.link_button("📤 Share Report", "https://wa.me/?text="+urllib.parse.quote(report))
+
 # ============================================================
 # UI START
 # ============================================================
-
-st.markdown(
-    '<div class="header"><h1>💬 ClyxessChat AI</h1></div>',
-    unsafe_allow_html=True
-)
-
-# ============================================================
-# GROQ CLIENT
-# ============================================================
+st.markdown('<div class="header"><h1>💬 ClyxessChat AI</h1></div>', unsafe_allow_html=True)
 
 try:
-    client = Groq(
-        api_key=st.secrets["GROQ_API_KEY"]
-    )
+    client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 except Exception:
-    st.error(
-        "GROQ_API_KEY is missing from Streamlit secrets."
-    )
+    st.error("GROQ_API_KEY is missing from Streamlit secrets.")
     st.stop()
-
-# ============================================================
-# SIDEBAR - MODE SELECTOR
-# ============================================================
 
 with st.sidebar:
-
     st.title("💬 ClyxessChat AI")
+    try:
+        logged_user = supabase.auth.get_user().user if supabase else None
+    except Exception:
+        logged_user = None
+    if logged_user:
+        st.success(f"👤 {logged_user.email}")
+        if st.button("🚪 Log Out", use_container_width=True):
+            try: supabase.auth.sign_out()
+            except Exception: pass
+            st.rerun()
+    else:
+        st.caption("Not logged in — sign in to save chats and view parent progress.")
 
-    mode = st.radio(
-        "Select Mode",
-        [
-            "Normal Chat",
-            "Creative Lab (School Mode)",
-            "🎮 Play & Learn"
-        ],
-        index=0
-    )
-
+    mode = st.radio("Select Mode", [
+        "Normal Chat",
+        "Creative Lab (School Mode)",
+        "🎮 Play & Learn",
+        "🎨 Creative AI Image Generator",
+        "📷 Vision Lab",
+        "🎭 Peer Roleplay Modes",
+        "📋 AI Daily Timetable",
+        "📝 Interactive Homework & Test",
+        "👨‍👩‍👦 Parent Dashboard",
+        "🔐 Login / Sign Up"
+    ])
     st.markdown("---")
-
-    # --------------------------------------------------------
-    # EXISTING CREATIVE LAB AGE SELECTOR
-    # --------------------------------------------------------
-
-    age_group = "1-2 Yrs"
-
-    if "Creative Lab" in mode:
-
-        st.markdown("### 🎒 Age Group Selector")
-        st.caption(
-            "LEARN & CREATE (SHIKHEN AUR BANAYEN)"
-        )
-
-        cols = st.columns(2)
-
-        age_options = [
-            "1-2 Yrs",
-            "3-4 Yrs",
-            "5-6 Yrs",
-            "6-8 Yrs",
-            "10-11 Yrs",
-            "11+ Yrs"
-        ]
-
-        for i, ag in enumerate(age_options):
-
-            if cols[i % 2].button(
-                ag,
-                key=f"age_{ag}",
-                use_container_width=True,
-                type=(
-                    "primary"
-                    if st.session_state.get(
-                        "age_group",
-                        "1-2 Yrs"
-                    ) == ag
-                    else "secondary"
-                )
-            ):
-                st.session_state.age_group = ag
-
-        age_group = st.session_state.get(
-            "age_group",
-            "1-2 Yrs"
-        )
-
-        st.success(
-            f"Active: {age_group} | Focus: "
-            f"{'Early Brain Development' if '1-2' in age_group else 'Creative Lab'}"
-        )
-
-    # --------------------------------------------------------
-    # NEW PLAY & LEARN SIDEBAR INFO
-    # --------------------------------------------------------
-
-    if mode == "🎮 Play & Learn":
-
-        st.markdown("### 🎮 Play & Learn")
-
-        st.caption(
-            "AI QUESTIONS • LEARNING • GAMES"
-        )
-
-        st.info(
-            "10/10 complete करने पर next age level unlock होगा."
-        )
-
-    # --------------------------------------------------------
-    # NEW CHAT
-    # --------------------------------------------------------
-
-    if st.button(
-        "+ New Chat",
-        use_container_width=True
-    ):
-
-        st.session_state.messages = []
-        st.session_state.session_id = str(uuid.uuid4())
-
-        # Do not destroy Play & Learn progress.
-        st.session_state.play_game_started = False
-        st.session_state.play_questions = []
-        st.session_state.play_question_index = 0
-        st.session_state.play_score = 0
-        st.session_state.play_answered = False
-        st.session_state.play_last_correct = False
-        st.session_state.play_last_explanation = ""
-
+    if st.button("+ New Chat", use_container_width=True):
+        st.session_state.messages=[]
+        st.session_state.session_id=str(uuid.uuid4())
         st.rerun()
+    st.caption("🇮🇳 India live time: "+get_india_datetime_context().replace("Current India date: ",""))
 
-# ============================================================
-# PLAY & LEARN ROUTE
-# ============================================================
-
+# ---- routes: one unique screen per feature ----
+if mode == "🔐 Login / Sign Up":
+    render_login_signup(); st.stop()
+if mode == "👨‍👩‍👦 Parent Dashboard":
+    render_parent_dashboard(); st.stop()
+if mode == "🎨 Creative AI Image Generator":
+    render_image_generator(); st.stop()
+if mode == "📷 Vision Lab":
+    render_vision_lab(); st.stop()
+if mode == "🎭 Peer Roleplay Modes":
+    render_roleplay(); st.stop()
+if mode == "📋 AI Daily Timetable":
+    render_timetable(); st.stop()
+if mode == "📝 Interactive Homework & Test":
+    render_homework_test(); st.stop()
 if mode == "🎮 Play & Learn":
+    render_play_and_learn(client); st.stop()
 
-    render_play_and_learn(client)
-
+# ---- Creative Lab (School Mode) ----
+if mode == "Creative Lab (School Mode)":
+    st.title("🚀 Creative Lab - Smart AI Classroom")
+    age_options=["1-2 Yrs","3-4 Yrs","5-6 Yrs","6-8 Yrs","10-11 Yrs","11+ Yrs"]
+    st.session_state.age_group=st.selectbox("🎒 Age Group",age_options,index=age_options.index(st.session_state.get("age_group","1-2 Yrs")))
+    labels=list(PLAY_LANGUAGES.keys()); label=st.selectbox("🌐 Response Language",labels,key="creative_language")
+    active_lang=PLAY_LANGUAGES[label]
+    st.subheader("📷 Vision Lab")
+    f=st.file_uploader("Upload book/homework",type=["png","jpg","jpeg","webp"])
+    if f:
+        st.markdown('<div class="media-card">',unsafe_allow_html=True); st.image(f,width=480); st.markdown('</div>',unsafe_allow_html=True)
+        if st.button("🧠 Analyze with AI"):
+            st.write(analyze_image_with_groq(f.getvalue(),f.type,"Explain this simply and solve the visible question if present.",language_display_name(active_lang)))
+    q=st.text_input("Ask a school question")
+    if st.button("🧠 Learn",type="primary") and q:
+        answer,_=get_groq_response(client,[{"role":"user","content":q}],get_school_system_prompt(st.session_state.age_group)+f" Selected language is {active_lang}; reply only in that language.","")
+        if answer: st.info(answer.choices[0].message.content)
     st.stop()
 
-# ============================================================
-# EXISTING CHAT DISPLAY
-# ============================================================
-
+# ---- Normal Chat ----
 for message in st.session_state.messages:
-
     with st.chat_message(message["role"]):
-
         if "image_url" in message:
-
-            st.image(
-                message["image_url"],
-                caption=message.get(
-                    "image_caption",
-                    ""
-                )
-            )
-
+            st.markdown('<div class="media-card">',unsafe_allow_html=True)
+            st.image(message["image_url"],caption=message.get("image_caption",""),width=520)
+            st.markdown('</div>',unsafe_allow_html=True)
         else:
+            st.markdown(message["content"])
 
-            st.markdown(
-                message["content"]
-            )
+voice_prompt=""
+if mic_recorder:
+    audio=mic_recorder(start_prompt="🔴 Start Recording",stop_prompt="⏹️ Stop & Send",key="chat_mic_final")
+    if audio:
+        voice_prompt=transcribe_audio_with_groq(client,audio.get("bytes",b""))
 
-# ============================================================
-# CHAT INPUT
-# ============================================================
+prompt=st.chat_input("Ask ClyxessChat AI")
+if not prompt and voice_prompt: prompt=voice_prompt
 
-chat_placeholder = (
-    "Apna idea type karein ya draw karein..."
-    if "Creative" in mode
-    else "Ask ClyxessChat AI"
-)
+if prompt:
+    st.session_state.messages.append({"role":"user","content":prompt})
+    with st.chat_message("user"): st.markdown(f'<div class="user-bubble">{prompt}</div>',unsafe_allow_html=True)
 
-if prompt := st.chat_input(chat_placeholder):
-
-    is_school = "Creative" in mode
-
-    current_age = (
-        st.session_state.age_group
-        if is_school
-        else "Normal"
-    )
-
-    system_prompt = (
-        get_school_system_prompt(current_age)
-        if is_school
-        else NORMAL_SYSTEM_PROMPT
-    )
-
-    st.session_state.messages.append({
-        "role": "user",
-        "content": prompt
-    })
-
-    with st.chat_message("user"):
-        st.markdown(
-            f'<div class="user-bubble">{prompt}</div>',
-            unsafe_allow_html=True
-        )
-
-    # --------------------------------------------------------
-    # IMAGE REQUEST
-    # --------------------------------------------------------
-
-    wants_image = any(
-        w in prompt.lower()
-        for w in [
-            "image",
-            "draw",
-            "banao",
-            "photo",
-            "picture",
-            "chitra",
-            "rocket",
-            "diagram"
-        ]
-    )
-
-    with st.chat_message("assistant"):
-
-        if wants_image:
-
-            with st.spinner(
-                "🎨 Image bana raha hu..."
-            ):
-
-                img_data, source = generate_image_url(
-                    prompt,
-                    is_school,
-                    current_age
-                )
-
-                st.image(
-                    img_data,
-                    caption=f"Generated for: {prompt}"
-                )
-
-                st.session_state.messages.append({
-                    "role": "assistant",
-                    "image_url": img_data,
-                    "image_caption": prompt,
-                    "content": (
-                        f"Ye lo aapki image! ({source})"
-                    )
-                })
-
-        # ----------------------------------------------------
-        # TEXT RESPONSE
-        # ----------------------------------------------------
-
-        message_placeholder = st.empty()
-        full_response = ""
-
-        with st.spinner(
-            "ClyxessChat AI is responding..."
-        ):
-
-            search_context, sources = search_tavily(
-                prompt
-            )
-
-            completion, used_model = get_groq_response(
-                client,
-                st.session_state.messages,
-                system_prompt,
-                search_context
-            )
-
+    # Image generation is explicit only. No automatic image generation for ordinary questions.
+    low=prompt.lower()
+    explicit_image = any(x in low for x in ["generate image","create image","make an image","draw an image","image banao","image bana","poster banao","photo banao","चित्र बनाओ","तस्वीर बनाओ"])
+    if explicit_image:
+        with st.chat_message("assistant"):
+            with st.spinner("🎨 Image bana raha hu..."):
+                img_data,source=generate_image_url(prompt,False,"Normal","1:1")
+            st.markdown('<div class="media-card">',unsafe_allow_html=True)
+            st.image(img_data,width=520,caption="Generated image")
+            st.markdown('</div>',unsafe_allow_html=True)
+            st.caption("Image display is compact; no unrelated subject was added by the prompt controller.")
+            st.session_state.messages.append({"role":"assistant","image_url":img_data,"image_caption":prompt,"content":"Generated image"})
+            save_current_chat_cloud()
+    else:
+        search_context,sources=search_tavily(prompt)
+        system=NORMAL_SYSTEM_PROMPT+"\nLIVE INDIA CLOCK: "+get_india_datetime_context()
+        if search_context: system += "\nLIVE WEB INFO:\n"+search_context
+        with st.chat_message("assistant"):
+            completion,used_model=get_groq_response(client,st.session_state.messages,system,"")
             if completion is None:
-                st.error(
-                    "AI response नहीं आ पाया. "
-                    "Please try again."
-                )
+                st.error("AI response नहीं आ पाया. Please try again.")
                 st.stop()
-
-            response = (
-                completion
-                .choices[0]
-                .message
-                .content
-            )
-
-            if sources:
-                response += (
-                    f"\n\n**Source:**\n{sources}"
-                )
-
-        for word in response.split():
-
-            full_response += word + " "
-
-            message_placeholder.markdown(
-                full_response + "▌"
-            )
-
-            time.sleep(0.03)
-
-        message_placeholder.markdown(
-            full_response
-        )
-
-        st.caption(
-            f"Mode: {mode} | "
-            f"Age: {current_age} | "
-            f"Model: {used_model}"
-        )
-
-    if not wants_image:
-
-        st.session_state.messages.append({
-            "role": "assistant",
-            "content": response
-        })
-
-    st.rerun()
+            response=completion.choices[0].message.content
+            st.markdown(response)
+            if sources: st.caption("Sources:\n"+sources)
+            st.caption(f"Model: {used_model or 'fallback'}")
+        st.session_state.messages.append({"role":"assistant","content":response})
+        save_current_chat_cloud()
