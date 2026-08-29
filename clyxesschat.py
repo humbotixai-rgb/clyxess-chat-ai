@@ -9,11 +9,6 @@ except ImportError:
 from typing import Dict, List, Any
 from fpdf import FPDF
 
-try:
-    from streamlit_mic_recorder import mic_recorder
-except ImportError:
-    mic_recorder = None
-
 # ============================================================
 # CLYXESSCHAT AI
 # NORMAL CHAT + CREATIVE LAB + PLAY & LEARN
@@ -110,12 +105,11 @@ st.markdown("""
 # ============================================================
 
 GROQ_MODELS = [
-    # Primary model from the latest app code, followed by fallbacks.
-    "llama-3.3-70b-versatile",
     "openai/gpt-oss-120b",
     "openai/gpt-oss-20b",
     "qwen/qwen3-32b",
     "llama-3.1-70b-versatile",
+    "mixtral-8x7b-32768",
     "llama-3.1-8b-instant"
 ]
 
@@ -638,7 +632,7 @@ def get_school_system_prompt(age_group):
 
     elif "10-11" in age_group:
         return base + """
-        Age 10-11: Focus Maker & Practical Science.
+        Age 7-10: Focus Maker & Practical Science.
         Task: Step-by-step DIY Projects & Logic Challenges.
         Hint Style: Jugaad wala.
         Eg: 'Rocket banana hai? Socho hawa kaha se niklegi?'.
@@ -652,38 +646,6 @@ def get_school_system_prompt(age_group):
         Hint Style: Innovator wala.
         Challenge them to break big problem into 2 small parts.
         """
-
-# ============================================================
-# VOICE INPUT (OPTIONAL)
-# ============================================================
-
-def transcribe_audio_with_groq(client, audio_bytes):
-    """Transcribe recorded speech using Groq Whisper when available."""
-    if not audio_bytes:
-        return ""
-    temp_path = "clyxesschat_temp_audio.wav"
-    try:
-        with open(temp_path, "wb") as f:
-            f.write(audio_bytes)
-        with open(temp_path, "rb") as audio_file:
-            result = client.audio.transcriptions.create(
-                file=audio_file,
-                model="whisper-large-v3",
-                prompt=(
-                    "Speech may contain Hindi, Hinglish, Chhattisgarhi, "
-                    "Marwadi, Sindhi, Marathi, Bengali, Tamil, Telugu, "
-                    "Gujarati, Kannada, Malayalam, Odia or English."
-                )
-            )
-        return getattr(result, "text", "") or ""
-    except Exception:
-        return ""
-    finally:
-        try:
-            if os.path.exists(temp_path):
-                os.remove(temp_path)
-        except Exception:
-            pass
 
 # ============================================================
 # TAVILY
@@ -963,6 +925,31 @@ def validate_questions(data, count=10):
     return valid
 
 
+# ============================================================
+# STRICT MULTILINGUAL 1-2 YEARS FALLBACK
+# ============================================================
+EARLY_TRANSLATIONS = {
+ "hi": {"Colors":("कौन सा रंग लाल है? 🔴",["🔴 लाल","🔵 नीला","🟢 हरा","🟡 पीला"],"🔴 लाल","यह लाल रंग है।"),"Shapes":("गोल आकार कौन सा है? ⭕",["⬛ वर्ग","🔺 त्रिभुज","⭕ वृत्त","⭐ तारा"],"⭕ वृत्त","यह गोल आकार है।"),"Animals":("कौन सा जानवर म्याऊँ करता है? 🐱",["🐶 कुत्ता","🐱 बिल्ली","🐮 गाय","🐟 मछली"],"🐱 बिल्ली","बिल्ली म्याऊँ करती है।"),"Counting":("कितने तारे हैं? ⭐⭐",["1","2","3","4"],"2","यहाँ 2 तारे हैं।")},
+ "mr": {"Colors":("कोणता रंग लाल आहे? 🔴",["🔴 लाल","🔵 निळा","🟢 हिरवा","🟡 पिवळा"],"🔴 लाल","हा लाल रंग आहे."),"Shapes":("गोल आकार कोणता आहे? ⭕",["⬛ चौकोन","🔺 त्रिकोण","⭕ वर्तुळ","⭐ तारा"],"⭕ वर्तुळ","हा गोल आकार आहे."),"Animals":("कोणता प्राणी म्याऊ करतो? 🐱",["🐶 कुत्रा","🐱 मांजर","🐮 गाय","🐟 मासा"],"🐱 मांजर","मांजर म्याऊ करते."),"Counting":("किती तारे आहेत? ⭐⭐",["1","2","3","4"],"2","इथे 2 तारे आहेत.")},
+ "bn": {"Colors":("কোন রংটি লাল? 🔴",["🔴 লাল","🔵 নীল","🟢 সবুজ","🟡 হলুদ"],"🔴 লাল","এটি লাল রং।"),"Shapes":("কোনটি গোল? ⭕",["⬛ বর্গ","🔺 ত্রিভুজ","⭕ বৃত্ত","⭐ তারা"],"⭕ বৃত্ত","এটি গোল আকার।"),"Animals":("কোন প্রাণী মিউ মিউ করে? 🐱",["🐶 কুকুর","🐱 বিড়াল","🐮 গরু","🐟 মাছ"],"🐱 বিড়াল","বিড়াল মিউ মিউ করে।"),"Counting":("কতগুলি তারা আছে? ⭐⭐",["1","2","3","4"],"2","এখানে 2টি তারা আছে।")},
+ "ta": {"Colors":("எந்த நிறம் சிவப்பு? 🔴",["🔴 சிவப்பு","🔵 நீலம்","🟢 பச்சை","🟡 மஞ்சள்"],"🔴 சிவப்பு","இது சிவப்பு நிறம்."),"Shapes":("வட்ட வடிவம் எது? ⭕",["⬛ சதுரம்","🔺 முக்கோணம்","⭕ வட்டம்","⭐ நட்சத்திரம்"],"⭕ வட்டம்","இது வட்ட வடிவம்."),"Animals":("எந்த விலங்கு மியாவ் என்று ஒலி செய்யும்? 🐱",["🐶 நாய்","🐱 பூனை","🐮 மாடு","🐟 மீன்"],"🐱 பூனை","பூனை மியாவ் என்று ஒலி செய்யும்."),"Counting":("எத்தனை நட்சத்திரங்கள் உள்ளன? ⭐⭐",["1","2","3","4"],"2","இங்கே 2 நட்சத்திரங்கள் உள்ளன.")},
+ "te": {"Colors":("ఏ రంగు ఎరుపు? 🔴",["🔴 ఎరుపు","🔵 నీలం","🟢 ఆకుపచ్చ","🟡 పసుపు"],"🔴 ఎరుపు","ఇది ఎరుపు రంగు."),"Shapes":("గుండ్రని ఆకారం ఏది? ⭕",["⬛ చతురస్రం","🔺 త్రిభుజం","⭕ వృత్తం","⭐ నక్షత్రం"],"⭕ వృత్తం","ఇది గుండ్రని ఆకారం."),"Animals":("ఏ జంతువు మియావ్ అంటుంది? 🐱",["🐶 కుక్క","🐱 పిల్లి","🐮 ఆవు","🐟 చేప"],"🐱 పిల్లి","పిల్లి మియావ్ అంటుంది."),"Counting":("ఎన్ని నక్షత్రాలు ఉన్నాయి? ⭐⭐",["1","2","3","4"],"2","ఇక్కడ 2 నక్షత్రాలు ఉన్నాయి.")},
+ "gu": {"Colors":("કયો રંગ લાલ છે? 🔴",["🔴 લાલ","🔵 વાદળી","🟢 લીલો","🟡 પીળો"],"🔴 લાલ","આ લાલ રંગ છે."),"Shapes":("ગોળ આકાર કયો છે? ⭕",["⬛ ચોરસ","🔺 ત્રિકોણ","⭕ વર્તુળ","⭐ તારો"],"⭕ વર્તુળ","આ ગોળ આકાર છે."),"Animals":("કયું પ્રાણી મ્યાઉં કરે છે? 🐱",["🐶 કૂતરો","🐱 બિલાડી","🐮 ગાય","🐟 માછલી"],"🐱 બિલાડી","બિલાડી મ્યાઉં કરે છે."),"Counting":("કેટલા તારા છે? ⭐⭐",["1","2","3","4"],"2","અહીં 2 તારા છે.")},
+ "kn": {"Colors":("ಯಾವ ಬಣ್ಣ ಕೆಂಪು? 🔴",["🔴 ಕೆಂಪು","🔵 ನೀಲಿ","🟢 ಹಸಿರು","🟡 ಹಳದಿ"],"🔴 ಕೆಂಪು","ಇದು ಕೆಂಪು ಬಣ್ಣ."),"Shapes":("ದುಂಡಾದ ಆಕಾರ ಯಾವುದು? ⭕",["⬛ ಚೌಕ","🔺 ತ್ರಿಭುಜ","⭕ ವೃತ್ತ","⭐ ನಕ್ಷತ್ರ"],"⭕ ವೃತ್ತ","ಇದು ದುಂಡಾದ ಆಕಾರ."),"Animals":("ಯಾವ ಪ್ರಾಣಿ ಮಿಯಾಂವ್ ಎಂದು ಶಬ್ದ ಮಾಡುತ್ತದೆ? 🐱",["🐶 ನಾಯಿ","🐱 ಬೆಕ್ಕು","🐮 ಹಸು","🐟 ಮೀನು"],"🐱 ಬೆಕ್ಕು","ಬೆಕ್ಕು ಮಿಯಾಂವ್ ಎಂದು ಶಬ್ದ ಮಾಡುತ್ತದೆ."),"Counting":("ಎಷ್ಟು ನಕ್ಷತ್ರಗಳಿವೆ? ⭐⭐",["1","2","3","4"],"2","ಇಲ್ಲಿ 2 ನಕ್ಷತ್ರಗಳಿವೆ.")},
+ "ml": {"Colors":("ഏത് നിറമാണ് ചുവപ്പ്? 🔴",["🔴 ചുവപ്പ്","🔵 നീല","🟢 പച്ച","🟡 മഞ്ഞ"],"🔴 ചുവപ്പ്","ഇത് ചുവപ്പ് നിറമാണ്."),"Shapes":("വൃത്താകാരം ഏതാണ്? ⭕",["⬛ ചതുരം","🔺 ത്രികോണം","⭕ വൃത്തം","⭐ നക്ഷത്രം"],"⭕ വൃത്തം","ഇത് വൃത്താകാരമാണ്."),"Animals":("ഏത് മൃഗമാണ് മ്യാവൂ എന്ന് ശബ്ദിക്കുന്നത്? 🐱",["🐶 നായ","🐱 പൂച്ച","🐮 പശു","🐟 മത്സ്യം"],"🐱 പൂച്ച","പൂച്ച മ്യാവൂ എന്ന് ശബ്ദിക്കുന്നു."),"Counting":("എത്ര നക്ഷത്രങ്ങളുണ്ട്? ⭐⭐",["1","2","3","4"],"2","ഇവിടെ 2 നക്ഷത്രങ്ങളുണ്ട്.")},
+ "or": {"Colors":("କେଉଁ ରଙ୍ଗଟି ଲାଲ? 🔴",["🔴 ଲାଲ","🔵 ନୀଳ","🟢 ସବୁଜ","🟡 ହଳଦିଆ"],"🔴 ଲାଲ","ଏହା ଲାଲ ରଙ୍ଗ।"),"Shapes":("ଗୋଲ ଆକାର କେଉଁଟି? ⭕",["⬛ ବର୍ଗ","🔺 ତ୍ରିଭୁଜ","⭕ ବୃତ୍ତ","⭐ ତାରା"],"⭕ ବୃତ୍ତ","ଏହା ଗୋଲ ଆକାର।"),"Animals":("କେଉଁ ପଶୁ ମ୍ୟାଉ କରେ? 🐱",["🐶 କୁକୁର","🐱 ବିଲେଇ","🐮 ଗାଈ","🐟 ମାଛ"],"🐱 ବିଲେଇ","ବିଲେଇ ମ୍ୟାଉ କରେ।"),"Counting":("କେତୋଟି ତାରା ଅଛି? ⭐⭐",["1","2","3","4"],"2","ଏଠାରେ 2ଟି ତାରା ଅଛି।")},
+ "en": {"Colors":("Which color is red? 🔴",["🔴 Red","🔵 Blue","🟢 Green","🟡 Yellow"],"🔴 Red","This is red."),"Shapes":("Which shape is a circle? ⭕",["⬛ Square","🔺 Triangle","⭕ Circle","⭐ Star"],"⭕ Circle","This is a circle."),"Animals":("Which animal says meow? 🐱",["🐶 Dog","🐱 Cat","🐮 Cow","🐟 Fish"],"🐱 Cat","A cat says meow."),"Counting":("How many stars? ⭐⭐",["1","2","3","4"],"2","There are 2 stars.")},
+ "zh": {"Colors":("哪个是红色？🔴",["🔴 红色","🔵 蓝色","🟢 绿色","🟡 黄色"],"🔴 红色","这是红色。"),"Shapes":("哪个是圆形？⭕",["⬛ 正方形","🔺 三角形","⭕ 圆形","⭐ 星形"],"⭕ 圆形","这是圆形。"),"Animals":("哪种动物会喵喵叫？🐱",["🐶 狗","🐱 猫","🐮 牛","🐟 鱼"],"🐱 猫","猫会喵喵叫。"),"Counting":("有几颗星星？⭐⭐",["1","2","3","4"],"2","这里有2颗星星。")},
+ "ja": {"Colors":("どの色が赤ですか？🔴",["🔴 赤","🔵 青","🟢 緑","🟡 黄色"],"🔴 赤","これは赤色です。"),"Shapes":("どれが丸ですか？⭕",["⬛ 四角","🔺 三角","⭕ 丸","⭐ 星"],"⭕ 丸","これは丸い形です。"),"Animals":("ニャーと鳴く動物はどれ？🐱",["🐶 犬","🐱 猫","🐮 牛","🐟 魚"],"🐱 猫","猫はニャーと鳴きます。"),"Counting":("星はいくつありますか？⭐⭐",["1","2","3","4"],"2","星は2つあります。")}
+}
+
+def strict_early_fallback(subject, language, count=10):
+    data = EARLY_TRANSLATIONS.get(language, {}).get(subject)
+    if not data: return None
+    q, opts, ans, exp = data
+    one = {"question": q, "options": list(opts), "answer": ans, "explanation": exp}
+    return [dict(one) for _ in range(count)]
+
 def generate_ai_questions(
     client,
     age,
@@ -1006,10 +993,9 @@ Rules:
 10. Give a short explanation.
 11. Return ONLY valid JSON.
 12. Do not use markdown.
-13. STRICT LANGUAGE LOCK: question, all options, answer and explanation MUST be entirely in the selected language.
-14. Never silently switch to English when another language is selected.
-15. Do not use Hinglish or mixed-language text unless English is the selected language.
-16. Do not ask personal-experience questions such as what the child ate, owns, likes, saw or did.
+13. ALL question text, every option, the answer, and explanation MUST be written in the selected language. Do not translate only the question; translate the complete object.
+14. Never mix English into a non-English selected language.
+15. For age 1-2, never ask about the child's personal life, possessions, memories, preferences, or past experiences.
 
 JSON format:
 [
@@ -1052,29 +1038,10 @@ JSON format:
         except Exception:
             continue
 
-    # Strict same-language fallback for early learning.
-    early_bank = {
-        "hi": {"Colors": ("कौन सा रंग लाल है? 🔴", ["🔴 लाल", "🔵 नीला", "🟢 हरा", "🟡 पीला"], "🔴 लाल", "यह लाल रंग है।"),
-               "Shapes": ("गोल आकार कौन सा है? ⭕", ["⬛ वर्ग", "🔺 त्रिभुज", "⭕ वृत्त", "⭐ तारा"], "⭕ वृत्त", "यह गोल आकार है।"),
-               "Animals": ("कौन सा जानवर म्याऊँ करता है? 🐱", ["🐶 कुत्ता", "🐱 बिल्ली", "🐮 गाय", "🐟 मछली"], "🐱 बिल्ली", "बिल्ली म्याऊँ करती है।")},
-        "en": {"Colors": ("Which color is red? 🔴", ["🔴 Red", "🔵 Blue", "🟢 Green", "🟡 Yellow"], "🔴 Red", "This is red."),
-               "Shapes": ("Which shape is a circle? ⭕", ["⬛ Square", "🔺 Triangle", "⭕ Circle", "⭐ Star"], "⭕ Circle", "This is a circle."),
-               "Animals": ("Which animal says meow? 🐱", ["🐶 Dog", "🐱 Cat", "🐮 Cow", "🐟 Fish"], "🐱 Cat", "A cat says meow.")},
-        "zh": {"Colors": ("哪个是红色？🔴", ["🔴 红色", "🔵 蓝色", "🟢 绿色", "🟡 黄色"], "🔴 红色", "这是红色。"),
-               "Shapes": ("哪个是圆形？⭕", ["⬛ 正方形", "🔺 三角形", "⭕ 圆形", "⭐ 星形"], "⭕ 圆形", "这是圆形。")},
-        "ja": {"Colors": ("どの色が赤ですか？🔴", ["🔴 赤", "🔵 青", "🟢 緑", "🟡 黄色"], "🔴 赤", "これは赤色です。"),
-               "Shapes": ("どれが丸ですか？⭕", ["⬛ 四角", "🔺 三角", "⭕ 丸", "⭐ 星"], "⭕ 丸", "これは丸い形です。")},
-    }
-    if "1–2" in age or "1-2" in age:
-        item = early_bank.get(language, {}).get(subject)
-        if item:
-            q, opts, ans, exp = item
-            base = [{"question": q, "options": opts, "answer": ans, "explanation": exp}]
-            result = []
-            while len(result) < count:
-                result.extend([dict(base[0])])
-            return result[:count]
-
+    if "1-2" in age:
+        fallback = strict_early_fallback(subject, language, count)
+        if fallback:
+            return fallback
     return build_demo_questions(subject)
 
 
@@ -1673,27 +1640,6 @@ for message in st.session_state.messages:
             )
 
 # ============================================================
-# OPTIONAL VOICE INPUT
-# ============================================================
-
-voice_prompt = ""
-if mic_recorder is not None:
-    with st.sidebar:
-        st.markdown("### 🎤 Voice Input")
-        audio = mic_recorder(
-            start_prompt="🔴 Start Recording",
-            stop_prompt="⏹️ Stop & Send",
-            key="clyxesschat_voice"
-        )
-        if audio:
-            with st.spinner("🎙️ Transcribing..."):
-                voice_prompt = transcribe_audio_with_groq(
-                    client, audio.get("bytes", b"")
-                )
-            if voice_prompt:
-                st.info(f"🗣️ {voice_prompt}")
-
-# ============================================================
 # CHAT INPUT
 # ============================================================
 
@@ -1703,11 +1649,7 @@ chat_placeholder = (
     else "Ask ClyxessChat AI"
 )
 
-prompt = st.chat_input(chat_placeholder)
-if not prompt and voice_prompt:
-    prompt = voice_prompt
-
-if prompt:
+if prompt := st.chat_input(chat_placeholder):
 
     is_school = "Creative" in mode
 
@@ -1816,7 +1758,7 @@ if prompt:
                 .content
             )
 
-            if sources and mode != "🎮 Play & Learn":
+            if sources:
                 response += (
                     f"\n\n**Source:**\n{sources}"
                 )
