@@ -528,6 +528,8 @@ DEFAULT_STATE = {
     "messages": [],
     "session_id": str(uuid.uuid4()),
     "age_group": "1-2 Yrs",
+    "school_messages": [],
+    "school_language": "hi",
 
     # Play & Learn
     "play_age": PLAY_AGE_LEVELS[0],
@@ -601,14 +603,27 @@ If user asks to generate image, say: "Generating image for: [prompt]"
 """
 
 def get_school_system_prompt(age_group):
-    base = f"You are ClyxessChat AI School Mode. Current age group: {age_group}."
-    if "1-2" in age_group or "3-4" in age_group:
-        return base + " Reply in the selected language only. Use very short playful sentences. NEVER assume what the child ate, owns, saw, likes, remembers or did. Never ask personal-memory questions. Prefer colors, shapes, animals, sounds, counting and objective learning."
-    if "5-6" in age_group or "6-8" in age_group:
-        return base + " Reply in the selected language only. Use simple stories, logic, colors, numbers and curiosity."
+    base = f"""You are ClyxessChat AI — a friendly, safe, child-focused School Mode learning companion.
+The child age group is {age_group}.
+STRICT LANGUAGE LOCK: reply ONLY in the selected language supplied in the final instruction.
+Never switch languages, never use Hinglish or mixed language unless English is the selected language.
+Keep the conversation natural and interactive: answer the child's question, explain simply, and when useful ask ONE relevant follow-up question.
+Do not pretend to remember things the child never told you. Do not invent personal experiences, food, toys, family, location, preferences, or past actions.
+Do not ask questions such as what the child ate, owns, saw, likes, did, or remembers unless the child has explicitly provided that information in this conversation and it is relevant.
+Do not pressure the child to reveal passwords, addresses, phone numbers, private photos, or other sensitive personal information.
+For learning topics, encourage understanding instead of simply giving homework answers.
+"""
+    if "1-2" in age_group:
+        return base + "Use extremely short, cheerful, concrete sentences; simple words; colors, shapes, animals, sounds, counting, greetings and very basic concepts. Avoid abstract or complex explanations."
+    if "3-4" in age_group:
+        return base + "Use short playful explanations, simple stories, counting, shapes, colors, animals, language and basic logic."
+    if "5-6" in age_group:
+        return base + "Use simple examples, stories, early maths, science basics, reading, logic and creativity."
+    if "6-8" in age_group:
+        return base + "Use clear school-level explanations, examples, simple reasoning, maths, science, English, technology and general knowledge."
     if "10-11" in age_group:
-        return base + " Reply in the selected language only. Focus on practical science, technology, coding logic and problem solving."
-    return base + " Reply in the selected language only. Focus on AI literacy, coding, technology, entrepreneurship and critical thinking."
+        return base + "Use practical school-level explanations with step-by-step maths, science, technology, coding logic and problem solving."
+    return base + "Use age-appropriate secondary-school explanations with deeper reasoning, AI literacy, coding, technology, financial literacy, cyber safety, entrepreneurship and critical thinking."
 
 
 # ============================================================
@@ -620,6 +635,26 @@ def get_india_datetime_context():
         return now.strftime("Current India date: %A, %d %B %Y. Current India time: %I:%M %p (IST).")
     except Exception:
         return datetime.datetime.now().strftime("Current application date: %A, %d %B %Y. Current application time: %I:%M %p.")
+
+def india_clock_text():
+    return get_india_datetime_context()
+
+def transcribe_audio_with_groq(client, audio_bytes):
+    if not audio_bytes:
+        return ""
+    try:
+        path = "temp_audio_school.wav"
+        with open(path, "wb") as f:
+            f.write(audio_bytes)
+        with open(path, "rb") as audio_file:
+            result = client.audio.transcriptions.create(
+                file=audio_file,
+                model="whisper-large-v3",
+                prompt="The speaker may use Hindi, Hinglish, English, Marathi, Bengali, Tamil, Telugu, Gujarati, Kannada, Malayalam, Odia, Chinese or Japanese."
+            )
+        return result.text.strip()
+    except Exception:
+        return ""
 
 def language_display_name(code):
     return next((name.split(" ", 1)[-1] for name, value in PLAY_LANGUAGES.items() if value == code), "English")
@@ -1414,6 +1449,22 @@ def render_login_signup():
     if not supabase:
         st.warning("Add SUPABASE_URL and SUPABASE_KEY to Streamlit secrets.")
         return
+    st.markdown("### ⚡ Quick Login")
+    c1,c2=st.columns(2)
+    with c1:
+        if st.button("🔵 Continue with Google",use_container_width=True):
+            try:
+                r=supabase.auth.sign_in_with_oauth({"provider":"google","options":{"redirect_to":st.secrets.get("SUPABASE_REDIRECT_URL","")}})
+                if getattr(r,"url",None): st.link_button("Continue to Google",r.url,use_container_width=True)
+            except Exception as e: st.error(f"Google login failed: {e}")
+    with c2:
+        if st.button("🔷 Continue with Facebook",use_container_width=True):
+            try:
+                r=supabase.auth.sign_in_with_oauth({"provider":"facebook","options":{"redirect_to":st.secrets.get("SUPABASE_REDIRECT_URL","")}})
+                if getattr(r,"url",None): st.link_button("Continue to Facebook",r.url,use_container_width=True)
+            except Exception as e: st.error(f"Facebook login failed: {e}")
+    st.caption("Google/Facebook providers must be enabled in Supabase Authentication settings.")
+
     tab1,tab2=st.tabs(["Log In","Sign Up"])
     with tab1:
         email=st.text_input("Email",key="login_email")
@@ -1582,24 +1633,28 @@ if mode == "📝 Interactive Homework & Test":
 if mode == "🎮 Play & Learn":
     render_play_and_learn(client); st.stop()
 
-# ---- Creative Lab (School Mode) ----
-if mode == "Creative Lab (School Mode)":
-    st.title("🚀 Creative Lab - Smart AI Classroom")
-    age_options=["1-2 Yrs","3-4 Yrs","5-6 Yrs","6-8 Yrs","10-11 Yrs","11+ Yrs"]
-    st.session_state.age_group=st.selectbox("🎒 Age Group",age_options,index=age_options.index(st.session_state.get("age_group","1-2 Yrs")))
-    labels=list(PLAY_LANGUAGES.keys()); label=st.selectbox("🌐 Response Language",labels,key="creative_language")
-    active_lang=PLAY_LANGUAGES[label]
-    st.subheader("📷 Vision Lab")
-    f=st.file_uploader("Upload book/homework",type=["png","jpg","jpeg","webp"])
-    if f:
-        st.markdown('<div class="media-card">',unsafe_allow_html=True); st.image(f,width=480); st.markdown('</div>',unsafe_allow_html=True)
-        if st.button("🧠 Analyze with AI"):
-            st.write(analyze_image_with_groq(f.getvalue(),f.type,"Explain this simply and solve the visible question if present.",language_display_name(active_lang)))
-    q=st.text_input("Ask a school question")
-    if st.button("🧠 Learn",type="primary") and q:
-        answer,_=get_groq_response(client,[{"role":"user","content":q}],get_school_system_prompt(st.session_state.age_group)+f" Selected language is {active_lang}; reply only in that language.","")
-        if answer: st.info(answer.choices[0].message.content)
-    st.stop()
+def get_school_system_prompt(age_group):
+    base = f"""You are ClyxessChat AI — a friendly, safe, child-focused School Mode learning companion.
+The child age group is {age_group}.
+STRICT LANGUAGE LOCK: reply ONLY in the selected language supplied in the final instruction.
+Never switch languages, never use Hinglish or mixed language unless English is the selected language.
+Keep the conversation natural and interactive: answer the child's question, explain simply, and when useful ask ONE relevant follow-up question.
+Do not pretend to remember things the child never told you. Do not invent personal experiences, food, toys, family, location, preferences, or past actions.
+Do not ask questions such as what the child ate, owns, saw, likes, did, or remembers unless the child has explicitly provided that information in this conversation and it is relevant.
+Do not pressure the child to reveal passwords, addresses, phone numbers, private photos, or other sensitive personal information.
+For learning topics, encourage understanding instead of simply giving homework answers.
+"""
+    if "1-2" in age_group:
+        return base + "Use extremely short, cheerful, concrete sentences; simple words; colors, shapes, animals, sounds, counting, greetings and very basic concepts. Avoid abstract or complex explanations."
+    if "3-4" in age_group:
+        return base + "Use short playful explanations, simple stories, counting, shapes, colors, animals, language and basic logic."
+    if "5-6" in age_group:
+        return base + "Use simple examples, stories, early maths, science basics, reading, logic and creativity."
+    if "6-8" in age_group:
+        return base + "Use clear school-level explanations, examples, simple reasoning, maths, science, English, technology and general knowledge."
+    if "10-11" in age_group:
+        return base + "Use practical school-level explanations with step-by-step maths, science, technology, coding logic and problem solving."
+    return base + "Use age-appropriate secondary-school explanations with deeper reasoning, AI literacy, coding, technology, financial literacy, cyber safety, entrepreneurship and critical thinking."
 
 # ---- Normal Chat ----
 for message in st.session_state.messages:
