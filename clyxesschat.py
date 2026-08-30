@@ -113,12 +113,20 @@ st.markdown("""
 # CONFIG
 # ============================================================
 
+# ============ 8 MODEL MEGA COMBINED - 100% ACTIVE ============
 GROQ_MODELS = [
-    "openai/gpt-oss-120b",
-    "openai/gpt-oss-20b",
-    "qwen/qwen3.6-27b"
-]
+    # --- Tera wala 3 - 100% sahi ---
+    "openai/gpt-oss-120b",      # sabse powerful
+    "openai/gpt-oss-20b",       # sabse fast
+    "qwen/qwen3.6-27b",         # Qwen ka latest
 
+    # --- Extra 5 jo 100% chalu hai ---
+    "meta-llama/llama-4-scout-17b-16e-instruct",    # Meta ka new small
+    "meta-llama/llama-4-maverick-17b-128e-instruct", # Meta ka new big
+    "groq/compound",            # search + code wala
+    "groq/compound-mini",       # uska mini version
+    "moonshotai/kimi-k2-instruct" # long reasoning
+]
 QUESTIONS_PER_LEVEL = 10
 
 # ============================================================
