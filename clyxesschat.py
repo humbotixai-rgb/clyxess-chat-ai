@@ -106,9 +106,6 @@ st.markdown("""
 .media-card img {max-width:100% !important;width:auto !important;height:auto !important;max-height:520px !important;object-fit:contain;border-radius:14px;display:block;margin:auto;}
 [data-testid="stImage"] img {max-width:560px !important;max-height:520px !important;width:auto !important;height:auto !important;object-fit:contain;margin:auto;display:block;}
 .report-card {padding:18px;border-radius:16px;border:1px solid #334155;background:#0f172a;color:white;}
-
-.social-login-card {display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 14px;margin-bottom:8px;border:1px solid #475569;border-radius:12px;background:#ffffff;color:#111827;font-weight:600;}
-.social-logo {width:24px;height:24px;display:block;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -528,17 +525,11 @@ UI = {
 # ============================================================
 
 DEFAULT_STATE = {
-    # Active chat (messages is always the currently selected mode)
     "messages": [],
     "session_id": str(uuid.uuid4()),
-    "active_chat_mode": "normal",
-    "normal_messages": [],
-    "normal_session_id": str(uuid.uuid4()),
-    "school_messages": [],
-    "school_session_id": str(uuid.uuid4()),
-    "school_language": "hi",
-    "chat_schema_warning": False,
     "age_group": "1-2 Yrs",
+    "school_messages": [],
+    "school_language": "hi",
 
     # Play & Learn
     "play_age": PLAY_AGE_LEVELS[0],
@@ -563,18 +554,6 @@ for key, value in DEFAULT_STATE.items():
 # ============================================================
 # IMAGE FALLBACK FUNCTION
 # ============================================================
-
-def is_explicit_image_request(text):
-    """Only explicit image-generation requests may call the image generator."""
-    low = (text or "").strip().lower()
-    phrases = [
-        "generate an image", "generate image", "create an image", "create image",
-        "make an image", "make image", "draw an image", "draw image",
-        "generate a picture", "create a picture", "make a picture",
-        "image banao", "image bana do", "image bana", "photo banao", "photo bana do",
-        "picture banao", "poster banao", "चित्र बनाओ", "तस्वीर बनाओ", "इमेज बनाओ", "पोस्टर बनाओ"
-    ]
-    return any(x in low for x in phrases)
 
 def build_image_prompt(user_prompt, is_school_mode=False, age="Normal"):
     p = user_prompt.strip()
@@ -619,12 +598,8 @@ def generate_image_url(prompt, is_school_mode, age, aspect="1:1"):
 NORMAL_SYSTEM_PROMPT = """
 You are ClyxessChat AI, created by ClyxessChat AI Technology.
 CORE RULE: REPLY ONLY IN THE SAME LANGUAGE AS USER.
-Your name is ClyxessChat AI. Friendly, intelligent, calm and conversational.
-IMPORTANT CONTEXT RULE: Treat the conversation history as one continuous conversation.
-If the user changes language, acknowledge the language request and continue the existing topic/context.
-Do NOT discard or replace the previous topic merely because the user asks to speak another language.
-Do not invent memories or personal facts that are not present in the conversation.
-If the user expresses suicidal thoughts, self-harm intent, or says they want to die, respond with empathy and safety-focused support first. Encourage immediate contact with a trusted person and local emergency/crisis support when there is immediate danger. If the user then asks to change language, continue the safety support in that requested language instead of changing the subject.
+Your name is ClyxessChat AI. Friendly, intelligent, calm.
+If user asks to generate image, say: "Generating image for: [prompt]"
 """
 
 def get_school_system_prompt(age_group):
@@ -637,7 +612,6 @@ Do not pretend to remember things the child never told you. Do not invent person
 Do not ask questions such as what the child ate, owns, saw, likes, did, or remembers unless the child has explicitly provided that information in this conversation and it is relevant.
 Do not pressure the child to reveal passwords, addresses, phone numbers, private photos, or other sensitive personal information.
 For learning topics, encourage understanding instead of simply giving homework answers.
-CONTEXT + SAFETY: Keep the child's previous messages in context. If the child says they feel very lonely, unsafe, want to die, want to hurt themselves, or mentions suicide/self-harm, do not abruptly switch to a normal topic. Respond warmly and simply, encourage the child to tell a parent/guardian/teacher or another trusted adult immediately, and encourage emergency help if they are in immediate danger. If the child asks to speak in another language, acknowledge the language request while keeping the safety context.
 """
     if "1-2" in age_group:
         return base + "Use extremely short, cheerful, concrete sentences; simple words; colors, shapes, animals, sounds, counting, greetings and very basic concepts. Avoid abstract or complex explanations."
@@ -1443,152 +1417,32 @@ def analyze_image_with_groq(image_bytes, mime, question, selected_language="Engl
     except Exception as e:
         return f"Vision error: {e}"
 
-def current_chat_mode_key(mode=None):
-    mode = mode or st.session_state.get("active_chat_mode", "normal")
-    return "school" if mode == "school" else "normal"
-
-def chat_mode_label(mode_key):
-    return "Creative Lab (School Mode)" if mode_key == "school" else "Normal Chat"
-
-def _sync_active_messages_to_mode():
-    mode_key = current_chat_mode_key()
-    if mode_key == "school":
-        st.session_state.school_messages = list(st.session_state.messages)
-        st.session_state.school_session_id = st.session_state.session_id
-    else:
-        st.session_state.normal_messages = list(st.session_state.messages)
-        st.session_state.normal_session_id = st.session_state.session_id
-
-def switch_chat_mode(mode_key):
-    """Keep Normal and School conversations isolated in memory."""
-    mode_key = current_chat_mode_key(mode_key)
-    previous = st.session_state.get("active_chat_mode", "normal")
-    if previous != mode_key:
-        _sync_active_messages_to_mode()
-        if mode_key == "school":
-            st.session_state.messages = list(st.session_state.school_messages)
-            st.session_state.session_id = st.session_state.school_session_id
-        else:
-            st.session_state.messages = list(st.session_state.normal_messages)
-            st.session_state.session_id = st.session_state.normal_session_id
-        st.session_state.active_chat_mode = mode_key
-
 def save_current_chat_cloud():
     if not supabase or not st.session_state.messages:
         return False
     try:
-        user = supabase.auth.get_user().user
-        if not user:
-            return False
-        mode_key = current_chat_mode_key()
+        user=supabase.auth.get_user().user
+        if not user: return False
         supabase.table("chat_sessions").upsert({
-            "id": st.session_state.session_id,
-            "user_id": user.id,
-            "mode": mode_key,
-            "messages": st.session_state.messages,
-            "updated_at": datetime.datetime.utcnow().isoformat()
+            "id":st.session_state.session_id,
+            "user_id":user.id,
+            "messages":st.session_state.messages,
+            "updated_at":datetime.datetime.utcnow().isoformat()
         }).execute()
-        st.session_state.chat_schema_warning = False
         return True
     except Exception:
-        st.session_state.chat_schema_warning = True
         return False
 
-def load_latest_chat_cloud(mode_key=None):
-    if not supabase:
-        return False
+def load_latest_chat_cloud():
+    if not supabase: return
     try:
-        user = supabase.auth.get_user().user
-        if not user:
-            return False
-        mode_key = current_chat_mode_key(mode_key)
-        r = (supabase.table("chat_sessions")
-             .select("id,messages,updated_at,mode")
-             .eq("user_id", user.id)
-             .eq("mode", mode_key)
-             .order("updated_at", desc=True)
-             .limit(1)
-             .execute())
+        user=supabase.auth.get_user().user
+        if not user: return
+        r=supabase.table("chat_sessions").select("messages").eq("user_id",user.id).order("updated_at",desc=True).limit(1).execute()
         if r.data and r.data[0].get("messages"):
-            st.session_state.messages = r.data[0]["messages"]
-            st.session_state.session_id = r.data[0].get("id", st.session_state.session_id)
-            if mode_key == "school":
-                st.session_state.school_messages = list(st.session_state.messages)
-                st.session_state.school_session_id = st.session_state.session_id
-            else:
-                st.session_state.normal_messages = list(st.session_state.messages)
-                st.session_state.normal_session_id = st.session_state.session_id
-            return True
+            st.session_state.messages=r.data[0]["messages"]
     except Exception:
-        st.session_state.chat_schema_warning = True
-    return False
-
-def load_chat_cloud(chat_id, mode_key):
-    if not supabase:
-        return False
-    try:
-        user = supabase.auth.get_user().user
-        if not user:
-            return False
-        r = (supabase.table("chat_sessions")
-             .select("id,messages,updated_at,mode")
-             .eq("user_id", user.id)
-             .eq("id", chat_id)
-             .eq("mode", current_chat_mode_key(mode_key))
-             .limit(1)
-             .execute())
-        if r.data and r.data[0].get("messages") is not None:
-            st.session_state.messages = r.data[0]["messages"]
-            st.session_state.session_id = r.data[0]["id"]
-            if current_chat_mode_key(mode_key) == "school":
-                st.session_state.school_messages = list(st.session_state.messages)
-                st.session_state.school_session_id = st.session_state.session_id
-            else:
-                st.session_state.normal_messages = list(st.session_state.messages)
-                st.session_state.normal_session_id = st.session_state.session_id
-            return True
-    except Exception:
-        st.session_state.chat_schema_warning = True
-    return False
-
-def render_saved_chats(mode_key):
-    """Small per-mode saved-chat section; only visible while logged in."""
-    if not supabase:
-        return
-    try:
-        user = supabase.auth.get_user().user
-    except Exception:
-        user = None
-    if not user:
-        return
-    with st.expander(f"💾 Saved Chats — {chat_mode_label(mode_key)}", expanded=False):
-        try:
-            rows = (supabase.table("chat_sessions")
-                    .select("id,messages,updated_at,mode")
-                    .eq("user_id", user.id)
-                    .eq("mode", current_chat_mode_key(mode_key))
-                    .order("updated_at", desc=True)
-                    .limit(12)
-                    .execute()).data or []
-            if not rows:
-                st.caption("No saved chats yet.")
-                return
-            for idx, row in enumerate(rows):
-                msgs = row.get("messages") or []
-                title = "New Chat"
-                for msg in msgs:
-                    if msg.get("role") == "user" and msg.get("content"):
-                        title = re.sub(r"\s+", " ", str(msg["content"])).strip()[:42]
-                        break
-                updated = str(row.get("updated_at", ""))[:16].replace("T", " ")
-                if st.button(f"💬 {title}", key=f"saved_{mode_key}_{idx}_{row.get('id')}", use_container_width=True):
-                    if load_chat_cloud(row.get("id"), mode_key):
-                        st.rerun()
-                if updated:
-                    st.caption(updated)
-        except Exception:
-            st.session_state.chat_schema_warning = True
-            st.caption("Saved chats need the `mode` column in Supabase.")
+        pass
 
 def render_login_signup():
     st.title("🔐 Login / Sign Up")
@@ -1596,61 +1450,42 @@ def render_login_signup():
         st.warning("Add SUPABASE_URL and SUPABASE_KEY to Streamlit secrets.")
         return
     st.markdown("### ⚡ Quick Login")
-    st.caption("Use your Google or Facebook account to sign in quickly.")
-    c1, c2 = st.columns(2)
-    google_logo = "https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-    facebook_logo = "https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/facebook.svg"
+    c1,c2=st.columns(2)
     with c1:
-        st.markdown(f'''<div class="social-login-card"><img src="{google_logo}" class="social-logo"><span>Google</span></div>''', unsafe_allow_html=True)
-        if st.button("Continue with Google", key="oauth_google", use_container_width=True):
+        if st.button("🔵 Continue with Google",use_container_width=True):
             try:
-                r = supabase.auth.sign_in_with_oauth({"provider":"google","options":{"redirect_to":st.secrets.get("SUPABASE_REDIRECT_URL","")}})
-                if getattr(r, "url", None):
-                    st.link_button("Continue to Google", r.url, use_container_width=True)
-            except Exception as e:
-                st.error(f"Google login failed: {e}")
+                r=supabase.auth.sign_in_with_oauth({"provider":"google","options":{"redirect_to":st.secrets.get("SUPABASE_REDIRECT_URL","")}})
+                if getattr(r,"url",None): st.link_button("Continue to Google",r.url,use_container_width=True)
+            except Exception as e: st.error(f"Google login failed: {e}")
     with c2:
-        st.markdown(f'''<div class="social-login-card"><img src="{facebook_logo}" class="social-logo"><span>Facebook</span></div>''', unsafe_allow_html=True)
-        if st.button("Continue with Facebook", key="oauth_facebook", use_container_width=True):
+        if st.button("🔷 Continue with Facebook",use_container_width=True):
             try:
-                r = supabase.auth.sign_in_with_oauth({"provider":"facebook","options":{"redirect_to":st.secrets.get("SUPABASE_REDIRECT_URL","")}})
-                if getattr(r, "url", None):
-                    st.link_button("Continue to Facebook", r.url, use_container_width=True)
-            except Exception as e:
-                st.error(f"Facebook login failed: {e}")
+                r=supabase.auth.sign_in_with_oauth({"provider":"facebook","options":{"redirect_to":st.secrets.get("SUPABASE_REDIRECT_URL","")}})
+                if getattr(r,"url",None): st.link_button("Continue to Facebook",r.url,use_container_width=True)
+            except Exception as e: st.error(f"Facebook login failed: {e}")
     st.caption("Google/Facebook providers must be enabled in Supabase Authentication settings.")
-    tab1, tab2 = st.tabs(["Log In", "Sign Up"])
+
+    tab1,tab2=st.tabs(["Log In","Sign Up"])
     with tab1:
-        email = st.text_input("Email", key="login_email")
-        password = st.text_input("Password", type="password", key="login_password")
-        if st.button("Log In", type="primary", use_container_width=True):
+        email=st.text_input("Email",key="login_email")
+        password=st.text_input("Password",type="password",key="login_password")
+        if st.button("Log In",type="primary"):
             try:
-                supabase.auth.sign_in_with_password({"email":email,"password":password})
-                st.session_state.active_chat_mode = "normal"
-                st.session_state.messages = list(st.session_state.normal_messages)
-                st.session_state.session_id = st.session_state.normal_session_id
-                load_latest_chat_cloud("normal")
+                r=supabase.auth.sign_in_with_password({"email":email,"password":password})
+                st.session_state.user_email=email
+                load_latest_chat_cloud()
                 st.success("Logged in successfully.")
                 st.rerun()
-            except Exception as e:
-                st.error(f"Login failed: {e}")
+            except Exception as e: st.error(f"Login failed: {e}")
     with tab2:
-        name = st.text_input("Name", key="signup_name")
-        email = st.text_input("Email", key="signup_email")
-        password = st.text_input("Password", type="password", key="signup_password")
-        if st.button("Create Account", use_container_width=True):
+        name=st.text_input("Name",key="signup_name")
+        email=st.text_input("Email",key="signup_email")
+        password=st.text_input("Password",type="password",key="signup_password")
+        if st.button("Create Account"):
             try:
                 supabase.auth.sign_up({"email":email,"password":password,"options":{"data":{"name":name}}})
                 st.success("Account created. Confirm email if your Supabase project requires it.")
-            except Exception as e:
-                st.error(f"Sign up failed: {e}")
-    st.divider()
-    with st.expander("📜 Terms & Conditions"):
-        st.write("By using ClyxessChat AI, you agree to use the service lawfully and responsibly. AI responses may contain mistakes and should be checked when decisions are important. Do not use the service to share passwords or sensitive private information.")
-    with st.expander("🔒 Privacy Policy"):
-        st.write("When you are logged in, chat sessions may be saved to your account so you can access them later. Logged-out chats are not stored in your account. Avoid entering highly sensitive personal information into chats.")
-    with st.expander("🍪 Cookies"):
-        st.write("The application may use browser/session storage and authentication cookies or tokens required for login and secure operation. These are used for core functionality rather than selling your chat content.")
+            except Exception as e: st.error(f"Sign up failed: {e}")
 
 def render_image_generator():
     st.title("🎨 Creative AI Image Generator")
@@ -1757,52 +1592,118 @@ with st.sidebar:
         if st.button("🚪 Log Out", use_container_width=True):
             try: supabase.auth.sign_out()
             except Exception: pass
-            st.session_state.messages = []
-            st.session_state.normal_messages = []
-            st.session_state.school_messages = []
             st.rerun()
     else:
-        st.caption("Not logged in — sign in to save chats. Logged-out chats stay only in this session.")
+        st.caption("Not logged in — sign in to save chats and view parent progress.")
+
     mode = st.radio("Select Mode", [
-        "Normal Chat", "Creative Lab (School Mode)", "🎮 Play & Learn",
-        "🎨 Creative AI Image Generator", "📷 Vision Lab", "🎭 Peer Roleplay Modes",
-        "📋 AI Daily Timetable", "📝 Interactive Homework & Test",
-        "👨‍👩‍👦 Parent Dashboard", "🔐 Login / Sign Up"
-    ], key="main_mode")
-    chat_mode = "school" if mode == "Creative Lab (School Mode)" else "normal"
-    if mode in ("Normal Chat", "Creative Lab (School Mode)"):
-        switch_chat_mode(chat_mode)
+        "Normal Chat",
+        "Creative Lab (School Mode)",
+        "🎮 Play & Learn",
+        "🎨 Creative AI Image Generator",
+        "📷 Vision Lab",
+        "🎭 Peer Roleplay Modes",
+        "📋 AI Daily Timetable",
+        "📝 Interactive Homework & Test",
+        "👨‍👩‍👦 Parent Dashboard",
+        "🔐 Login / Sign Up"
+    ])
     st.markdown("---")
-    if mode == "Creative Lab (School Mode)":
-        st.markdown("### 🎒 Age Group")
-        age_options = ["1-2 Yrs","3-4 Yrs","5-6 Yrs","6-8 Yrs","8-10 Yrs","10-11 Yrs","11+ Yrs"]
-        st.session_state.age_group = st.selectbox("Age", age_options, index=age_options.index(st.session_state.get("age_group", "1-2 Yrs")))
-        st.success(f"Active: {st.session_state.age_group}")
-    if mode == "🎮 Play & Learn":
-        st.markdown("### 🎮 Play & Learn")
-        st.info("10/10 complete करने पर next age level unlock होगा.")
-    if mode in ("Normal Chat", "Creative Lab (School Mode)") and logged_user:
-        render_saved_chats(chat_mode)
     if st.button("+ New Chat", use_container_width=True):
-        if mode in ("Normal Chat", "Creative Lab (School Mode)"):
-            if chat_mode == "school":
-                st.session_state.school_messages = []
-                st.session_state.school_session_id = str(uuid.uuid4())
-                st.session_state.messages = []
-                st.session_state.session_id = st.session_state.school_session_id
-            else:
-                st.session_state.normal_messages = []
-                st.session_state.normal_session_id = str(uuid.uuid4())
-                st.session_state.messages = []
-                st.session_state.session_id = st.session_state.normal_session_id
-        else:
-            st.session_state.messages = []
-            st.session_state.session_id = str(uuid.uuid4())
+        st.session_state.messages=[]
+        st.session_state.session_id=str(uuid.uuid4())
         st.rerun()
     st.caption("🇮🇳 India live time: "+get_india_datetime_context().replace("Current India date: ",""))
 
-# ---- routes: every existing feature remains available ----
-if mode == "🔐 Login / Sign Up": render_login_signup(); st.stop()
-if mode == "👨‍👩‍👦 Parent Dashboard": render_parent_dashboard(); st.stop()
-if mode == "🎨 Creative AI Image Generator": render_image_generator(); st.stop()
-if mode == "📷 Vision Lab": render
+# ---- routes: one unique screen per feature ----
+if mode == "🔐 Login / Sign Up":
+    render_login_signup(); st.stop()
+if mode == "👨‍👩‍👦 Parent Dashboard":
+    render_parent_dashboard(); st.stop()
+if mode == "🎨 Creative AI Image Generator":
+    render_image_generator(); st.stop()
+if mode == "📷 Vision Lab":
+    render_vision_lab(); st.stop()
+if mode == "🎭 Peer Roleplay Modes":
+    render_roleplay(); st.stop()
+if mode == "📋 AI Daily Timetable":
+    render_timetable(); st.stop()
+if mode == "📝 Interactive Homework & Test":
+    render_homework_test(); st.stop()
+if mode == "🎮 Play & Learn":
+    render_play_and_learn(client); st.stop()
+
+def get_school_system_prompt(age_group):
+    base = f"""You are ClyxessChat AI — a friendly, safe, child-focused School Mode learning companion.
+The child age group is {age_group}.
+STRICT LANGUAGE LOCK: reply ONLY in the selected language supplied in the final instruction.
+Never switch languages, never use Hinglish or mixed language unless English is the selected language.
+Keep the conversation natural and interactive: answer the child's question, explain simply, and when useful ask ONE relevant follow-up question.
+Do not pretend to remember things the child never told you. Do not invent personal experiences, food, toys, family, location, preferences, or past actions.
+Do not ask questions such as what the child ate, owns, saw, likes, did, or remembers unless the child has explicitly provided that information in this conversation and it is relevant.
+Do not pressure the child to reveal passwords, addresses, phone numbers, private photos, or other sensitive personal information.
+For learning topics, encourage understanding instead of simply giving homework answers.
+"""
+    if "1-2" in age_group:
+        return base + "Use extremely short, cheerful, concrete sentences; simple words; colors, shapes, animals, sounds, counting, greetings and very basic concepts. Avoid abstract or complex explanations."
+    if "3-4" in age_group:
+        return base + "Use short playful explanations, simple stories, counting, shapes, colors, animals, language and basic logic."
+    if "5-6" in age_group:
+        return base + "Use simple examples, stories, early maths, science basics, reading, logic and creativity."
+    if "6-8" in age_group:
+        return base + "Use clear school-level explanations, examples, simple reasoning, maths, science, English, technology and general knowledge."
+    if "10-11" in age_group:
+        return base + "Use practical school-level explanations with step-by-step maths, science, technology, coding logic and problem solving."
+    return base + "Use age-appropriate secondary-school explanations with deeper reasoning, AI literacy, coding, technology, financial literacy, cyber safety, entrepreneurship and critical thinking."
+
+# ---- Normal Chat ----
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        if "image_url" in message:
+            st.markdown('<div class="media-card">',unsafe_allow_html=True)
+            st.image(message["image_url"],caption=message.get("image_caption",""),width=520)
+            st.markdown('</div>',unsafe_allow_html=True)
+        else:
+            st.markdown(message["content"])
+
+voice_prompt=""
+if mic_recorder:
+    audio=mic_recorder(start_prompt="🔴 Start Recording",stop_prompt="⏹️ Stop & Send",key="chat_mic_final")
+    if audio:
+        voice_prompt=transcribe_audio_with_groq(client,audio.get("bytes",b""))
+
+prompt=st.chat_input("Ask ClyxessChat AI")
+if not prompt and voice_prompt: prompt=voice_prompt
+
+if prompt:
+    st.session_state.messages.append({"role":"user","content":prompt})
+    with st.chat_message("user"): st.markdown(f'<div class="user-bubble">{prompt}</div>',unsafe_allow_html=True)
+
+    # Image generation is explicit only. No automatic image generation for ordinary questions.
+    low=prompt.lower()
+    explicit_image = any(x in low for x in ["generate image","create image","make an image","draw an image","image banao","image bana","poster banao","photo banao","चित्र बनाओ","तस्वीर बनाओ"])
+    if explicit_image:
+        with st.chat_message("assistant"):
+            with st.spinner("🎨 Image bana raha hu..."):
+                img_data,source=generate_image_url(prompt,False,"Normal","1:1")
+            st.markdown('<div class="media-card">',unsafe_allow_html=True)
+            st.image(img_data,width=520,caption="Generated image")
+            st.markdown('</div>',unsafe_allow_html=True)
+            st.caption("Image display is compact; no unrelated subject was added by the prompt controller.")
+            st.session_state.messages.append({"role":"assistant","image_url":img_data,"image_caption":prompt,"content":"Generated image"})
+            save_current_chat_cloud()
+    else:
+        search_context,sources=search_tavily(prompt)
+        system=NORMAL_SYSTEM_PROMPT+"\nLIVE INDIA CLOCK: "+get_india_datetime_context()
+        if search_context: system += "\nLIVE WEB INFO:\n"+search_context
+        with st.chat_message("assistant"):
+            completion,used_model=get_groq_response(client,st.session_state.messages,system,"")
+            if completion is None:
+                st.error("AI response नहीं आ पाया. Please try again.")
+                st.stop()
+            response=completion.choices[0].message.content
+            st.markdown(response)
+            if sources: st.caption("Sources:\n"+sources)
+            st.caption(f"Model: {used_model or 'fallback'}")
+        st.session_state.messages.append({"role":"assistant","content":response})
+        save_current_chat_cloud()
