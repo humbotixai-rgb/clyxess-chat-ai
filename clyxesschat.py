@@ -13,10 +13,6 @@ try:
 except Exception:
     mic_recorder = None
 
-# ============================================================
-# CLYXESSCHAT AI
-# NORMAL CHAT + CREATIVE LAB + PLAY & LEARN
-# ============================================================
 
 st.set_page_config(
     page_title="ClyxessChat AI",
@@ -24,9 +20,6 @@ st.set_page_config(
     layout="wide"
 )
 
-# ============================================================
-# CSS
-# ============================================================
 
 st.markdown("""
 <style>
@@ -109,9 +102,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ============================================================
-# CONFIG
-# ============================================================
 
 GROQ_MODELS = [
     "openai/gpt-oss-120b",
@@ -121,9 +111,6 @@ GROQ_MODELS = [
 
 QUESTIONS_PER_LEVEL = 10
 
-# ============================================================
-# PLAY & LEARN CONFIG
-# ============================================================
 
 PLAY_AGE_LEVELS = [
     "1–2 Years",
@@ -152,43 +139,104 @@ PLAY_LANGUAGES = {
 
 AGE_SUBJECTS = {
     "1–2 Years": [
-        "Colors", "Shapes", "Animals", "Sounds",
-        "Basic Language", "Memory"
+        "Colors", "Shapes", "Animals", "Sounds", "Basic Language", "Memory",
+        "Communication", "Technology Awareness", "AI Awareness", "Money Basics", "Safe Internet"
     ],
     "3–4 Years": [
-        "Numbers", "Language", "Shapes",
-        "Storytelling", "Communication", "Logic"
+        "Numbers", "Language", "Shapes", "Storytelling", "Communication", "Logic",
+        "Money Basics", "Technology Awareness", "AI Awareness", "Safe Internet", "Problem Solving"
     ],
     "5–6 Years": [
-        "Maths", "Science Basics", "Language",
-        "Reading", "Logic", "Creativity"
+        "Maths", "Science Basics", "Language", "Reading", "Logic", "Creativity",
+        "Communication", "Money Basics", "Technology Basics", "AI Introduction", "Safe Internet", "Problem Solving"
     ],
     "6–8 Years": [
-        "Maths", "Science", "English",
-        "General Knowledge", "Logic",
-        "Communication", "Technology Basics"
+        "Maths", "Science", "English", "General Knowledge", "Logic", "Communication",
+        "Technology Basics", "Coding Basics", "AI Introduction", "Financial Literacy", "Cyber Safety", "Critical Thinking", "Problem Solving"
     ],
     "8–10 Years": [
-        "Maths", "Science", "English",
-        "Coding Basics", "AI Introduction",
-        "Financial Literacy", "Communication"
+        "Maths", "Science", "English", "Coding Basics", "AI Introduction", "Financial Literacy",
+        "Communication", "Technology Basics", "Cyber Safety", "Critical Thinking", "Problem Solving"
     ],
     "10–11 Years": [
-        "Advanced Maths", "Science", "Technology",
-        "AI Literacy", "Coding",
-        "Financial Literacy", "Critical Thinking"
+        "Advanced Maths", "Science", "Technology", "AI Literacy", "Coding", "Financial Literacy",
+        "Communication", "Cyber Safety", "Critical Thinking", "Problem Solving", "Entrepreneurship"
     ],
     "11+ Years": [
-        "AI & Technology", "Coding",
-        "Financial Literacy", "Cyber Safety",
-        "Communication", "Entrepreneurship",
-        "Critical Thinking", "Problem Solving"
+        "AI & Technology", "Coding", "Financial Literacy", "Cyber Safety", "Communication",
+        "Entrepreneurship", "Critical Thinking", "Problem Solving", "Advanced Maths", "Science"
     ]
 }
 
-# ============================================================
-# FALLBACK QUESTION BANK
-# ============================================================
+# Age-specific fallback questions for the subjects that must never fall back to toddler-level content.
+# These are used when an AI provider is unavailable or returns invalid JSON.
+AGE_SUBJECT_FALLBACK = {
+    "1–2 Years": {
+        "Communication": [("Someone says hello. What can you say?", ["Hello", "Go", "Sleep", "No"], "Hello")],
+        "Technology Awareness": [("Which one is a phone?", ["📱", "🍎", "🐶", "⚽"], "📱")],
+        "AI Awareness": [("Which picture looks like a computer helper?", ["🤖", "🍌", "🐟", "🌳"], "🤖")],
+        "Money Basics": [("Which one is money?", ["🪙", "🍎", "🚗", "🐱"], "🪙")],
+        "Safe Internet": [("Should a small child use a phone with a trusted grown-up?", ["Yes", "No", "Always alone", "Never"], "Yes")],
+        "Critical Thinking": [("Which is bigger?", ["🐘", "🐜", "🍎", "⭐"], "🐘")],
+        "Problem Solving": [("Your toy is under a box. What can you do?", ["Ask for help", "Eat it", "Throw the box away", "Ignore it"], "Ask for help")],
+    },
+    "3–4 Years": {
+        "Communication": [("A friend gives you a toy. What can you say?", ["Thank you", "Go away", "Stop", "Nothing"], "Thank you")],
+        "Technology Awareness": [("Which device can show a cartoon?", ["Tablet", "Spoon", "Shoe", "Cup"], "Tablet")],
+        "AI Awareness": [("Which one looks like a robot helper?", ["🤖", "🍎", "🐟", "🌈"], "🤖")],
+        "Money Basics": [("You have ₹10 and spend ₹4. How much is left?", ["₹4", "₹5", "₹6", "₹8"], "₹6")],
+        "Safe Internet": [("Should you tell a stranger your name and home address online?", ["Yes", "No", "Maybe always", "Only at night"], "No")],
+        "Critical Thinking": [("Which is the best clue that a claim may be wrong?", ["It has no reason", "It is colorful", "It is short", "It has an emoji"], "It has no reason")],
+        "Problem Solving": [("You cannot reach a toy on a high shelf. What is safest?", ["Ask a grown-up", "Climb a window", "Jump", "Push furniture"], "Ask a grown-up")],
+    },
+    "5–6 Years": {
+        "Communication": [("Which sentence is polite when asking for help?", ["Please help me.", "Give it now!", "You must do it.", "Go away."], "Please help me.")],
+        "Technology Basics": [("Which device is mainly used to type letters?", ["Keyboard", "Speaker", "Camera", "Lamp"], "Keyboard")],
+        "AI Introduction": [("What is AI designed to do in many applications?", ["Perform tasks using learned patterns", "Grow like a plant", "Cook every meal", "Become a human"], "Perform tasks using learned patterns")],
+        "Money Basics": [("You have ₹50 and save ₹20. How much can you spend?", ["₹20", "₹30", "₹40", "₹50"], "₹30")],
+        "Safe Internet": [("What should you keep private online?", ["Passwords", "Favorite color", "A cartoon title", "A school subject"], "Passwords")],
+        "Critical Thinking": [("Before believing a surprising online story, what is a good first step?", ["Check another reliable source", "Share it", "Guess", "Ignore every fact"], "Check another reliable source")],
+        "Problem Solving": [("You have two ways to finish a task. What should you do first?", ["Compare the choices", "Pick randomly", "Quit", "Hide the task"], "Compare the choices")],
+    },
+    "6–8 Years": {
+        "Communication": [("Which message is best for resolving a disagreement?", ["Let's talk and find a fair solution.", "You are always wrong.", "I will shout.", "I will ignore you forever."], "Let's talk and find a fair solution.")],
+        "Coding Basics": [("In a program, what is a loop useful for?", ["Repeating instructions", "Deleting the computer", "Charging a battery", "Printing money"], "Repeating instructions")],
+        "AI Introduction": [("Why can an AI system make a mistake?", ["Its data or reasoning can be imperfect", "AI is always correct", "Computers cannot process data", "AI never uses data"], "Its data or reasoning can be imperfect")],
+        "Financial Literacy": [("You have ₹200, save ₹75, and spend the rest. How much do you spend?", ["₹100", "₹125", "₹135", "₹175"], "₹125")],
+        "Cyber Safety": [("A website asks for your password through a strange link. What should you do?", ["Do not enter it and verify the site", "Enter it quickly", "Share it with friends", "Turn off the screen"], "Do not enter it and verify the site")],
+        "Critical Thinking": [("Two websites give different answers. What should you compare?", ["Evidence and source reliability", "Font color", "Number of emojis", "Page length only"], "Evidence and source reliability")],
+        "Problem Solving": [("A science project fails. What is a useful next step?", ["Find the cause and test one change", "Give up", "Hide the result", "Blame someone"], "Find the cause and test one change")],
+    },
+    "8–10 Years": {
+        "Communication": [("Which response shows active listening?", ["I understand your point; can you explain more?", "Stop talking.", "I don't care.", "You are wrong."], "I understand your point; can you explain more?")],
+        "Coding Basics": [("What is a conditional statement used for?", ["Making a decision based on a condition", "Drawing every picture", "Charging hardware", "Deleting all code"], "Making a decision based on a condition")],
+        "AI Introduction": [("What is a useful way to evaluate an AI answer?", ["Check facts and reasoning", "Assume it is always true", "Share private data", "Ignore the question"], "Check facts and reasoning")],
+        "Financial Literacy": [("A ₹800 item is discounted by 15%. What is the discount?", ["₹80", "₹100", "₹120", "₹150"], "₹120")],
+        "Cyber Safety": [("Which is a strong account-protection practice?", ["Use unique passwords and MFA", "Reuse one password everywhere", "Share passwords", "Disable security updates"], "Use unique passwords and MFA")],
+        "Critical Thinking": [("Which evidence is strongest for a scientific claim?", ["Repeated results from a reliable method", "A random comment", "A rumor", "A catchy headline"], "Repeated results from a reliable method")],
+        "Problem Solving": [("A solution works but uses too many resources. What should you do?", ["Measure alternatives and optimize it", "Never change it", "Delete the project", "Guess"], "Measure alternatives and optimize it")],
+    },
+    "10–11 Years": {
+        "Communication": [("What is the best way to give constructive feedback?", ["Describe the issue and suggest a specific improvement", "Insult the person", "Say nothing useful", "Share it publicly"], "Describe the issue and suggest a specific improvement")],
+        "Coding": [("Why is a function useful in programming?", ["It packages reusable behavior", "It replaces the operating system", "It stores electricity", "It removes all bugs automatically"], "It packages reusable behavior")],
+        "AI Literacy": [("Why should an AI-generated claim be verified?", ["Models can produce inaccurate or unsupported information", "AI cannot process language", "AI always cites sources", "Verification is never useful"], "Models can produce inaccurate or unsupported information")],
+        "Financial Literacy": [("If ₹5,000 earns 8% simple interest for one year, what is the interest?", ["₹200", "₹300", "₹400", "₹500"], "₹400")],
+        "Cyber Safety": [("What is phishing?", ["A deceptive attempt to steal information", "A type of backup", "A faster Wi-Fi mode", "A coding language"], "A deceptive attempt to steal information")],
+        "Critical Thinking": [("Which question best tests a strong claim?", ["What evidence would prove or disprove it?", "Who posted it first?", "Is it popular?", "Does it sound confident?"], "What evidence would prove or disprove it?")],
+        "Problem Solving": [("When a problem has constraints, what should you do before choosing a solution?", ["List constraints and success criteria", "Ignore constraints", "Choose randomly", "Start over repeatedly"], "List constraints and success criteria")],
+    },
+    "11+ Years": {
+        "Communication": [("Which communication strategy is strongest in a technical disagreement?", ["Separate claims from evidence and address the evidence", "Attack the person", "Use louder language", "Avoid all questions"], "Separate claims from evidence and address the evidence")],
+        "Coding": [("What is the main benefit of algorithmic complexity analysis?", ["It estimates how resource use scales with input size", "It guarantees zero bugs", "It designs UI colors", "It replaces testing"], "It estimates how resource use scales with input size")],
+        "AI & Technology": [("What is model bias in an AI system?", ["Systematic differences in outputs caused by data or design", "A faster processor", "A screen defect", "A type of encryption"], "Systematic differences in outputs caused by data or design")],
+        "Financial Literacy": [("Why can compound interest grow faster than simple interest over long periods?", ["Interest can earn additional interest", "The principal disappears", "Taxes become zero", "Banks stop calculating interest"], "Interest can earn additional interest")],
+        "Cyber Safety": [("What is the principle of least privilege?", ["Give an account only the access it needs", "Give every user admin rights", "Share credentials", "Disable authentication"], "Give an account only the access it needs")],
+        "Critical Thinking": [("Which approach reduces confirmation bias?", ["Actively seek credible evidence that could challenge your view", "Only read supporting sources", "Avoid data", "Choose the most popular opinion"], "Actively seek credible evidence that could challenge your view")],
+        "Problem Solving": [("For a complex problem, what is a strong first step?", ["Define the problem, constraints, and measurable goal", "Implement immediately", "Ignore edge cases", "Choose the hardest solution"], "Define the problem, constraints, and measurable goal")],
+    }
+}
+
+
 
 QUESTION_BANK = {
     "Maths": [
@@ -495,9 +543,6 @@ QUESTION_BANK = {
     ]
 }
 
-# ============================================================
-# UI TRANSLATIONS
-# ============================================================
 
 UI = {
     "en": {
@@ -520,9 +565,6 @@ UI = {
     }
 }
 
-# ============================================================
-# SESSION STATE
-# ============================================================
 
 DEFAULT_STATE = {
     "messages": [],
@@ -533,9 +575,8 @@ DEFAULT_STATE = {
     "school_language": "hi",
     "school_age": "1-2 Yrs",
 
-    # Play & Learn
     "play_age": PLAY_AGE_LEVELS[0],
-    "play_language": "hi",
+    "play_language": "en",
     "play_subject": None,
     "play_questions": [],
     "play_question_index": 0,
@@ -546,16 +587,30 @@ DEFAULT_STATE = {
     "play_last_explanation": "",
     "play_unlocked_levels": [PLAY_AGE_LEVELS[0]],
     "play_completed_levels": [],
-    "play_best_scores": {}
+    "play_best_scores": {},
+    "play_config_key": None,
+    "homework_questions": [],
+    "homework_answers": {},
+    "homework_result": None,
+    "homework_config_key": None,
+    "role_language": "en",
+    "vision_language": "en",
+    "play_game_type": None
 }
 
 for key, value in DEFAULT_STATE.items():
     if key not in st.session_state:
         st.session_state[key] = value
 
-# ============================================================
-# IMAGE FALLBACK FUNCTION
-# ============================================================
+
+
+
+def get_language_name(language_code):
+    """Return the human-readable language name for a selected language code."""
+    for label, code in PLAY_LANGUAGES.items():
+        if code == language_code:
+            return label.split(" ", 1)[-1]
+    return "English"
 
 def build_image_prompt(user_prompt, is_school_mode=False, age="Normal"):
     p = user_prompt.strip()
@@ -593,9 +648,6 @@ def generate_image_url(prompt, is_school_mode, age, aspect="1:1"):
     )
     return url, "pollinations"
 
-# ============================================================
-# PROMPTS
-# ============================================================
 
 NORMAL_SYSTEM_PROMPT = """
 You are ClyxessChat AI, created by ClyxessChat AI Technology.
@@ -627,10 +679,6 @@ For learning topics, encourage understanding instead of simply giving homework a
         return base + "Use practical school-level explanations with step-by-step maths, science, technology, coding logic and problem solving."
     return base + "Use age-appropriate secondary-school explanations with deeper reasoning, AI literacy, coding, technology, financial literacy, cyber safety, entrepreneurship and critical thinking."
 
-
-# ============================================================
-# LIVE INDIA CLOCK
-# ============================================================
 def get_india_datetime_context():
     try:
         now = datetime.datetime.now(ZoneInfo("Asia/Kolkata")) if ZoneInfo else datetime.datetime.now()
@@ -659,17 +707,8 @@ def transcribe_audio_with_groq(client, audio_bytes):
         return ""
 
 def language_display_name(code):
-    names = {
-        "hi": "Hindi", "mr": "Marathi", "bn": "Bengali",
-        "ta": "Tamil", "te": "Telugu", "gu": "Gujarati",
-        "kn": "Kannada", "ml": "Malayalam", "or": "Odia",
-        "en": "English", "zh": "Chinese", "ja": "Japanese"
-    }
-    return names.get(code, "English")
+    return next((name.split(" ", 1)[-1] for name, value in PLAY_LANGUAGES.items() if value == code), "English")
 
-# ============================================================
-# TAVILY
-# ============================================================
 
 def search_tavily(query):
     search_words = [
@@ -710,9 +749,6 @@ def search_tavily(query):
     except Exception:
         return "", ""
 
-# ============================================================
-# GROQ CHAT
-# ============================================================
 
 def get_groq_response(
     client,
@@ -752,9 +788,6 @@ def get_groq_response(
 
     return None, None
 
-# ============================================================
-# SUPABASE
-# ============================================================
 
 @st.cache_resource
 def init_supabase():
@@ -768,21 +801,15 @@ def init_supabase():
 
 supabase = init_supabase()
 
-# ============================================================
-# PLAY & LEARN HELPERS
-# ============================================================
 
 def get_play_ui(language):
     return UI.get(language, UI["en"])
 
-
 def get_play_subjects(age):
     return AGE_SUBJECTS.get(age, [])
 
-
 def play_level_unlocked(age):
     return age in st.session_state.play_unlocked_levels
-
 
 def unlock_next_play_level(age):
     try:
@@ -802,47 +829,40 @@ def unlock_next_play_level(age):
 
     return next_level
 
+AGE_FALLBACK = {
+"1–2 Years":[("Which one is a circle?",["⬜","⭕","🔺","⭐"],"⭕"),("Which color is 🔴?",["Red","Blue","Green","Yellow"],"Red"),("Which animal says meow?",["Cat","Dog","Cow","Duck"],"Cat"),("How many apples? 🍎🍎",["1","2","3","4"],"2"),("Which shape has 3 sides?",["Circle","Square","Triangle","Oval"],"Triangle"),("Which is bigger?",["🐘","🐜","Same","Unknown"],"🐘"),("Which is a fruit?",["🍎","🚗","⚽","🐶"],"🍎"),("Which one is yellow?",["🔵","🟡","🔴","🟢"],"🟡"),("How many stars? ⭐⭐⭐",["1","2","3","4"],"3"),("Which is a bird?",["🐟","🐦","🐱","🐰"],"🐦")],
+"3–4 Years":[("What comes after 3?",["2","4","5","1"],"4"),("What is 2 + 1?",["2","3","4","5"],"3"),("Which shape has 4 equal sides?",["Circle","Square","Triangle","Oval"],"Square"),("How many legs does a dog have?",["2","3","4","6"],"4"),("Which word starts with B?",["Ball","Cat","Dog","Sun"],"Ball"),("Which number is smallest?",["2","5","7","9"],"2"),("What comes next: 5, 6, ?",["4","7","8","9"],"7"),("What is used for writing?",["Pencil","Shoe","Cup","Ball"],"Pencil"),("Which can fly?",["Fish","Bird","Cow","Elephant"],"Bird"),("How many sides does a triangle have?",["2","3","4","5"],"3")],
+"5–6 Years":[("What is 4 + 3?",["5","6","7","8"],"7"),("What is 10 - 4?",["4","5","6","7"],"6"),("What is 2 × 3?",["5","6","7","8"],"6"),("Which planet do we live on?",["Mars","Earth","Jupiter","Venus"],"Earth"),("Which organ helps us see?",["Ears","Eyes","Nose","Hands"],"Eyes"),("Which is a noun?",["Run","Happy","Book","Quickly"],"Book"),("Next: 10, 20, 30, ?",["35","40","45","50"],"40"),("Which is usually transparent?",["Glass","Wood","Stone","Metal"],"Glass"),("How many minutes in an hour?",["30","45","60","100"],"60"),("Which is living?",["Rock","Tree","Chair","Pencil"],"Tree")],
+"6–8 Years":[("What is 7 × 4?",["24","28","32","36"],"28"),("What is 36 ÷ 6?",["5","6","7","8"],"6"),("Which gas do humans need?",["Oxygen","Helium","Hydrogen","Neon"],"Oxygen"),("Past tense of 'go'?",["Goed","Gone","Went","Going"],"Went"),("Which planet has famous rings?",["Mercury","Saturn","Earth","Mars"],"Saturn"),("What is 125 + 75?",["180","190","200","210"],"200"),("Which device types text?",["Keyboard","Monitor","Speaker","Router"],"Keyboard"),("A triangle has how many angles?",["2","3","4","5"],"3"),("Which is renewable energy?",["Coal","Solar","Petrol","Gas"],"Solar"),("₹50 - ₹20 = ?",["₹20","₹30","₹40","₹70"],"₹30")],
+"8–10 Years":[("What is 15 × 6?",["80","90","100","110"],"90"),("What is 3/4 of 20?",["10","12","15","16"],"15"),("Which organ pumps blood?",["Lungs","Heart","Stomach","Kidney"],"Heart"),("What does CPU stand for?",["Central Processing Unit","Computer Power Unit","Central Program Utility","Control Processing User"],"Central Processing Unit"),("What is 2.5 + 1.75?",["3.25","4.25","4.50","5.25"],"4.25"),("Which is renewable?",["Sunlight","Coal","Petrol","Diesel"],"Sunlight"),("₹200 - ₹120 = ?",["₹60","₹70","₹80","₹90"],"₹80"),("Next: 3, 6, 12, 24, ?",["36","42","48","54"],"48"),("Which is strongest password?",["123456","password","R7!mQ2#z","myname"],"R7!mQ2#z"),("Square side 5 cm: perimeter?",["10 cm","15 cm","20 cm","25 cm"],"20 cm")],
+"10–11 Years":[("Solve 3x + 5 = 20",["3","4","5","6"],"5"),("What is 25% of 240?",["40","50","60","80"],"60"),("Which force pulls objects to Earth?",["Friction","Gravity","Magnetism","Buoyancy"],"Gravity"),("What is an algorithm?",["Step-by-step procedure","Screen","Battery","Browser"],"Step-by-step procedure"),("What is 2³ + 4?",["8","10","12","16"],"12"),("Which fraction is greatest?",["1/4","1/2","2/3","3/8"],"2/3"),("Why update software?",["Security and fixes","Wallpaper","Delete internet","Never useful"],"Security and fixes"),("₹1,000 grows by 10% = ?",["₹1,010","₹1,050","₹1,100","₹1,200"],"₹1,100"),("Next: 2, 5, 10, 17, ?",["24","25","26","27"],"26"),("Best account protection?",["Share password","Use MFA","Reuse password","Turn off updates"],"Use MFA")],
+"11+ Years":[("If f(x)=2x+3, f(5)=?",["10","11","13","15"],"13"),("Probability of a 6 on a fair die?",["1/2","1/4","1/6","1/8"],"1/6"),("Which structure follows FIFO?",["Stack","Queue","Tree","Graph"],"Queue"),("Phishing usually steals?",["Credentials","Brightness","Battery","Keys"],"Credentials"),("Derivative of x²?",["x","2x","x²","2"],"2x"),("Compound interest means interest on...",["Principal only","Principal plus accumulated interest","None","Fixed fee"],"Principal plus accumulated interest"),("Main purpose of version control?",["Track code changes","Increase screen","Replace DB","Charge users"],"Track code changes"),("99% uptime over 100 hours: downtime?",["0.1 h","1 h","5 h","10 h"],"1 h"),("Specific observations to general rule?",["Deductive","Inductive","Circular","Random"],"Inductive"),("Safest response to suspicious login link?",["Click","Verify source","Forward","Enter password"],"Verify source")]
+}
 
-def build_demo_questions(subject):
-    bank = QUESTION_BANK.get(subject, [])
-
-    if not bank:
-        # Fallback to a generic safe question
-        bank = [
-            {
-                "question": "Which option is correct?",
-                "options": ["A", "B", "C", "D"],
-                "answer": "A",
-                "explanation": "This is a demo learning question."
-            }
-        ]
-
-    result = []
-
-    for item in bank:
-        result.append({
-            "question": str(item["question"]),
-            "options": list(item["options"]),
-            "answer": str(item["answer"]),
-            "explanation": str(item.get("explanation", ""))
-        })
-
+def build_demo_questions(subject, age=None):
+    age = age or PLAY_AGE_LEVELS[0]
+    # Prefer an age + subject-specific fallback so an older learner never receives toddler content.
+    subject_pool = AGE_SUBJECT_FALLBACK.get(age, {}).get(subject, [])
+    # Second fallback is the global subject bank, never the wrong subject.
+    bank_pool = []
+    for item in QUESTION_BANK.get(subject, []):
+        bank_pool.append((item["question"], item["options"], item["answer"]))
+    general_pool = AGE_FALLBACK.get(age, AGE_FALLBACK["8–10 Years"])
+    pool = list(subject_pool) + bank_pool + list(general_pool)
+    result=[]
+    seen=set()
+    for q, opts, ans in pool:
+        key=q.strip().lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append({"question":q,"options":list(opts),"answer":ans,"explanation":f"Correct answer: {ans}."})
     random.shuffle(result)
-
-    original = list(result)
-
-    while len(result) < QUESTIONS_PER_LEVEL:
-        result.append(original[len(result) % len(original)].copy())
-
-    random.shuffle(result)
-
     return result[:QUESTIONS_PER_LEVEL]
-
 
 def clean_json_text(text):
     text = text.strip()
 
-    # Remove markdown code fences
     text = re.sub(
         r"^```(?:json)?\s*",
         "",
@@ -856,7 +876,6 @@ def clean_json_text(text):
         text
     )
 
-    # Find JSON array if extra text exists
     start = text.find("[")
     end = text.rfind("]")
 
@@ -864,7 +883,6 @@ def clean_json_text(text):
         text = text[start:end + 1]
 
     return text.strip()
-
 
 def validate_questions(data, count=10):
     if not isinstance(data, list):
@@ -895,7 +913,6 @@ def validate_questions(data, count=10):
         answer = str(answer).strip()
 
         if answer not in options:
-            # Allow answer as A/B/C/D index
             if answer.upper() in ["A", "B", "C", "D"]:
                 idx = ord(answer.upper()) - ord("A")
                 if idx < len(options):
@@ -916,7 +933,6 @@ def validate_questions(data, count=10):
 
     return valid
 
-
 def _personal_assumption_question(text):
     q = text.lower()
     patterns = [
@@ -928,122 +944,102 @@ def _personal_assumption_question(text):
     ]
     return any(re.search(x, q, re.I) for x in patterns)
 
-def _age_difficulty_guide(age):
-    return {
-        "1–2 Years": "Use recognition, colors, shapes, animals, sounds, counting 1-5. No reading-heavy text.",
-        "3–4 Years": "Use simple counting, matching, shapes, short words, simple stories and everyday logic. Keep language very simple.",
-        "5–6 Years": "Use early arithmetic, basic science, reading, patterns, classification and simple reasoning.",
-        "6–8 Years": "Use multiplication basics, science facts, grammar, logic, communication and introductory technology.",
-        "8–10 Years": "Use multi-step maths, science reasoning, coding basics, AI concepts, money basics and communication.",
-        "10–11 Years": "Use fractions/decimals, scientific reasoning, algorithms, AI literacy, technology, finance and critical thinking.",
-        "11+ Years": "Use advanced school-level reasoning, coding, cybersecurity, AI/technology, finance, entrepreneurship, communication and problem solving. Avoid baby-level questions."
-    }.get(age, "Use age-appropriate school-level questions.")
+def generate_ai_questions(client, age, language, subject, count=10, game_type="Quiz Challenge"):
+    language_name = next((name for name, code in PLAY_LANGUAGES.items() if code == language), "English")
+    difficulty = {
+        "1–2 Years": "Pre-school recognition: colors, shapes, animals, counting to 5; use very short sentences and simple visual/emoji choices.",
+        "3–4 Years": "Early learning: counting, simple addition, shapes, vocabulary, patterns and basic reasoning.",
+        "5–6 Years": "Primary foundation: simple arithmetic, basic science, reading/language and everyday concepts.",
+        "6–8 Years": "Primary school: multiplication/division, basic science, grammar, technology and simple money/logic.",
+        "8–10 Years": "Upper primary: multi-step arithmetic, fractions/decimals, science, coding basics, AI introduction and financial literacy.",
+        "10–11 Years": "Advanced primary: algebra foundations, percentages, deeper science, coding, AI literacy, cyber safety and critical thinking.",
+        "11+ Years": "Teen level: algebra, probability, programming, AI/technology, cybersecurity, finance, entrepreneurship and analytical reasoning."
+    }.get(age, "Age-appropriate school learning.")
 
-def _age_fallback_questions(age, subject, language):
-    # Deterministic fallbacks are deliberately different by age so an API outage
-    # cannot make every age level receive the same baby-level question set.
-    if language == "hi":
-        pools = {
-            "1–2 Years": [
-                {"question":"कौन सा रंग लाल है?","options":["🔴","🔵","🟢","🟡"],"answer":"🔴","explanation":"🔴 लाल रंग है।"},
-                {"question":"कौन सा आकार गोल है?","options":["⬜","🔺","⭕","⭐"],"answer":"⭕","explanation":"⭕ गोल आकार है।"},
-                {"question":"गाय की आवाज़ कैसी होती है?","options":["म्याऊँ","भौं-भौं","रंभाना","कूकना"],"answer":"रंभाना","explanation":"गाय रंभाती है।"},
-                {"question":"1 के बाद कौन सा अंक आता है?","options":["0","1","2","3"],"answer":"2","explanation":"1 के बाद 2 आता है।"}],
-                "3–4 Years": [
-                {"question":"2 + 1 = ?","options":["2","3","4","5"],"answer":"3","explanation":"2 में 1 जोड़ने पर 3 होता है।"},
-                {"question":"कौन सा आकार त्रिकोण है?","options":["⭕","⬜","🔺","⭐"],"answer":"🔺","explanation":"🔺 त्रिकोण है।"},
-                {"question":"सेब किसका उदाहरण है?","options":["फल","जानवर","वाहन","खिलौना"],"answer":"फल","explanation":"सेब एक फल है।"},
-                {"question":"5, 6, 7, ?","options":["6","7","8","9"],"answer":"8","explanation":"हर बार 1 बढ़ रहा है।"}],
-                "5–6 Years": [
-                {"question":"7 + 6 = ?","options":["11","12","13","14"],"answer":"13","explanation":"7 + 6 = 13।"},
-                {"question":"पौधों को बढ़ने के लिए क्या चाहिए?","options":["पानी","पत्थर","प्लास्टिक","खिलौना"],"answer":"पानी","explanation":"पौधों के लिए पानी आवश्यक है।"},
-                {"question":"‘बड़ा’ का विलोम क्या है?","options":["छोटा","लंबा","तेज","ऊँचा"],"answer":"छोटा","explanation":"बड़ा का विलोम छोटा है।"},
-                {"question":"2, 4, 6, ?","options":["7","8","9","10"],"answer":"8","explanation":"हर बार 2 बढ़ रहा है।"}],
-                "6–8 Years": [
-                {"question":"8 × 7 = ?","options":["54","56","58","64"],"answer":"56","explanation":"8 × 7 = 56।"},
-                {"question":"पानी किस तापमान पर सामान्यतः जमता है?","options":["0°C","10°C","50°C","100°C"],"answer":"0°C","explanation":"सामान्य दबाव पर पानी 0°C पर जमता है।"},
-                {"question":"कंप्यूटर में टाइप करने के लिए किसका उपयोग होता है?","options":["कीबोर्ड","स्पीकर","प्रिंटर","माउस पैड"],"answer":"कीबोर्ड","explanation":"कीबोर्ड से अक्षर और अंक टाइप किए जाते हैं।"},
-                {"question":"एक सप्ताह में कितने दिन होते हैं?","options":["5","6","7","8"],"answer":"7","explanation":"एक सप्ताह में 7 दिन होते हैं।"}],
-                "8–10 Years": [
-                {"question":"यदि किसी वस्तु की कीमत ₹80 है और ₹100 दिए, तो कितना वापस मिलेगा?","options":["₹10","₹20","₹30","₹40"],"answer":"₹20","explanation":"₹100 − ₹80 = ₹20।"},
-                {"question":"लूप का उपयोग कोड में किसलिए किया जाता है?","options":["दोहराव के लिए","चित्र बनाने के लिए ही","कंप्यूटर बंद करने के लिए","पासवर्ड रखने के लिए"],"answer":"दोहराव के लिए","explanation":"लूप किसी काम को बार-बार चलाने में मदद करता है।"},
-                {"question":"AI का पूरा नाम क्या है?","options":["आर्टिफिशियल इंटेलिजेंस","ऑटो इंटरनेट","एडवांस्ड इनपुट","ऑटोमेटिक आइडिया"],"answer":"आर्टिफिशियल इंटेलिजेंस","explanation":"AI का अर्थ Artificial Intelligence है।"},
-                {"question":"3/4 का दशमलव रूप क्या है?","options":["0.25","0.5","0.75","1.25"],"answer":"0.75","explanation":"3 ÷ 4 = 0.75।"}],
-                "10–11 Years": [
-                {"question":"0.75 को भिन्न में कैसे लिखेंगे?","options":["1/2","2/3","3/4","4/5"],"answer":"3/4","explanation":"0.75 = 75/100 = 3/4।"},
-                {"question":"किसी एल्गोरिदम में क्रमबद्ध चरणों का उद्देश्य क्या है?","options":["समस्या को व्यवस्थित ढंग से हल करना","सिर्फ चित्र बनाना","पासवर्ड बदलना","इंटरनेट बंद करना"],"answer":"समस्या को व्यवस्थित ढंग से हल करना","explanation":"एल्गोरिदम समस्या के समाधान के लिए स्पष्ट चरण देता है।"},
-                {"question":"मजबूत पासवर्ड में क्या बेहतर है?","options":["केवल नाम","123456","अलग-अलग अक्षर, अंक और प्रतीक","जन्मदिन"],"answer":"अलग-अलग अक्षर, अंक और प्रतीक","explanation":"मिश्रित और अनोखा पासवर्ड अधिक सुरक्षित होता है।"},
-                {"question":"₹500 पर 10% छूट कितनी है?","options":["₹5","₹25","₹50","₹100"],"answer":"₹50","explanation":"500 का 10% = ₹50।"}],
-                "11+ Years": [
-                {"question":"यदि किसी निवेश पर 8% वार्षिक दर से ₹10,000 लगाए जाएँ, तो एक वर्ष का साधारण ब्याज कितना होगा?","options":["₹80","₹400","₹800","₹1,800"],"answer":"₹800","explanation":"10,000 × 8/100 = ₹800।"},
-                {"question":"फ़िशिंग से बचने का सबसे अच्छा कदम क्या है?","options":["हर लिंक खोलना","OTP साझा करना","संदिग्ध लिंक और प्रेषक की जाँच करना","पासवर्ड चैट में भेजना"],"answer":"संदिग्ध लिंक और प्रेषक की जाँच करना","explanation":"संदिग्ध संदेशों में लिंक और प्रेषक की पुष्टि करनी चाहिए।"},
-                {"question":"यदि O(n) एल्गोरिदम इनपुट को दोगुना करने पर लगभग दोगुना काम करता है, तो यह किस प्रकार की जटिलता है?","options":["रैखिक","स्थिर","घातीय","लघुगणकीय"],"answer":"रैखिक","explanation":"O(n) को रैखिक समय जटिलता कहते हैं।"},
-                {"question":"किसी तर्क में निष्कर्ष निकालने से पहले क्या करना सबसे उचित है?","options":["साक्ष्य जाँचना","पहला अनुमान मान लेना","अफवाह फैलाना","डेटा छोड़ देना"],"answer":"साक्ष्य जाँचना","explanation":"अच्छी critical thinking में प्रमाण और तर्क की जाँच की जाती है।"}]
-        }
-        pool = pools.get(age, pools["8–10 Years"])
-    elif language == "en":
-        pools = {
-            "1–2 Years": [("Which color is red?",["🔴","🔵","🟢","🟡"],"🔴","🔴 is red."),("Which shape is round?",["⬜","🔺","⭕","⭐"],"⭕","⭕ is round."),("Which animal says moo?",["Cat","Cow","Dog","Bird"],"Cow","A cow says moo."),("What comes after 1?",["0","1","2","3"],"2","2 comes after 1.")],
-            "3–4 Years": [("2 + 1 = ?",["2","3","4","5"],"3","2 + 1 = 3."),("Which is a triangle?",["⭕","⬜","🔺","⭐"],"🔺","🔺 is a triangle."),("Which is a fruit?",["Apple","Chair","Car","Ball"],"Apple","An apple is a fruit."),("5, 6, 7, ?",["6","7","8","9"],"8","The pattern increases by 1.")],
-            "5–6 Years": [("7 + 6 = ?",["11","12","13","14"],"13","7 + 6 = 13."),("What helps a plant grow?",["Water","Plastic","Stone","Toy"],"Water","Plants need water."),("Opposite of big?",["Small","Fast","Tall","Bright"],"Small","Small is the opposite of big."),("2, 4, 6, ?",["7","8","9","10"],"8","The pattern increases by 2.")],
-            "6–8 Years": [("8 × 7 = ?",["54","56","58","64"],"56","8 × 7 = 56."),("At what temperature does water normally freeze?",["0°C","10°C","50°C","100°C"],"0°C","Water normally freezes at 0°C."),("Which device is used for typing?",["Keyboard","Speaker","Printer","Mouse pad"],"Keyboard","A keyboard is used for typing."),("How many days are in a week?",["5","6","7","8"],"7","A week has 7 days.")],
-            "8–10 Years": [("₹100 − ₹80 = ?",["₹10","₹20","₹30","₹40"],"₹20","₹100 − ₹80 = ₹20."),("What is a loop used for in programming?",["Repetition","Only drawing","Shutting down","Storing passwords"],"Repetition","Loops repeat instructions."),("What does AI stand for?",["Artificial Intelligence","Automatic Internet","Advanced Input","Automatic Idea"],"Artificial Intelligence","AI means Artificial Intelligence."),("What is 3/4 as a decimal?",["0.25","0.5","0.75","1.25"],"0.75","3 ÷ 4 = 0.75.")],
-            "10–11 Years": [("What is 0.75 as a fraction?",["1/2","2/3","3/4","4/5"],"3/4","0.75 = 3/4."),("What is the purpose of an algorithm?",["Solve a problem in steps","Only draw pictures","Change passwords","Turn off internet"],"Solve a problem in steps","An algorithm gives ordered steps."),("Which is a stronger password?",["Your name","123456","Mixed letters, numbers and symbols","Birthday"],"Mixed letters, numbers and symbols","A unique mixed password is safer."),("10% of ₹500 is?",["₹5","₹25","₹50","₹100"],"₹50","10% of ₹500 is ₹50.")],
-            "11+ Years": [("8% simple interest on ₹10,000 for one year is?",["₹80","₹400","₹800","₹1,800"],"₹800","10,000 × 8/100 = ₹800."),("Best defense against phishing?",["Open every link","Share OTP","Verify sender and suspicious links","Send passwords in chat"],"Verify sender and suspicious links","Verification reduces phishing risk."),("What does O(n) describe?",["Linear time","Constant time","Exponential time","Logarithmic time"],"Linear time","O(n) is linear complexity."),("What should you do before accepting a conclusion?",["Check evidence","Assume the first guess","Spread rumors","Ignore data"],"Check evidence","Critical thinking checks evidence.")]
-        }
-        raw = pools.get(age, pools["8–10 Years"])
-        pool = [{"question":q,"options":o,"answer":a,"explanation":e} for q,o,a,e in raw]
-    else:
-        # If the API is unavailable, keep the fallback language-neutral instead of
-        # falsely mixing English into the selected language.
-        pool = [
-            {"question":"2 + 3 = ?","options":["4","5","6","7"],"answer":"5","explanation":"2 + 3 = 5"},
-            {"question":"1, 2, 3, ?","options":["2","3","4","5"],"answer":"4","explanation":"1, 2, 3, 4"},
-            {"question":"Which symbol is a circle?","options":["⬜","🔺","⭕","⭐"],"answer":"⭕","explanation":"⭕ is a circle."},
-            {"question":"3 × 2 = ?","options":["4","5","6","8"],"answer":"6","explanation":"3 × 2 = 6"}
-        ]
-    return (pool * ((count + len(pool) - 1) // len(pool)))[:count]
-
-def generate_ai_questions(client, age, language, subject, count=10):
-    language_name = language_display_name(language)
-    guide = _age_difficulty_guide(age)
     prompt = f"""
+You are the question engine for ClyxessChat AI Play & Learn.
 Create exactly {count} educational multiple-choice questions.
 AGE GROUP: {age}
 SUBJECT: {subject}
-AGE DIFFICULTY RULE: {guide}
+GAME TYPE: {game_type}
 SELECTED LANGUAGE: {language_name}
-STRICT LANGUAGE LOCK: question, all four options, answer and explanation MUST be entirely in {language_name}. Never switch to English or Hinglish unless English is selected.
-Do not reuse baby-level questions for older learners. The subject MUST match the selected subject.
-For ages 1–4, never ask personal-experience questions such as what the child ate, owns, likes, saw, did or remembers.
-For 8+ use age-appropriate school concepts; for 11+ use advanced reasoning and avoid preschool questions.
-Every question must be objective, safe, have exactly four options, and exactly one correct answer.
-Return ONLY valid JSON: [{{"question":"...","options":["A","B","C","D"],"answer":"A","explanation":"..."}}]
+DIFFICULTY PROFILE: {difficulty}
+
+HARD AGE RULE:
+The age group is NOT cosmetic. The questions MUST materially change in vocabulary,
+concept difficulty, numbers, reasoning depth and subject complexity for different ages.
+Never reuse the same question, sequence, example or answer pattern from another age group.
+For example, a simple counting question suitable for 3–4 must not appear for 10–11 or 11+.
+For 1–2 use recognition and tiny quantities; for 11+ use genuinely advanced reasoning where
+appropriate to the selected subject.
+
+HARD SUBJECT RULE:
+Every question must match the selected subject. For Homework, this rule is mandatory.
+Never substitute a generic age question for a requested subject unless absolutely necessary; if
+a fallback is needed, preserve the same subject and age difficulty. Do not return generic maths questions when
+the subject is Coding, AI, Science, Financial Literacy, Communication, etc.
+
+HARD UNIQUENESS RULE:
+All {count} questions in this batch must be different from each other. Do not repeat a question
+with changed numbers only. Make the concepts/examples varied.
+
+LANGUAGE RULE:
+Question text, all four options, answer and explanation MUST be entirely in {language_name}.
+Never use Hinglish or mixed language unless English is selected.
+For ages 1–4, never ask personal-experience questions such as what the child ate, owns, likes,
+saw, did or remembers.
+GAME DESIGN RULE: Adapt the question style to GAME TYPE. Keep it playable and varied, but
+never lower the difficulty below the selected age. For older ages, include multi-step reasoning,
+scenarios, trade-offs, algorithms, evidence evaluation, or calculations where the subject allows.
+
+ANSWER RULE:
+Each question has exactly four options and exactly one correct answer. The 'answer' field MUST
+be an exact character-for-character copy of one option, not A/B/C/D.
+
+Return ONLY valid JSON in this exact format:
+[{{"question":"...","options":["...","...","...","..."],"answer":"...","explanation":"..."}}]
 """
-    for model in GROQ_MODELS:
+
+    model_order = list(GROQ_MODELS)
+    offset = (sum(ord(c) for c in f"{age}|{subject}|{language}") % len(model_order)) if model_order else 0
+    model_order = model_order[offset:] + model_order[:offset]
+
+    for model in model_order:
         try:
-            completion = client.chat.completions.create(model=model, messages=[{"role":"user","content":prompt}], temperature=0.35, max_tokens=5000)
+            completion = client.chat.completions.create(
+                model=model,
+                messages=[{"role":"user","content":prompt}],
+                temperature=0.65,
+                max_tokens=6000
+            )
             parsed = json.loads(clean_json_text(completion.choices[0].message.content))
             valid=[]
             seen=set()
             for item in parsed if isinstance(parsed,list) else []:
-                if not isinstance(item,dict): continue
-                q=str(item.get("question","")).strip(); opts=[str(x).strip() for x in item.get("options",[]) if str(x).strip()]
-                ans=str(item.get("answer","")).strip(); exp=str(item.get("explanation","")).strip()
-                key=q.casefold()
-                if not q or key in seen or len(opts)!=4 or len(set(opts))!=4 or ans not in opts: continue
-                if ("1–2" in age or "3–4" in age) and _personal_assumption_question(q): continue
+                if not isinstance(item,dict):
+                    continue
+                q=str(item.get("question","")).strip()
+                opts=[str(x).strip() for x in item.get("options",[]) if str(x).strip()]
+                ans=str(item.get("answer","")).strip()
+                exp=str(item.get("explanation","")).strip()
+                key=re.sub(r"\s+", " ", q.lower())
+                if not q or len(opts)!=4 or len(set(opts))!=4 or ans not in opts:
+                    continue
+                if key in seen:
+                    continue
+                if ("1–2" in age or "3–4" in age) and _personal_assumption_question(q):
+                    continue
                 seen.add(key)
                 valid.append({"question":q,"options":opts,"answer":ans,"explanation":exp})
-                if len(valid)==count: return valid
+                if len(valid)==count:
+                    break
+            if len(valid)==count:
+                return valid
         except Exception:
             continue
-    return _age_fallback_questions(age, subject, language)
 
+    return build_demo_questions(subject, age=age)[:count]
 
-# ============================================================
-# PLAY & LEARN UI
-# ============================================================
 
 def render_play_and_learn(client):
 
@@ -1059,9 +1055,6 @@ def render_play_and_learn(client):
         unsafe_allow_html=True
     )
 
-    # --------------------------------------------------------
-    # Settings
-    # --------------------------------------------------------
 
     col1, col2, col3 = st.columns(3)
 
@@ -1102,24 +1095,39 @@ def render_play_and_learn(client):
             index=subject_index
         )
 
-    previous_config = st.session_state.get("play_config_signature")
-    new_config = (play_age, play_language, play_subject)
-    if previous_config is not None and previous_config != new_config:
-        st.session_state.play_questions = []
-        st.session_state.play_question_index = 0
-        st.session_state.play_score = 0
-        st.session_state.play_answered = False
-        st.session_state.play_last_correct = False
-        st.session_state.play_last_explanation = ""
-        st.session_state.play_game_started = False
-    st.session_state.play_config_signature = new_config
+    game_types = {
+        "1–2 Years": ["Picture Pick", "Memory Match", "Color & Shape Hunt"],
+        "3–4 Years": ["Pattern Hunt", "Quick Choice", "Story Challenge"],
+        "5–6 Years": ["Speed Maths", "Brain Quest", "Memory Challenge"],
+        "6–8 Years": ["Brain Quest", "Logic Sprint", "Tech Challenge"],
+        "8–10 Years": ["Logic Lab", "Coding Challenge", "Money Mission", "Quiz Challenge"],
+        "10–11 Years": ["Challenge Mode", "Case Challenge", "Algorithm Quest", "Quiz Challenge"],
+        "11+ Years": ["Advanced Challenge", "Scenario Lab", "Code & Logic", "Critical Thinking Duel"]
+    }
+    available_games = game_types.get(play_age, ["Quiz Challenge"])
+    previous_game = st.session_state.get("play_game_type")
+    game_index = available_games.index(previous_game) if previous_game in available_games else 0
+    play_game_type = st.selectbox(
+        "🎮 Game Type", available_games, index=game_index, key="play_game_type_selector"
+    )
+
     st.session_state.play_age = play_age
     st.session_state.play_language = play_language
     st.session_state.play_subject = play_subject
+    st.session_state.play_game_type = play_game_type
 
-    # --------------------------------------------------------
-    # Locked Level
-    # --------------------------------------------------------
+    new_config_key = f"{play_age}|{play_language}|{play_subject}|{play_game_type}"
+    old_config_key = st.session_state.get("play_config_key")
+    if old_config_key is not None and old_config_key != new_config_key:
+        st.session_state.play_questions = []
+        st.session_state.play_question_index = 0
+        st.session_state.play_score = 0
+        st.session_state.play_game_started = False
+        st.session_state.play_answered = False
+        st.session_state.play_last_correct = False
+        st.session_state.play_last_explanation = ""
+    st.session_state.play_config_key = new_config_key
+
 
     if not play_level_unlocked(play_age):
 
@@ -1134,9 +1142,6 @@ def render_play_and_learn(client):
 
         return
 
-    # --------------------------------------------------------
-    # Sidebar
-    # --------------------------------------------------------
 
     with st.sidebar:
         st.markdown("### 🎮 Play & Learn Progress")
@@ -1161,9 +1166,6 @@ def render_play_and_learn(client):
             else:
                 st.write(f"🔒 {level}")
 
-    # --------------------------------------------------------
-    # Start Screen
-    # --------------------------------------------------------
 
     if not st.session_state.play_game_started:
 
@@ -1176,6 +1178,7 @@ def render_play_and_learn(client):
 
         st.write(f"**Age:** {play_age}")
         st.write(f"**Subject:** {play_subject}")
+        st.write(f"**Game:** {play_game_type}")
         st.write(f"**Language:** {language_label}")
 
         st.info(
@@ -1198,7 +1201,8 @@ def render_play_and_learn(client):
                     age=play_age,
                     language=play_language,
                     subject=play_subject,
-                    count=QUESTIONS_PER_LEVEL
+                    count=QUESTIONS_PER_LEVEL,
+                    game_type=play_game_type
                 )
 
             if not questions:
@@ -1214,6 +1218,7 @@ def render_play_and_learn(client):
             st.session_state.play_last_correct = False
             st.session_state.play_last_explanation = ""
             st.session_state.play_game_started = True
+            st.session_state.play_config_key = f"{play_age}|{play_language}|{play_subject}|{play_game_type}"
 
             st.rerun()
 
@@ -1224,9 +1229,6 @@ def render_play_and_learn(client):
 
         return
 
-    # --------------------------------------------------------
-    # Question Data
-    # --------------------------------------------------------
 
     questions = st.session_state.play_questions
 
@@ -1247,11 +1249,8 @@ def render_play_and_learn(client):
     correct_answer = current["answer"]
     explanation = current.get("explanation", "")
 
-    # --------------------------------------------------------
-    # Progress
-    # --------------------------------------------------------
 
-    progress = question_index / QUESTIONS_PER_LEVEL
+    progress = (question_index + 1) / QUESTIONS_PER_LEVEL
 
     st.progress(
         progress,
@@ -1281,9 +1280,6 @@ def render_play_and_learn(client):
             play_subject
         )
 
-    # --------------------------------------------------------
-    # Question Card
-    # --------------------------------------------------------
 
     st.markdown(
         '<div class="play-card">',
@@ -1306,9 +1302,6 @@ def render_play_and_learn(client):
         unsafe_allow_html=True
     )
 
-    # --------------------------------------------------------
-    # Submit
-    # --------------------------------------------------------
 
     if not st.session_state.play_answered:
 
@@ -1329,9 +1322,6 @@ def render_play_and_learn(client):
 
             st.rerun()
 
-    # --------------------------------------------------------
-    # Feedback
-    # --------------------------------------------------------
 
     if st.session_state.play_answered:
 
@@ -1351,9 +1341,6 @@ def render_play_and_learn(client):
                 f"💡 {st.session_state.play_last_explanation}"
             )
 
-    # --------------------------------------------------------
-    # Next Question / Result
-    # --------------------------------------------------------
 
     if st.session_state.play_answered:
 
@@ -1458,9 +1445,6 @@ def render_play_and_learn(client):
 
                     st.rerun()
 
-    # --------------------------------------------------------
-    # Reset Game
-    # --------------------------------------------------------
 
     st.divider()
 
@@ -1479,10 +1463,6 @@ def render_play_and_learn(client):
 
         st.rerun()
 
-
-# ============================================================
-# EXTRA FEATURES — integrated without creating duplicate core modes
-# ============================================================
 def analyze_image_with_groq(image_bytes, mime, question, selected_language="English"):
     if not client:
         return "Groq API key missing."
@@ -1491,7 +1471,7 @@ def analyze_image_with_groq(image_bytes, mime, question, selected_language="Engl
         completion = client.chat.completions.create(
             model="qwen/qwen3.6-27b",
             messages=[{"role":"user","content":[
-                {"type":"text","text":f"LANGUAGE LOCK: Reply ONLY in {language_display_name(selected_language)}. Do not use English, Hinglish, transliteration, or mixed language unless English is selected. Answer the user's request accurately and age-appropriately. {question}"},
+                {"type":"text","text":f"STRICT LANGUAGE LOCK: Reply ONLY in {selected_language}. Do not use English or mixed language unless English is selected. {question}"},
                 {"type":"image_url","image_url":{"url":f"data:{mime};base64,{b64}"}}
             ]}], temperature=0.4, max_completion_tokens=1500
         )
@@ -1588,124 +1568,20 @@ def render_image_generator():
 def render_vision_lab():
     st.title("📷 Vision Lab")
     f=st.file_uploader("Upload book, homework or diagram",type=["png","jpg","jpeg","webp"])
-    labels=list(PLAY_LANGUAGES.keys()); label=st.selectbox("Answer language",labels,index=labels.index("🇬🇧 English"))
+    labels=list(PLAY_LANGUAGES.keys())
+    default_idx=labels.index("🇬🇧 English")
+    label=st.selectbox("🌐 Answer Language",labels,index=default_idx,key="vision_language_selector")
+    selected_language=PLAY_LANGUAGES[label]
     question=st.text_input("What should AI explain?",value="Explain the image simply and solve any visible question.")
     if f:
         st.markdown('<div class="media-card">',unsafe_allow_html=True); st.image(f,width=480); st.markdown('</div>',unsafe_allow_html=True)
         if st.button("🧠 Analyze Image",type="primary",use_container_width=True):
-            st.write(analyze_image_with_groq(f.getvalue(),f.type,question,PLAY_LANGUAGES[label]))
+            language_name=get_language_name(selected_language)
+            strict=f"Reply ONLY in {language_name}. Do not use English unless English is selected. Analyze this image and answer the user's request. {question}"
+            st.write(analyze_image_with_groq(f.getvalue(),f.type,strict,language_name))
 
 def render_roleplay():
     st.title("🎭 Peer Roleplay Modes")
     role=st.selectbox("Role",["Classmate","Teacher","Study Buddy","Interview Partner","Project Teammate"])
-    label=st.selectbox("Language",list(PLAY_LANGUAGES.keys()),key="role_language")
-    prompt=st.text_input("Start the roleplay")
-    if st.button("Start Roleplay",type="primary") and prompt:
-        selected_code = PLAY_LANGUAGES[label]
-        selected_name = language_display_name(selected_code)
-        system=f"Act as {role} for educational practice. Reply ONLY in {selected_name}. Do not use English, Hinglish, transliteration, or mixed-language text unless {selected_name} is English. Be safe, respectful and age-appropriate."
-        ans,_=get_groq_response(client,[{"role":"user","content":prompt}],system,"")
-        st.chat_message("assistant").write(ans.choices[0].message.content if ans else "")
-
-def render_timetable():
-    st.title("📋 AI Daily Timetable")
-    age=st.selectbox("Age/Class",PLAY_AGE_LEVELS)
-    subjects=st.multiselect("Subjects",get_play_subjects(age),default=get_play_subjects(age)[:3])
-    hours=st.slider("Learning hours",1,6,2)
-    if st.button("🗓️ Create Timetable",type="primary"):
-        mins=max(20,int(hours*60/max(1,len(subjects))))
-        st.session_state.timetable="\n".join([f"{i+1}. {sub} — {mins} min" for i,sub in enumerate(subjects)])
-    if st.session_state.get("timetable"): st.code(st.session_state.timetable)
-
-def render_homework_test():
-    st.title("📝 Interactive Homework & Test")
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        homework_age = st.selectbox("👶 Age", PLAY_AGE_LEVELS, key="homework_age")
-    with c2:
-        homework_label = st.selectbox("🌐 Language", list(PLAY_LANGUAGES.keys()), key="homework_language")
-        homework_language = PLAY_LANGUAGES[homework_label]
-    with c3:
-        subjects = get_play_subjects(homework_age)
-        subject = st.selectbox("📚 Subject", subjects, key="homework_subject")
-
-    homework_signature = (homework_age, homework_language, subject)
-    if st.session_state.get("homework_config_signature") != homework_signature:
-        st.session_state.homework_questions = []
-        st.session_state.homework_answers = {}
-        st.session_state.homework_result = None
-        st.session_state.homework_config_signature = homework_signature
-
-    st.caption(f"Homework will be generated for {homework_age} in {homework_label}.")
-    if st.button("Generate Test", type="primary", use_container_width=True):
-        st.session_state.homework_questions = generate_ai_questions(
-            client, homework_age, homework_language, subject, 5
-        )
-        st.session_state.homework_answers = {}
-        st.session_state.homework_result = None
-
-    qs = st.session_state.get("homework_questions", [])
-    if qs:
-        for i, q in enumerate(qs):
-            st.session_state.homework_answers[i] = st.radio(
-                q["question"], q["options"], key=f"hw_{i}"
-            )
-        if st.button("Submit Test", use_container_width=True):
-            score = sum(
-                st.session_state.homework_answers.get(i) == q["answer"]
-                for i, q in enumerate(qs)
-            )
-            st.session_state.homework_result = f"{score}/{len(qs)}"
-            st.success(f"Score: {st.session_state.homework_result}")
-
-def learning_report():
-    best=max(st.session_state.play_best_scores.values(),default=0)
-    return "\n".join([
-        "ClyxessChat AI — Learning Report",
-        f"Generated: {india_clock_text()}",
-        f"Current Level: {st.session_state.play_age}",
-        f"Language: {next((n for n,c in PLAY_LANGUAGES.items() if c==st.session_state.play_language),'English')}",
-        f"Completed Levels: {len(st.session_state.play_completed_levels)}",
-        f"Best Score: {best}/10",
-        f"Homework/Test: {st.session_state.get('homework_result') or 'Not attempted'}"
-    ])
-
-def render_parent_dashboard():
-    st.title("👨‍👩‍👦 Parent Dashboard")
-    best=max(st.session_state.play_best_scores.values(),default=0)
-    c1,c2,c3=st.columns(3); c1.metric("Completed Levels",len(st.session_state.play_completed_levels)); c2.metric("Best Score",f"{best}/10"); c3.metric("Current Level",st.session_state.play_age)
-    report=learning_report()
-    st.markdown('<div class="report-card">',unsafe_allow_html=True); st.text(report); st.markdown('</div>',unsafe_allow_html=True)
-    st.download_button("📄 Save Report",data=report,file_name="clyxesschat_learning_report.txt",mime="text/plain")
-    st.link_button("📤 Share Report", "https://wa.me/?text="+urllib.parse.quote(report))
-
-# ============================================================
-# UI START
-# ============================================================
-st.markdown('<div class="header"><h1>💬 ClyxessChat AI</h1></div>', unsafe_allow_html=True)
-
-try:
-    client = Groq(api_key=st.secrets["GROQ_API_KEY"])
-except Exception:
-    st.error("GROQ_API_KEY is missing from Streamlit secrets.")
-    st.stop()
-
-with st.sidebar:
-    st.title("💬 ClyxessChat AI")
-    try:
-        logged_user = supabase.auth.get_user().user if supabase else None
-    except Exception:
-        logged_user = None
-    if logged_user:
-        st.success(f"👤 {logged_user.email}")
-        if st.button("🚪 Log Out", use_container_width=True):
-            try: supabase.auth.sign_out()
-            except Exception: pass
-            st.rerun()
-    else:
-        st.caption("Not logged in — sign in to save chats and view parent progress.")
-
-    mode = st.radio("Select Mode", [
-        "Normal Chat",
-        "Creative Lab (School Mode)",
-        "🎮 Play
+    labels=list(PLAY_LANGUAGES.keys())
+    default_idx=labels.index("🇬🇧 Engl
