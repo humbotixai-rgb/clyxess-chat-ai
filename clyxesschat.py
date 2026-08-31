@@ -603,15 +603,6 @@ for key, value in DEFAULT_STATE.items():
         st.session_state[key] = value
 
 
-
-
-def get_language_name(language_code):
-    """Return the human-readable language name for a selected language code."""
-    for label, code in PLAY_LANGUAGES.items():
-        if code == language_code:
-            return label.split(" ", 1)[-1]
-    return "English"
-
 def build_image_prompt(user_prompt, is_school_mode=False, age="Normal"):
     p = user_prompt.strip()
     p = re.sub(r"^(please\s+)?(make|create|generate|draw|banao|banaiye)\s+(an?\s+)?(image|photo|picture|poster|chitra)\s*(of|for|:)?\s*", "", p, flags=re.I)
@@ -1576,7 +1567,7 @@ def render_vision_lab():
     if f:
         st.markdown('<div class="media-card">',unsafe_allow_html=True); st.image(f,width=480); st.markdown('</div>',unsafe_allow_html=True)
         if st.button("🧠 Analyze Image",type="primary",use_container_width=True):
-            language_name=get_language_name(selected_language)
+            language_name=next((n.split(" ",1)[-1] for n,c in PLAY_LANGUAGES.items() if c==selected_language),"English")
             strict=f"Reply ONLY in {language_name}. Do not use English unless English is selected. Analyze this image and answer the user's request. {question}"
             st.write(analyze_image_with_groq(f.getvalue(),f.type,strict,language_name))
 
@@ -1584,4 +1575,7 @@ def render_roleplay():
     st.title("🎭 Peer Roleplay Modes")
     role=st.selectbox("Role",["Classmate","Teacher","Study Buddy","Interview Partner","Project Teammate"])
     labels=list(PLAY_LANGUAGES.keys())
-    default_idx=labels.index("🇬🇧 Engl
+    default_idx=labels.index("🇬🇧 English")
+    label=st.selectbox("🌐 Language",labels,index=default_idx,key="role_language_selector")
+    selected_language=PLAY_LANGUAGES[label]
+    language_name=next((n.split(" ",1)[-1] for n,c in PLAY_LANGUAGE
