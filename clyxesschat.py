@@ -659,7 +659,13 @@ def transcribe_audio_with_groq(client, audio_bytes):
         return ""
 
 def language_display_name(code):
-    return next((name.split(" ", 1)[-1] for name, value in PLAY_LANGUAGES.items() if value == code), "English")
+    names = {
+        "hi": "Hindi", "mr": "Marathi", "bn": "Bengali",
+        "ta": "Tamil", "te": "Telugu", "gu": "Gujarati",
+        "kn": "Kannada", "ml": "Malayalam", "or": "Odia",
+        "en": "English", "zh": "Chinese", "ja": "Japanese"
+    }
+    return names.get(code, "English")
 
 # ============================================================
 # TAVILY
@@ -922,54 +928,117 @@ def _personal_assumption_question(text):
     ]
     return any(re.search(x, q, re.I) for x in patterns)
 
+def _age_difficulty_guide(age):
+    return {
+        "1–2 Years": "Use recognition, colors, shapes, animals, sounds, counting 1-5. No reading-heavy text.",
+        "3–4 Years": "Use simple counting, matching, shapes, short words, simple stories and everyday logic. Keep language very simple.",
+        "5–6 Years": "Use early arithmetic, basic science, reading, patterns, classification and simple reasoning.",
+        "6–8 Years": "Use multiplication basics, science facts, grammar, logic, communication and introductory technology.",
+        "8–10 Years": "Use multi-step maths, science reasoning, coding basics, AI concepts, money basics and communication.",
+        "10–11 Years": "Use fractions/decimals, scientific reasoning, algorithms, AI literacy, technology, finance and critical thinking.",
+        "11+ Years": "Use advanced school-level reasoning, coding, cybersecurity, AI/technology, finance, entrepreneurship, communication and problem solving. Avoid baby-level questions."
+    }.get(age, "Use age-appropriate school-level questions.")
+
+def _age_fallback_questions(age, subject, language):
+    # Deterministic fallbacks are deliberately different by age so an API outage
+    # cannot make every age level receive the same baby-level question set.
+    if language == "hi":
+        pools = {
+            "1–2 Years": [
+                {"question":"कौन सा रंग लाल है?","options":["🔴","🔵","🟢","🟡"],"answer":"🔴","explanation":"🔴 लाल रंग है।"},
+                {"question":"कौन सा आकार गोल है?","options":["⬜","🔺","⭕","⭐"],"answer":"⭕","explanation":"⭕ गोल आकार है।"},
+                {"question":"गाय की आवाज़ कैसी होती है?","options":["म्याऊँ","भौं-भौं","रंभाना","कूकना"],"answer":"रंभाना","explanation":"गाय रंभाती है।"},
+                {"question":"1 के बाद कौन सा अंक आता है?","options":["0","1","2","3"],"answer":"2","explanation":"1 के बाद 2 आता है।"}],
+                "3–4 Years": [
+                {"question":"2 + 1 = ?","options":["2","3","4","5"],"answer":"3","explanation":"2 में 1 जोड़ने पर 3 होता है।"},
+                {"question":"कौन सा आकार त्रिकोण है?","options":["⭕","⬜","🔺","⭐"],"answer":"🔺","explanation":"🔺 त्रिकोण है।"},
+                {"question":"सेब किसका उदाहरण है?","options":["फल","जानवर","वाहन","खिलौना"],"answer":"फल","explanation":"सेब एक फल है।"},
+                {"question":"5, 6, 7, ?","options":["6","7","8","9"],"answer":"8","explanation":"हर बार 1 बढ़ रहा है।"}],
+                "5–6 Years": [
+                {"question":"7 + 6 = ?","options":["11","12","13","14"],"answer":"13","explanation":"7 + 6 = 13।"},
+                {"question":"पौधों को बढ़ने के लिए क्या चाहिए?","options":["पानी","पत्थर","प्लास्टिक","खिलौना"],"answer":"पानी","explanation":"पौधों के लिए पानी आवश्यक है।"},
+                {"question":"‘बड़ा’ का विलोम क्या है?","options":["छोटा","लंबा","तेज","ऊँचा"],"answer":"छोटा","explanation":"बड़ा का विलोम छोटा है।"},
+                {"question":"2, 4, 6, ?","options":["7","8","9","10"],"answer":"8","explanation":"हर बार 2 बढ़ रहा है।"}],
+                "6–8 Years": [
+                {"question":"8 × 7 = ?","options":["54","56","58","64"],"answer":"56","explanation":"8 × 7 = 56।"},
+                {"question":"पानी किस तापमान पर सामान्यतः जमता है?","options":["0°C","10°C","50°C","100°C"],"answer":"0°C","explanation":"सामान्य दबाव पर पानी 0°C पर जमता है।"},
+                {"question":"कंप्यूटर में टाइप करने के लिए किसका उपयोग होता है?","options":["कीबोर्ड","स्पीकर","प्रिंटर","माउस पैड"],"answer":"कीबोर्ड","explanation":"कीबोर्ड से अक्षर और अंक टाइप किए जाते हैं।"},
+                {"question":"एक सप्ताह में कितने दिन होते हैं?","options":["5","6","7","8"],"answer":"7","explanation":"एक सप्ताह में 7 दिन होते हैं।"}],
+                "8–10 Years": [
+                {"question":"यदि किसी वस्तु की कीमत ₹80 है और ₹100 दिए, तो कितना वापस मिलेगा?","options":["₹10","₹20","₹30","₹40"],"answer":"₹20","explanation":"₹100 − ₹80 = ₹20।"},
+                {"question":"लूप का उपयोग कोड में किसलिए किया जाता है?","options":["दोहराव के लिए","चित्र बनाने के लिए ही","कंप्यूटर बंद करने के लिए","पासवर्ड रखने के लिए"],"answer":"दोहराव के लिए","explanation":"लूप किसी काम को बार-बार चलाने में मदद करता है।"},
+                {"question":"AI का पूरा नाम क्या है?","options":["आर्टिफिशियल इंटेलिजेंस","ऑटो इंटरनेट","एडवांस्ड इनपुट","ऑटोमेटिक आइडिया"],"answer":"आर्टिफिशियल इंटेलिजेंस","explanation":"AI का अर्थ Artificial Intelligence है।"},
+                {"question":"3/4 का दशमलव रूप क्या है?","options":["0.25","0.5","0.75","1.25"],"answer":"0.75","explanation":"3 ÷ 4 = 0.75।"}],
+                "10–11 Years": [
+                {"question":"0.75 को भिन्न में कैसे लिखेंगे?","options":["1/2","2/3","3/4","4/5"],"answer":"3/4","explanation":"0.75 = 75/100 = 3/4।"},
+                {"question":"किसी एल्गोरिदम में क्रमबद्ध चरणों का उद्देश्य क्या है?","options":["समस्या को व्यवस्थित ढंग से हल करना","सिर्फ चित्र बनाना","पासवर्ड बदलना","इंटरनेट बंद करना"],"answer":"समस्या को व्यवस्थित ढंग से हल करना","explanation":"एल्गोरिदम समस्या के समाधान के लिए स्पष्ट चरण देता है।"},
+                {"question":"मजबूत पासवर्ड में क्या बेहतर है?","options":["केवल नाम","123456","अलग-अलग अक्षर, अंक और प्रतीक","जन्मदिन"],"answer":"अलग-अलग अक्षर, अंक और प्रतीक","explanation":"मिश्रित और अनोखा पासवर्ड अधिक सुरक्षित होता है।"},
+                {"question":"₹500 पर 10% छूट कितनी है?","options":["₹5","₹25","₹50","₹100"],"answer":"₹50","explanation":"500 का 10% = ₹50।"}],
+                "11+ Years": [
+                {"question":"यदि किसी निवेश पर 8% वार्षिक दर से ₹10,000 लगाए जाएँ, तो एक वर्ष का साधारण ब्याज कितना होगा?","options":["₹80","₹400","₹800","₹1,800"],"answer":"₹800","explanation":"10,000 × 8/100 = ₹800।"},
+                {"question":"फ़िशिंग से बचने का सबसे अच्छा कदम क्या है?","options":["हर लिंक खोलना","OTP साझा करना","संदिग्ध लिंक और प्रेषक की जाँच करना","पासवर्ड चैट में भेजना"],"answer":"संदिग्ध लिंक और प्रेषक की जाँच करना","explanation":"संदिग्ध संदेशों में लिंक और प्रेषक की पुष्टि करनी चाहिए।"},
+                {"question":"यदि O(n) एल्गोरिदम इनपुट को दोगुना करने पर लगभग दोगुना काम करता है, तो यह किस प्रकार की जटिलता है?","options":["रैखिक","स्थिर","घातीय","लघुगणकीय"],"answer":"रैखिक","explanation":"O(n) को रैखिक समय जटिलता कहते हैं।"},
+                {"question":"किसी तर्क में निष्कर्ष निकालने से पहले क्या करना सबसे उचित है?","options":["साक्ष्य जाँचना","पहला अनुमान मान लेना","अफवाह फैलाना","डेटा छोड़ देना"],"answer":"साक्ष्य जाँचना","explanation":"अच्छी critical thinking में प्रमाण और तर्क की जाँच की जाती है।"}]
+        }
+        pool = pools.get(age, pools["8–10 Years"])
+    elif language == "en":
+        pools = {
+            "1–2 Years": [("Which color is red?",["🔴","🔵","🟢","🟡"],"🔴","🔴 is red."),("Which shape is round?",["⬜","🔺","⭕","⭐"],"⭕","⭕ is round."),("Which animal says moo?",["Cat","Cow","Dog","Bird"],"Cow","A cow says moo."),("What comes after 1?",["0","1","2","3"],"2","2 comes after 1.")],
+            "3–4 Years": [("2 + 1 = ?",["2","3","4","5"],"3","2 + 1 = 3."),("Which is a triangle?",["⭕","⬜","🔺","⭐"],"🔺","🔺 is a triangle."),("Which is a fruit?",["Apple","Chair","Car","Ball"],"Apple","An apple is a fruit."),("5, 6, 7, ?",["6","7","8","9"],"8","The pattern increases by 1.")],
+            "5–6 Years": [("7 + 6 = ?",["11","12","13","14"],"13","7 + 6 = 13."),("What helps a plant grow?",["Water","Plastic","Stone","Toy"],"Water","Plants need water."),("Opposite of big?",["Small","Fast","Tall","Bright"],"Small","Small is the opposite of big."),("2, 4, 6, ?",["7","8","9","10"],"8","The pattern increases by 2.")],
+            "6–8 Years": [("8 × 7 = ?",["54","56","58","64"],"56","8 × 7 = 56."),("At what temperature does water normally freeze?",["0°C","10°C","50°C","100°C"],"0°C","Water normally freezes at 0°C."),("Which device is used for typing?",["Keyboard","Speaker","Printer","Mouse pad"],"Keyboard","A keyboard is used for typing."),("How many days are in a week?",["5","6","7","8"],"7","A week has 7 days.")],
+            "8–10 Years": [("₹100 − ₹80 = ?",["₹10","₹20","₹30","₹40"],"₹20","₹100 − ₹80 = ₹20."),("What is a loop used for in programming?",["Repetition","Only drawing","Shutting down","Storing passwords"],"Repetition","Loops repeat instructions."),("What does AI stand for?",["Artificial Intelligence","Automatic Internet","Advanced Input","Automatic Idea"],"Artificial Intelligence","AI means Artificial Intelligence."),("What is 3/4 as a decimal?",["0.25","0.5","0.75","1.25"],"0.75","3 ÷ 4 = 0.75.")],
+            "10–11 Years": [("What is 0.75 as a fraction?",["1/2","2/3","3/4","4/5"],"3/4","0.75 = 3/4."),("What is the purpose of an algorithm?",["Solve a problem in steps","Only draw pictures","Change passwords","Turn off internet"],"Solve a problem in steps","An algorithm gives ordered steps."),("Which is a stronger password?",["Your name","123456","Mixed letters, numbers and symbols","Birthday"],"Mixed letters, numbers and symbols","A unique mixed password is safer."),("10% of ₹500 is?",["₹5","₹25","₹50","₹100"],"₹50","10% of ₹500 is ₹50.")],
+            "11+ Years": [("8% simple interest on ₹10,000 for one year is?",["₹80","₹400","₹800","₹1,800"],"₹800","10,000 × 8/100 = ₹800."),("Best defense against phishing?",["Open every link","Share OTP","Verify sender and suspicious links","Send passwords in chat"],"Verify sender and suspicious links","Verification reduces phishing risk."),("What does O(n) describe?",["Linear time","Constant time","Exponential time","Logarithmic time"],"Linear time","O(n) is linear complexity."),("What should you do before accepting a conclusion?",["Check evidence","Assume the first guess","Spread rumors","Ignore data"],"Check evidence","Critical thinking checks evidence.")]
+        }
+        raw = pools.get(age, pools["8–10 Years"])
+        pool = [{"question":q,"options":o,"answer":a,"explanation":e} for q,o,a,e in raw]
+    else:
+        # If the API is unavailable, keep the fallback language-neutral instead of
+        # falsely mixing English into the selected language.
+        pool = [
+            {"question":"2 + 3 = ?","options":["4","5","6","7"],"answer":"5","explanation":"2 + 3 = 5"},
+            {"question":"1, 2, 3, ?","options":["2","3","4","5"],"answer":"4","explanation":"1, 2, 3, 4"},
+            {"question":"Which symbol is a circle?","options":["⬜","🔺","⭕","⭐"],"answer":"⭕","explanation":"⭕ is a circle."},
+            {"question":"3 × 2 = ?","options":["4","5","6","8"],"answer":"6","explanation":"3 × 2 = 6"}
+        ]
+    return (pool * ((count + len(pool) - 1) // len(pool)))[:count]
+
 def generate_ai_questions(client, age, language, subject, count=10):
-    language_name = next((name for name, code in PLAY_LANGUAGES.items() if code == language), "English")
+    language_name = language_display_name(language)
+    guide = _age_difficulty_guide(age)
     prompt = f"""
-Create exactly {count} educational multiple-choice questions for age group {age}.
-Subject: {subject}
-Selected language: {language_name}
-STRICT LANGUAGE LOCK: question, all four options, answer and explanation MUST be entirely in {language_name}.
-Never switch to English. Never use Hinglish or mixed language unless English is selected.
-For ages 1–4, NEVER ask personal-experience questions such as what the child ate, owns, likes, saw, did or remembers.
-Every question must be objective, age-appropriate, safe, and have exactly four options with exactly one correct answer.
-Return ONLY valid JSON with this format:
-[{{"question":"...","options":["A","B","C","D"],"answer":"A","explanation":"..."}}]
+Create exactly {count} educational multiple-choice questions.
+AGE GROUP: {age}
+SUBJECT: {subject}
+AGE DIFFICULTY RULE: {guide}
+SELECTED LANGUAGE: {language_name}
+STRICT LANGUAGE LOCK: question, all four options, answer and explanation MUST be entirely in {language_name}. Never switch to English or Hinglish unless English is selected.
+Do not reuse baby-level questions for older learners. The subject MUST match the selected subject.
+For ages 1–4, never ask personal-experience questions such as what the child ate, owns, likes, saw, did or remembers.
+For 8+ use age-appropriate school concepts; for 11+ use advanced reasoning and avoid preschool questions.
+Every question must be objective, safe, have exactly four options, and exactly one correct answer.
+Return ONLY valid JSON: [{{"question":"...","options":["A","B","C","D"],"answer":"A","explanation":"..."}}]
 """
     for model in GROQ_MODELS:
         try:
             completion = client.chat.completions.create(model=model, messages=[{"role":"user","content":prompt}], temperature=0.35, max_tokens=5000)
             parsed = json.loads(clean_json_text(completion.choices[0].message.content))
             valid=[]
+            seen=set()
             for item in parsed if isinstance(parsed,list) else []:
                 if not isinstance(item,dict): continue
                 q=str(item.get("question","")).strip(); opts=[str(x).strip() for x in item.get("options",[]) if str(x).strip()]
                 ans=str(item.get("answer","")).strip(); exp=str(item.get("explanation","")).strip()
-                if not q or len(opts)!=4 or ans not in opts: continue
+                key=q.casefold()
+                if not q or key in seen or len(opts)!=4 or len(set(opts))!=4 or ans not in opts: continue
                 if ("1–2" in age or "3–4" in age) and _personal_assumption_question(q): continue
+                seen.add(key)
                 valid.append({"question":q,"options":opts,"answer":ans,"explanation":exp})
-                if len(valid)==count: break
-            if len(valid)==count:
-                return valid
+                if len(valid)==count: return valid
         except Exception:
             continue
-    # Strict fallback. For non-English languages use language-neutral objective questions rather than mixed English.
-    if language == "hi":
-        pool = [
-            {"question":"1 + 1 = ?","options":["1","2","3","4"],"answer":"2","explanation":"1 + 1 = 2।"},
-            {"question":"2, 4, 6, ?","options":["7","8","9","10"],"answer":"8","explanation":"हर बार 2 बढ़ रहा है।"},
-            {"question":"कौन सा आकार वृत्त है?","options":["⬜","🔺","⭕","⭐"],"answer":"⭕","explanation":"⭕ वृत्त है।"},
-            {"question":"कौन सा रंग लाल है?","options":["🔴","🔵","🟢","🟡"],"answer":"🔴","explanation":"🔴 लाल रंग है।"}
-        ]
-    elif language == "en":
-        pool = build_demo_questions(subject)
-    else:
-        pool = [
-            {"question":"2 + 3 = ?","options":["4","5","6","7"],"answer":"5","explanation":"2 + 3 = 5"},
-            {"question":"1, 2, 3, ?","options":["2","3","4","5"],"answer":"4","explanation":"1, 2, 3, 4"},
-            {"question":"⭕ ?","options":["⬜","🔺","⭕","⭐"],"answer":"⭕","explanation":"⭕"},
-            {"question":"🔴 + 🔴 = ?","options":["2","3","4","5"],"answer":"2","explanation":"2"}
-        ]
-    return (pool * ((count // max(1,len(pool)))+1))[:count]
+    return _age_fallback_questions(age, subject, language)
 
 
 # ============================================================
@@ -1033,6 +1102,17 @@ def render_play_and_learn(client):
             index=subject_index
         )
 
+    previous_config = st.session_state.get("play_config_signature")
+    new_config = (play_age, play_language, play_subject)
+    if previous_config is not None and previous_config != new_config:
+        st.session_state.play_questions = []
+        st.session_state.play_question_index = 0
+        st.session_state.play_score = 0
+        st.session_state.play_answered = False
+        st.session_state.play_last_correct = False
+        st.session_state.play_last_explanation = ""
+        st.session_state.play_game_started = False
+    st.session_state.play_config_signature = new_config
     st.session_state.play_age = play_age
     st.session_state.play_language = play_language
     st.session_state.play_subject = play_subject
@@ -1411,7 +1491,7 @@ def analyze_image_with_groq(image_bytes, mime, question, selected_language="Engl
         completion = client.chat.completions.create(
             model="qwen/qwen3.6-27b",
             messages=[{"role":"user","content":[
-                {"type":"text","text":f"Reply only in {selected_language}. {question}"},
+                {"type":"text","text":f"LANGUAGE LOCK: Reply ONLY in {language_display_name(selected_language)}. Do not use English, Hinglish, transliteration, or mixed language unless English is selected. Answer the user's request accurately and age-appropriately. {question}"},
                 {"type":"image_url","image_url":{"url":f"data:{mime};base64,{b64}"}}
             ]}], temperature=0.4, max_completion_tokens=1500
         )
@@ -1508,7 +1588,7 @@ def render_image_generator():
 def render_vision_lab():
     st.title("📷 Vision Lab")
     f=st.file_uploader("Upload book, homework or diagram",type=["png","jpg","jpeg","webp"])
-    labels=list(PLAY_LANGUAGES.keys()); label=st.selectbox("Answer language",labels)
+    labels=list(PLAY_LANGUAGES.keys()); label=st.selectbox("Answer language",labels,index=labels.index("🇬🇧 English"))
     question=st.text_input("What should AI explain?",value="Explain the image simply and solve any visible question.")
     if f:
         st.markdown('<div class="media-card">',unsafe_allow_html=True); st.image(f,width=480); st.markdown('</div>',unsafe_allow_html=True)
@@ -1521,7 +1601,9 @@ def render_roleplay():
     label=st.selectbox("Language",list(PLAY_LANGUAGES.keys()),key="role_language")
     prompt=st.text_input("Start the roleplay")
     if st.button("Start Roleplay",type="primary") and prompt:
-        system=f"Act as {role} for educational practice. Reply ONLY in {PLAY_LANGUAGES[label]}. Be safe, respectful and age-appropriate."
+        selected_code = PLAY_LANGUAGES[label]
+        selected_name = language_display_name(selected_code)
+        system=f"Act as {role} for educational practice. Reply ONLY in {selected_name}. Do not use English, Hinglish, transliteration, or mixed-language text unless {selected_name} is English. Be safe, respectful and age-appropriate."
         ans,_=get_groq_response(client,[{"role":"user","content":prompt}],system,"")
         st.chat_message("assistant").write(ans.choices[0].message.content if ans else "")
 
@@ -1546,6 +1628,13 @@ def render_homework_test():
     with c3:
         subjects = get_play_subjects(homework_age)
         subject = st.selectbox("📚 Subject", subjects, key="homework_subject")
+
+    homework_signature = (homework_age, homework_language, subject)
+    if st.session_state.get("homework_config_signature") != homework_signature:
+        st.session_state.homework_questions = []
+        st.session_state.homework_answers = {}
+        st.session_state.homework_result = None
+        st.session_state.homework_config_signature = homework_signature
 
     st.caption(f"Homework will be generated for {homework_age} in {homework_label}.")
     if st.button("Generate Test", type="primary", use_container_width=True):
@@ -1619,210 +1708,4 @@ with st.sidebar:
     mode = st.radio("Select Mode", [
         "Normal Chat",
         "Creative Lab (School Mode)",
-        "🎮 Play & Learn",
-        "🎨 Creative AI Image Generator",
-        "📷 Vision Lab",
-        "🎭 Peer Roleplay Modes",
-        "📋 AI Daily Timetable",
-        "📝 Interactive Homework & Test",
-        "👨‍👩‍👦 Parent Dashboard",
-        "🔐 Login / Sign Up"
-    ])
-    st.markdown("---")
-    if st.button("+ New Chat", use_container_width=True):
-        st.session_state.messages=[]
-        st.session_state.session_id=str(uuid.uuid4())
-        st.session_state.school_messages=[]
-        st.session_state.school_session_id=str(uuid.uuid4())
-        st.rerun()
-    st.caption("🇮🇳 India live time: "+get_india_datetime_context().replace("Current India date: ",""))
-
-# ---- routes: one unique screen per feature ----
-if mode == "🔐 Login / Sign Up":
-    render_login_signup(); st.stop()
-if mode == "👨‍👩‍👦 Parent Dashboard":
-    render_parent_dashboard(); st.stop()
-if mode == "🎨 Creative AI Image Generator":
-    render_image_generator(); st.stop()
-if mode == "📷 Vision Lab":
-    render_vision_lab(); st.stop()
-if mode == "🎭 Peer Roleplay Modes":
-    render_roleplay(); st.stop()
-if mode == "📋 AI Daily Timetable":
-    render_timetable(); st.stop()
-if mode == "📝 Interactive Homework & Test":
-    render_homework_test(); st.stop()
-if mode == "🎮 Play & Learn":
-    render_play_and_learn(client); st.stop()
-
-# ============================================================
-# NORMAL CHAT / CREATIVE LAB — SEPARATE CHAT HISTORIES
-# ============================================================
-def _explicit_image_request(text):
-    low = text.lower().strip()
-    phrases = [
-        "generate image", "create image", "make an image", "draw an image",
-        "generate a picture", "create a picture", "make a picture",
-        "image banao", "image bana", "photo banao", "picture banao",
-        "poster banao", "चित्र बनाओ", "तस्वीर बनाओ", "फोटो बनाओ"
-    ]
-    return any(x in low for x in phrases)
-
-def _render_chat_history(messages):
-    for message in messages:
-        with st.chat_message(message["role"]):
-            if "image_url" in message:
-                st.markdown('<div class="media-card">', unsafe_allow_html=True)
-                st.image(message["image_url"], caption=message.get("image_caption", ""), width=420)
-                st.markdown('</div>', unsafe_allow_html=True)
-            else:
-                st.markdown(message["content"])
-
-def _chat_voice_input(key):
-    if not mic_recorder:
-        return ""
-    audio = mic_recorder(
-        start_prompt="🎙️",
-        stop_prompt="⏹️",
-        key=key
-    )
-    if audio:
-        return transcribe_audio_with_groq(client, audio.get("bytes", b""))
-    return ""
-
-def render_normal_chat():
-    st.title("💬 Normal Chat")
-    st.caption("Your normal-chat conversation is kept separate from School Mode.")
-    _render_chat_history(st.session_state.messages)
-
-    voice_prompt = _chat_voice_input("normal_chat_mic")
-    prompt = st.chat_input("Search / ask ClyxessChat AI…", key="normal_chat_input")
-    if not prompt and voice_prompt:
-        prompt = voice_prompt
-
-    if not prompt:
-        return
-
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(f'<div class="user-bubble">{prompt}</div>', unsafe_allow_html=True)
-
-    if _explicit_image_request(prompt):
-        with st.chat_message("assistant"):
-            with st.spinner("🎨 Image bana raha hu..."):
-                img_data, source = generate_image_url(prompt, False, "Normal", "1:1")
-            st.markdown('<div class="media-card">', unsafe_allow_html=True)
-            st.image(img_data, width=420, caption="Generated image")
-            st.markdown('</div>', unsafe_allow_html=True)
-            st.caption(f"Source: {source}")
-        st.session_state.messages.append({
-            "role": "assistant", "image_url": img_data,
-            "image_caption": prompt, "content": "Generated image"
-        })
-        save_current_chat_cloud()
-        st.rerun()
-
-    search_context, sources = search_tavily(prompt)
-    system = NORMAL_SYSTEM_PROMPT + "\nLIVE INDIA CLOCK: " + get_india_datetime_context()
-    if search_context:
-        system += "\nLIVE WEB INFO:\n" + search_context
-
-    with st.chat_message("assistant"):
-        completion, used_model = get_groq_response(
-            client, st.session_state.messages, system, ""
-        )
-        if completion is None:
-            st.error("AI response नहीं आ पाया. Please try again.")
-            return
-        response = completion.choices[0].message.content
-        st.markdown(response)
-        if sources:
-            st.caption("Sources:\n" + sources)
-        st.caption(f"Model: {used_model or 'fallback'}")
-
-    st.session_state.messages.append({"role": "assistant", "content": response})
-    save_current_chat_cloud()
-    st.rerun()
-
-def render_school_chat():
-    st.title("🚀 Creative Lab — School Mode")
-    st.caption("Age and language control the AI. School Mode has its own separate chat history.")
-
-    c1, c2 = st.columns(2)
-    with c1:
-        age_options = ["1-2 Yrs", "3-4 Yrs", "5-6 Yrs", "6-8 Yrs", "8-10 Yrs", "10-11 Yrs", "11+ Yrs"]
-        school_age = st.selectbox(
-            "🎒 Age Group", age_options,
-            index=age_options.index(st.session_state.get("school_age", "1-2 Yrs")),
-            key="school_age_selector"
-        )
-    with c2:
-        labels = list(PLAY_LANGUAGES.keys())
-        current_label = next((n for n, c in PLAY_LANGUAGES.items() if c == st.session_state.get("school_language", "hi")), labels[0])
-        school_label = st.selectbox(
-            "🌐 Language", labels,
-            index=labels.index(current_label),
-            key="school_language_selector"
-        )
-
-    st.session_state.school_age = school_age
-    st.session_state.school_language = PLAY_LANGUAGES[school_label]
-
-    _render_chat_history(st.session_state.school_messages)
-
-    voice_prompt = _chat_voice_input("school_chat_mic")
-    prompt = st.chat_input("School Mode mein puchho…", key="school_chat_input")
-    if not prompt and voice_prompt:
-        prompt = voice_prompt
-
-    if not prompt:
-        return
-
-    messages = st.session_state.school_messages
-    messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(f'<div class="user-bubble">{prompt}</div>', unsafe_allow_html=True)
-
-    if _explicit_image_request(prompt):
-        with st.chat_message("assistant"):
-            with st.spinner("🎨 Age-appropriate image bana raha hu..."):
-                img_data, source = generate_image_url(prompt, True, school_age, "1:1")
-            st.markdown('<div class="media-card">', unsafe_allow_html=True)
-            st.image(img_data, width=420, caption="Generated image")
-            st.markdown('</div>', unsafe_allow_html=True)
-            st.caption(f"Source: {source}")
-        messages.append({
-            "role": "assistant", "image_url": img_data,
-            "image_caption": prompt, "content": "Generated image"
-        })
-        st.rerun()
-
-    language_name = language_display_name(st.session_state.school_language)
-    system = get_school_system_prompt(school_age)
-    system += f"\nSELECTED LANGUAGE: {language_name} ({st.session_state.school_language}). Reply ONLY in this language."
-    system += "\nUse the previous messages in this School Mode conversation as context. Never use Normal Chat history."
-    search_context, sources = search_tavily(prompt)
-    if search_context:
-        system += "\nLIVE WEB INFO:\n" + search_context
-
-    with st.chat_message("assistant"):
-        completion, used_model = get_groq_response(client, messages, system, "")
-        if completion is None:
-            st.error("AI response नहीं आ पाया. Please try again.")
-            return
-        response = completion.choices[0].message.content
-        st.markdown(response)
-        if sources:
-            st.caption("Sources:\n" + sources)
-        st.caption(f"Age: {school_age} | Language: {language_name} | Model: {used_model or 'fallback'}")
-
-    messages.append({"role": "assistant", "content": response})
-    st.rerun()
-
-if mode == "Normal Chat":
-    render_normal_chat()
-    st.stop()
-
-if mode == "Creative Lab (School Mode)":
-    render_school_chat()
-    st.stop()
+        "🎮 Play
