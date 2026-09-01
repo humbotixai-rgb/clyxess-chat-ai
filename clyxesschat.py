@@ -532,6 +532,7 @@ DEFAULT_STATE = {
     "school_session_id": str(uuid.uuid4()),
     "school_language": "hi",
     "school_age": "1-2 Yrs",
+    "school_config_signature": None,
 
     # Play & Learn
     "play_age": PLAY_AGE_LEVELS[0],
@@ -1174,13 +1175,13 @@ def _reset_play_game():
 def render_play_and_learn(client):
     st.markdown("""<div class="play-hero"><h1>🎮 ClyxessChat AI — Play & Learn</h1><p>Every game is generated from the selected age + subject + language.</p></div>""",unsafe_allow_html=True)
     c1,c2,c3=st.columns(3)
-    with c1: play_age=st.selectbox("👶 Select Age",PLAY_AGE_LEVELS,index=PLAY_AGE_LEVELS.index(st.session_state.play_age),key="play_age_selector")
+    with c1: play_age=st.selectbox("👶 Select Age",PLAY_AGE_LEVELS,index=PLAY_AGE_LEVELS.index(st.session_state.play_age),key=f"play_age_selector_{play_age}")
     with c2:
         labels=list(PLAY_LANGUAGES.keys()); cur=next((n for n,c in PLAY_LANGUAGES.items() if c==st.session_state.play_language),labels[0])
         language_label=st.selectbox("🌐 Select Language",labels,index=labels.index(cur),key="play_language_selector"); play_language=PLAY_LANGUAGES[language_label]
     with c3:
         subjects=get_play_subjects(play_age); prev=st.session_state.play_subject; idx=subjects.index(prev) if prev in subjects else 0
-        play_subject=st.selectbox("📚 Select Subject",subjects,index=idx,key="play_subject_selector")
+        play_subject=st.selectbox("📚 Select Subject",subjects,index=idx,key=f"play_subject_selector_{play_age}")
     sig=(play_age,play_language,play_subject)
     if st.session_state.get("play_config_signature")!=sig:
         st.session_state.play_config_signature=sig; _reset_play_game()
@@ -1247,7 +1248,7 @@ def analyze_image_with_groq(image_bytes, mime, question, selected_language="en")
         )
         return completion.choices[0].message.content
     except Exception as e:
-        return f"Vision error: {e}"
+        return ""
 
 def save_current_chat_cloud():
     if not supabase or not st.session_state.messages:
@@ -1325,5 +1326,4 @@ def render_image_generator():
     aspect=st.selectbox("📐 Format",["1:1","16:9","9:16"])
     if st.button("🎨 Generate Image",type="primary",use_container_width=True) and prompt.strip():
         with st.spinner("🎨 Creating only the requested subject..."):
-            data,source=generate_image_url(prompt,False,"Normal",aspect)
-        st.markdown('<div class="med
+            data,source=generate_image_url(prompt,False,"Normal",a
