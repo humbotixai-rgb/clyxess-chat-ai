@@ -1805,7 +1805,7 @@ def render_school_chat():
     if search_context:
         system += "\nLIVE WEB INFO:\n" + search_context
 
-    with st.chat_message("assistant"):
+   with st.chat_message("assistant"):
         completion, used_model = get_groq_response(client, messages, system, "")
         if completion is None:
             st.error("AI response नहीं आ पाया. Please try again.")
@@ -1823,7 +1823,6 @@ def render_school_chat():
         st.caption("🔒 ClyxessChat AI | Secure • Fast • Private")
         messages.append({"role": "assistant", "content": response})
         st.rerun()
-    st.rerun()
 
 if mode == "Normal Chat":
     render_normal_chat()
