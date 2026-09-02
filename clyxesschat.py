@@ -1724,7 +1724,6 @@ if prompt:
                 st.error("AI response नहीं आ पाया. Please try again.")
                 st.stop()
             response=completion.choices[0].message.content
-         response=completion.choices[0].message.content
         placeholder = st.empty()
         typed = ""
         for word in response.split(" "):
@@ -1734,7 +1733,5 @@ if prompt:
         placeholder.markdown(response)
         if sources: st.caption("Sources:\n"+sources)
         st.caption(f"Model: {used_model or 'fallback'}")
-            if sources: st.caption("Sources:\n"+sources)
-            st.caption(f"Model: {used_model or 'fallback'}")
-        st.session_state.messages.append({"role":"assistant","content":response})
-        save_current_chat_cloud()
+    st.session_state.messages.append({"role":"assistant","content":response})
+    save_current_chat_cloud()
