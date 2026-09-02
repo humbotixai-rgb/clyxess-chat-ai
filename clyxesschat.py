@@ -1820,7 +1820,7 @@ def render_school_chat():
         placeholder.markdown(response)
         if sources:
             st.caption("Sources:\n" + sources)
-        st.caption("🔒 ClyxessChat AI | Secure • Fast • Private")
+            st.caption("🔒 ClyxessChat AI | Secure • Fast • Private")
         messages.append({"role": "assistant", "content": response})
         st.rerun()
 
