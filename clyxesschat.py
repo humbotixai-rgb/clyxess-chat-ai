@@ -1810,7 +1810,7 @@ def render_school_chat():
         if completion is None:
             st.error("AI response नहीं आ पाया. Please try again.")
             return
-        response = completion.choices[0].message.content
+           response = completion.choices[0].message.content
         placeholder = st.empty()
         typed = ""
         for word in response.split(" "):
