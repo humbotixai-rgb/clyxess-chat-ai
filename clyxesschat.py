@@ -1805,7 +1805,7 @@ def render_school_chat():
     if search_context:
         system += "\nLIVE WEB INFO:\n" + search_context
 
-  with st.chat_message("assistant"):
+ with st.chat_message("assistant"):
         completion, used_model = get_groq_response(client, messages, system, "")
         if completion is None:
             st.error("AI response नहीं आ पाया. Please try again.")
