@@ -1724,7 +1724,13 @@ if prompt:
                 st.error("AI response नहीं आ पाया. Please try again.")
                 st.stop()
             response=completion.choices[0].message.content
-            st.markdown(response)
+          placeholder = st.empty()
+        typed = ""
+        for word in response.split(" "):
+            typed += word + " "
+            placeholder.markdown(typed + "▌")
+            time.sleep(0.06)
+        placeholder.markdown(response)
             if sources: st.caption("Sources:\n"+sources)
             st.caption(f"Model: {used_model or 'fallback'}")
         st.session_state.messages.append({"role":"assistant","content":response})
