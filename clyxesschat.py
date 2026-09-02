@@ -1820,12 +1820,14 @@ def render_school_chat():
         placeholder.markdown(response)
         if sources:
             st.caption("Sources:\n" + sources)
-            st.caption("🔒 ClyxessChat AI | Secure • Fast • Private")
+        st.caption("🔒 ClyxessChat AI | Secure • Fast • Private")
         messages.append({"role": "assistant", "content": response})
         st.rerun()
 
 if mode == "Normal Chat":
-    render_normal_chat()
+    render_normal_chat() 
+    st.divider()
+    st.caption("🔒 ClyxessChat AI | Secure • Fast • Private")
     st.stop()
 
 if mode == "Creative Lab (School Mode)":
