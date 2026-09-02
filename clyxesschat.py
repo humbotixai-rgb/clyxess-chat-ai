@@ -1676,8 +1676,13 @@ For learning topics, encourage understanding instead of simply giving homework a
         return base + "Use clear school-level explanations, examples, simple reasoning, maths, science, English, technology and general knowledge."
     if "10-11" in age_group:
         return base + "Use practical school-level explanations with step-by-step maths, science, technology, coding logic and problem solving."
-    return base + "Use age-appropriate secondary-school explanations with deeper reasoning, AI literacy, coding, technology, financial literacy, cyber safety, entrepreneurship and critical thinking."
-
+   if "secondary" in age_group or "12" in age_group:
+            return base + "Use age-appropriate secondary-school explanations"
+        return base + "You are normal ClyxessChat AI, answer normally 
+       if "school" in str(st.session_state.get('chat_mode','')).lower():
+    st.title("ClyxessChat AI School")
+else:
+    st.title("ClyxessChat AI") "
 # ---- Normal Chat ----
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
