@@ -1679,7 +1679,7 @@ For learning topics, encourage understanding instead of simply giving homework a
     if "secondary" in age_group or "12" in age_group:
         return base + "Use age-appropriate secondary-school explanations"
     return base + "You are normal ClyxessChat AI, answer normally"
-       if "school" in str(st.session_state.get('chat_mode','')).lower():
+    if "school" in str(st.session_state.get('chat_mode','')).lower():
     st.title("ClyxessChat AI School")
 else:
     st.title("ClyxessChat AI")
