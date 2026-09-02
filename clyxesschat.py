@@ -1810,18 +1810,19 @@ def render_school_chat():
         if completion is None:
             st.error("AI response नहीं आ पाया. Please try again.")
             return
- response = completion.choices[0].message.content
-    placeholder = st.empty()
-    typed = ""
-    for word in response.split(" "):
-        typed += word + " "
-        placeholder.markdown(typed + "▌")
-        time.sleep(0.02)
-    placeholder.markdown(response)
-    if sources:
-        st.caption("Sources:\n" + sources)
-    st.caption("🔒 ClyxessChat AI | Secure • Fast • Private")
-    messages.append({"role": "assistant", "content": response})
+  response = completion.choices[0].message.content
+        placeholder = st.empty()
+        typed = ""
+        for word in response.split(" "):
+            typed += word + " "
+            placeholder.markdown(typed + "▌")
+            time.sleep(0.02)
+        placeholder.markdown(response)
+        if sources:
+            st.caption("Sources:\n" + sources)
+        st.caption("🔒 ClyxessChat AI | Secure • Fast • Private")
+        messages.append({"role": "assistant", "content": response})
+        st.rerun()
     st.rerun()
 
 if mode == "Normal Chat":
