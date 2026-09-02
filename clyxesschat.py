@@ -1682,7 +1682,7 @@ For learning topics, encourage understanding instead of simply giving homework a
        if "school" in str(st.session_state.get('chat_mode','')).lower():
     st.title("ClyxessChat AI School")
 else:
-    st.title("ClyxessChat AI") "
+    st.title("ClyxessChat AI")
 # ---- Normal Chat ----
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
