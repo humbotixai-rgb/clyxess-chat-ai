@@ -1729,7 +1729,7 @@ if prompt:
         for word in response.split(" "):
             typed += word + " "
             placeholder.markdown(typed + "▌")
-            time.sleep(0.06)
+            time.sleep(0.08)
         placeholder.markdown(response)
         if sources: st.caption("Sources:\n"+sources)
         st.caption(f"Model: {used_model or 'fallback'}")
