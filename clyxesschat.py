@@ -1691,12 +1691,6 @@ else:
 
 # ---- Normal Chat ----
 for message in st.session_state.messages:
-    if "school" in str(st.session_state.get('chat_mode','')).lower():
-    st.title("ClyxessChat AI School")
-else:
-    st.title("ClyxessChat AI")
-# ---- Normal Chat ----
-for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         if "image_url" in message:
             st.markdown('<div class="media-card">',unsafe_allow_html=True)
