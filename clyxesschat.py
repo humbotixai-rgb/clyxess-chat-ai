@@ -1678,19 +1678,18 @@ For learning topics, encourage understanding instead of simply giving homework a
         return base + "Use simple examples, stories, early maths, science basics, reading, logic"
     if "6-8" in age_group:
         return base + "Use clear school-level explanations, examples, simple reasoning, maths, science"
-    if "10-11" in age_group:
-        return base + "Use practical school-level explanations with step-by-step maths, science, technology, coding logic and problem solving."
+  if "10-11" in age_group:
+        return base + "Use practical school-level explanations with step-by-step maths, science, te"
     if "secondary" in age_group or "12" in age_group:
-        return base + "Use age-appropriate secondary-school explanations" 
-       if "school" in str(age_group).lower() or "school" in str(st.session_state.get('chat_mode','')).lower():
-        return base + "You are ClyxessChat AI School assistant. Use clear school-level explanations, examples, simple reasoning, maths, science, step-by-step teaching."
+        return base + "Use age-appropriate secondary-school explanations"
+    if "school" in str(age_group).lower() or "school" in str(st.session_state.get('chat_mode','')).lower():
+        return base + "You are ClyxessChat AI School assistant. Use clear school-level explanations, examples, simple reasoning, maths, science"
+    return base + "You are normal ClyxessChat AI, answer normally"
 
-    return base + "You are normal ClyxessChat AI, answer normally" 
-   if "school" in str(st.session_state.get('chat_mode','')).lower():
+if "school" in str(st.session_state.get('chat_mode','')).lower():
     st.title("ClyxessChat AI School")
 else:
     st.title("ClyxessChat AI")
-
 # ---- Normal Chat ----
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
