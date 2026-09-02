@@ -1672,20 +1672,14 @@ For learning topics, encourage understanding instead of simply giving homework a
         return base + "Use short playful explanations, simple stories, counting, shapes, colors, animals, language and basic logic."
     if "5-6" in age_group:
         return base + "Use simple examples, stories, early maths, science basics, reading, logic and creativity."
-   if "6-8" in age_group:
+    if "6-8" in age_group:
         return base + "Use clear school-level explanations, examples, simple reasoning, maths, science, English, technology and general knowledge."
+    if "5-6" in age_group:
+        return base + "Use simple examples, stories, early maths, science basics, reading, logic"
+    if "6-8" in age_group:
+        return base + "Use clear school-level explanations, examples, simple reasoning, maths, science"
     if "10-11" in age_group:
         return base + "Use practical school-level explanations with step-by-step maths, science, technology, coding logic and problem solving."
-    if "secondary" in age_group or "12" in age_group:
-        return base + "Use age-appropriate secondary-school explanations"
-    return base + "You are normal ClyxessChat AI, answer normally" 
-return base + "Use short playful explanations, simple stories, counting, shapes, colors, a"
-    if "5-6" in age_group:
-        return base + "Use simple examples, stories, early maths, science basics, reading, logic a"
-    if "6-8" in age_group:
-        return base + "Use clear school-level explanations, examples, simple reasoning, maths, sci"
-    if "10-11" in age_group:
-        return base + "Use practical school-level explanations with step-by-step maths, science, te"
     if "secondary" in age_group or "12" in age_group:
         return base + "Use age-appropriate secondary-school explanations"
     return base + "You are normal ClyxessChat AI, answer normally"
