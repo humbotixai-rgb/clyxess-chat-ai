@@ -1810,8 +1810,7 @@ def render_school_chat():
         if completion is None:
             st.error("AI response नहीं आ पाया. Please try again.")
             return
-      [5:18 pm, 02/09/2026] .: ==========…
-[7:06 pm, 02/09/2026] .: response = completion.choices[0].message.content
+ response = completion.choices[0].message.content
     placeholder = st.empty()
     typed = ""
     for word in response.split(" "):
