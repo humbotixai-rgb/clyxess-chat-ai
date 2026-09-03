@@ -1832,4 +1832,4 @@ if mode == "Normal Chat":
 
 if mode == "Creative Lab (School Mode)":
     render_school_chat()
-      st.stop()
+st.stop()
