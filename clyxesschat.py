@@ -1831,5 +1831,7 @@ if mode == "Normal Chat":
     st.stop()
 
 if mode == "Creative Lab (School Mode)":
-    render_school_chat()
-    st.stop()
+    render_school_chat() 
+      st.divider()
+      st.caption("🔒 ClyxessChat AI | Secure • Fast • Private")
+      st.stop()
