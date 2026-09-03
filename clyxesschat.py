@@ -1729,7 +1729,7 @@ if prompt:
         for word in response.split(" "):
             typed += word + " "
             placeholder.markdown(typed + "▌")
-            time.sleep(0.02)
+            time.sleep(0.01)
         placeholder.markdown(response)
         if sources: st.caption("Sources:\n"+sources)
         st.caption(" ClyxessChat AI  | Secure • Fast • Private")
