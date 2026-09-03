@@ -44,7 +44,7 @@ st.markdown("""
 
 .header h1 {
     color: white;
-    font-size: 22px;
+    font-size: 16px;
     font-weight: 600;
     margin: 0;
     text-align: center;
