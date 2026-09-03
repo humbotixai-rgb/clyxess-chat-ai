@@ -62,7 +62,18 @@ st.markdown("""
     margin-bottom: 10px;
     text-align: right;
 }
-
+.ai-bubble {
+    background-color: #F1F0;
+    color: #111b21;
+    padding: 10px 14px;
+    border-radius: 18px;
+    border-bottom-left-radius: 4px;
+    max-width: 75%;
+    margin-right: auto;
+    margin-bottom: 10px;
+    text-align: left;
+    font-size: 13px;
+}
 .gradient-text {
     background: linear-gradient(90deg, #ff00cc, #3333ff, #00ffcc);
     -webkit-background-clip: text;
