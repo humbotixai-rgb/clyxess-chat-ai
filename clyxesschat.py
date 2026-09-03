@@ -20,7 +20,7 @@ except Exception:
 
 st.set_page_config(
     page_title="ClyxessChat AI",
-    page_icon="💬",
+    page_icon="",
     layout="wide"
 )
 
