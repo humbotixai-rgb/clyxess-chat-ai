@@ -535,13 +535,6 @@ def render_agentic_ai(
 # CLYXESSCHAT AI
 # NORMAL CHAT + CREATIVE LAB + PLAY & LEARN
 # ============================================================
-
-st.set_page_config(
-    page_title="ClyxessChat AI",
-    page_icon="",
-    layout="wide"
-)
-
 st.markdown("""
 <style>
 .main {max-width: 850px; margin: auto;}
