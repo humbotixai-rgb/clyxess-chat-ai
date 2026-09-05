@@ -3,7 +3,12 @@ from groq import Groq
 from supabase import create_client
 import datetime, uuid, requests, time, re, os, json, random, base64, urllib.parse
 from typing import Dict, List, Any
-from fpdf import FPDF
+from fpdf import FPDF 
+st.set_page_config(
+    page_title="ClyxessChat AI",
+    page_icon="",
+    layout="wide"
+)
 try:
     from zoneinfo import ZoneInfo
 except Exception:
