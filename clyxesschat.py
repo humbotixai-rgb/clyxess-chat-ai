@@ -561,8 +561,6 @@ st.markdown("""
     margin: 0;
     text-align: center;
 }
-</style>
-""", unsafe_allow_html=True)
 
 .header h1 {
     color: white;
