@@ -13,7 +13,6 @@ try:
 except Exception:
     mic_recorder = None
 
- """
 ClyxessChat AI - Separate Agentic AI Module
 
 This file is intentionally standalone.
