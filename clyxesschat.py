@@ -1633,7 +1633,9 @@ with st.sidebar:
     mode = st.radio("Select Mode", [
         "Normal Chat",
         "Creative Lab (School Mode)",
-        "🎮 Play & Learn",
+        "🎮 Play & Learn", 
+        "🎭 Peer Roleplay Modes",
+        
         "🎨 Creative AI Image Generator",
         "📷 Vision Lab",
         "🎭 Peer Roleplay Modes",
