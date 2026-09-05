@@ -540,11 +540,9 @@ def render_agentic_ai(
 # CLYXESSCHAT AI
 # NORMAL CHAT + CREATIVE LAB + PLAY & LEARN
 # ============================================================ 
-542  # =======
-543  st.markdown("""
-544  <style>
-545  .main {max-width: 850px; margin: auto;}
-<style>
+ 
+st.markdown("""
+<style> 
 .main {max-width: 850px; margin: auto;}
 
 .header {
