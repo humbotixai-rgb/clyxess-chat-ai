@@ -1634,8 +1634,8 @@ with st.sidebar:
         "Normal Chat",
         "Creative Lab (School Mode)",
         "🎮 Play & Learn", 
-        "🎭 Peer Roleplay Modes",
-        
+        "🤖 Agentic AI ",
+        "🤖 AI Coding Lab ",
         "🎨 Creative AI Image Generator",
         "📷 Vision Lab",
         "🎭 Peer Roleplay Modes",
