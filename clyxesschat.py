@@ -542,10 +542,6 @@ st.set_page_config(
     layout="wide"
 )
 
-# ============================================================
-# CSS
-# ============================================================
-
 st.markdown("""
 <style>
 .main {max-width: 850px; margin: auto;}
@@ -559,6 +555,16 @@ st.markdown("""
     z-index: 999;
     margin: -1rem -1rem 20px -1rem;
 }
+
+.header h1 {
+    color: white;
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0;
+    text-align: center;
+}
+</style>
+""", unsafe_allow_html=True)
 
 .header h1 {
     color: white;
