@@ -14,10 +14,23 @@ except Exception:
 try:
     from streamlit_mic_recorder import mic_recorder
 except Exception:
-    mic_recorder = None  
-    
-    genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-# ============================================================
+       mic_recorder = None
+
+genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+
+def generate_gemini_image(prompt):
+    try:
+        model = genai.GenerativeModel("gemini-2.0-flash-preview-image-generation")
+        response = model.generate_content(prompt)
+        for part in response.candidates[0].content.parts:
+            if part.inline_data:
+                return part.inline_data.data
+        return None
+    except Exception as e:
+        st.error(f"Image Error: {e}")
+        return None
+
+# =========================================================
 # CLYXESSCHAT AI
 # NORMAL CHAT + CREATIVE LAB + PLAY & LEARN
 # ============================================================
