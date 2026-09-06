@@ -1744,9 +1744,9 @@ if prompt:
                 st.image(img_data,width=520,caption="Generated image")
                 st.markdown('</div>',unsafe_allow_html=True)
                 st.caption("Image display is compact; no unrelated subject was added by the prompt controller.")
-                st.session_state.messages.append({"role":"assistant","image_url":img_data,"image_caption":prompt,"content":"Generated image"})
+                              st.session_state.messages.append({"role":"assistant","content":f"Generated image: {prompt}"})
                 save_current_chat_cloud()
-        st.stop()
+                st.stop()
     else:
         search_context,sources=search_tavily(prompt)
         system=NORMAL_SYSTEM_PROMPT+"\nLIVE INDIA CLOCK: "+get_india_datetime_context()
