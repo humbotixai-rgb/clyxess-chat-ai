@@ -22,10 +22,9 @@ def generate_gemini_image(prompt):
     try:
         model = genai.GenerativeModel("gemini-2.0-flash-preview-image-generation")
         response = model.generate_content(prompt)
-        for part in response.candidates[0].content.parts:
-            if part.inline_data:
-                return part.inline_data.data
-        return None
+        # image byte nikal ke PIL image banana
+        image_bytes = response.candidates[0].content.parts[0].inline_data.data
+        return Image.open(io.BytesIO(image_bytes))
     except Exception as e:
         st.error(f"Image Error: {e}")
         return None
