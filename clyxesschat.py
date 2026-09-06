@@ -1721,9 +1721,9 @@ if prompt:
         
 
     # Image generation is explicit only. No automatic image generation for ordinary questions.
-    low=prompt.lower()
-    explicit_image = any(x in low for x in ["generate image","create image","make an image","draw an image","image banao","image bana","poster banao","photo banao","चित्र बनाओ","तस्वीर बनाओ"])
-      if explicit_image:
+          low=prompt.lower()
+    explicit_image = any(x in low for x in ["generate image","create image","make an image","draw an image"])
+    if explicit_image:
         with st.chat_message("assistant"):
             with st.spinner("🎨 Image bana raha hu..."):
                 img_data = generate_gemini_image(prompt)
