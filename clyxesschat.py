@@ -1721,7 +1721,7 @@ if prompt:
         
 
     # Image generation is explicit only. No automatic image generation for ordinary questions.
-             low=prompt.lower()
+                 low=prompt.lower()
     explicit_image = any(x in low for x in ["generate image","create image","make an image","draw an image"])
     if explicit_image:
         with st.chat_message("assistant"):
