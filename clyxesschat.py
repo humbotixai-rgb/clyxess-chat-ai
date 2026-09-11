@@ -3,10 +3,7 @@ from groq import Groq
 from supabase import create_client
 import datetime, uuid, requests, time, re, os, json, random, base64, urllib.parse
 from typing import Dict, List, Any
-from fpdf import FPDF 
-import google.generativeai as genai
-from PIL import Image
-import io
+from fpdf import FPDF
 try:
     from zoneinfo import ZoneInfo
 except Exception:
@@ -14,22 +11,9 @@ except Exception:
 try:
     from streamlit_mic_recorder import mic_recorder
 except Exception:
-       mic_recorder = None
+    mic_recorder = None
 
-genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-
-def generate_gemini_image(prompt):
-    try:
-        model = genai.GenerativeModel("gemini-2.0-flash-preview-image-generation")
-        response = model.generate_content(prompt)
-        # image byte nikal ke PIL image banana
-        image_bytes = response.candidates[0].content.parts[0].inline_data.data
-        return Image.open(io.BytesIO(image_bytes))
-    except Exception as e:
-        st.error(f"Image Error: {e}")
-        return None
-
-# =========================================================
+# ============================================================
 # CLYXESSCHAT AI
 # NORMAL CHAT + CREATIVE LAB + PLAY & LEARN
 # ============================================================
@@ -1729,24 +1713,21 @@ if not prompt and voice_prompt: prompt=voice_prompt
 
 if prompt:
     st.session_state.messages.append({"role":"user","content":prompt})
-    with st.chat_message("user"): st.markdown(f'<div class="user-bubble">{prompt}</div>',unsafe_allow_html=True) 
-        
+    with st.chat_message("user"): st.markdown(f'<div class="user-bubble">{prompt}</div>',unsafe_allow_html=True)
 
     # Image generation is explicit only. No automatic image generation for ordinary questions.
     low=prompt.lower()
-    explicit_image = any(x in low for x in ["generate image","create image","make an image","draw an image"])
+    explicit_image = any(x in low for x in ["generate image","create image","make an image","draw an image","image banao","image bana","poster banao","photo banao","चित्र बनाओ","तस्वीर बनाओ"])
     if explicit_image:
         with st.chat_message("assistant"):
             with st.spinner("🎨 Image bana raha hu..."):
-                img_data = generate_gemini_image(prompt)
-                source = "Gemini"
-                st.markdown('<div class="media-card">',unsafe_allow_html=True)
-                st.image(img_data,width=520,caption="Generated image")
-                st.markdown('</div>',unsafe_allow_html=True)
-                st.caption("Image display is compact; no unrelated subject was added by the prompt controller.")
-                st.session_state.messages.append({"role":"assistant","image_url":img_data,"image_caption":prompt,"content":"Generated image"})
-                save_current_chat_cloud()
-        st.stop()
+                img_data,source=generate_image_url(prompt,False,"Normal","1:1")
+            st.markdown('<div class="media-card">',unsafe_allow_html=True)
+            st.image(img_data,width=520,caption="Generated image")
+            st.markdown('</div>',unsafe_allow_html=True)
+            st.caption("Image display is compact; no unrelated subject was added by the prompt controller.")
+            st.session_state.messages.append({"role":"assistant","image_url":img_data,"image_caption":prompt,"content":"Generated image"})
+            save_current_chat_cloud()
     else:
         search_context,sources=search_tavily(prompt)
         system=NORMAL_SYSTEM_PROMPT+"\nLIVE INDIA CLOCK: "+get_india_datetime_context()
