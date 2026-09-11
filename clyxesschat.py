@@ -3,7 +3,10 @@ from groq import Groq
 from supabase import create_client
 import datetime, uuid, requests, time, re, os, json, random, base64, urllib.parse
 from typing import Dict, List, Any
-from fpdf import FPDF
+from fpdf import FPDF 
+import google.generativeai as genai
+from PIL import Image
+import io
 try:
     from zoneinfo import ZoneInfo
 except Exception:
@@ -11,16 +14,29 @@ except Exception:
 try:
     from streamlit_mic_recorder import mic_recorder
 except Exception:
-    mic_recorder = None
+       mic_recorder = None
 
-# ============================================================
+genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+
+def generate_gemini_image(prompt):
+    try:
+        model = genai.GenerativeModel("gemini-2.0-flash-preview-image-generation")
+        response = model.generate_content(prompt)
+        # image byte nikal ke PIL image banana
+        image_bytes = response.candidates[0].content.parts[0].inline_data.data
+        return Image.open(io.BytesIO(image_bytes))
+    except Exception as e:
+        st.error(f"Image Error: {e}")
+        return None
+
+# =========================================================
 # CLYXESSCHAT AI
 # NORMAL CHAT + CREATIVE LAB + PLAY & LEARN
 # ============================================================
 
 st.set_page_config(
     page_title="ClyxessChat AI",
-    page_icon="💬",
+    page_icon="",
     layout="wide"
 )
 
@@ -53,7 +69,8 @@ st.markdown("""
 .user-bubble {
     background-color: #D9FDD3;
     color: #111b21;
-    padding: 10px 14px;
+    padding: 10px 14px; 
+    font-size: 13px;
     border-radius: 18px;
     border-bottom-right-radius: 4px;
     max-width: 75%;
@@ -61,7 +78,18 @@ st.markdown("""
     margin-bottom: 10px;
     text-align: right;
 }
-
+.ai-bubble {
+    background-color: #F1F0;
+    color: #111b21;
+    padding: 10px 14px;
+    border-radius: 18px;
+    border-bottom-left-radius: 4px;
+    max-width: 75%;
+    margin-right: auto;
+    margin-bottom: 10px;
+    text-align: left;
+    font-size: 13px;
+}
 .gradient-text {
     background: linear-gradient(90deg, #ff00cc, #3333ff, #00ffcc);
     -webkit-background-clip: text;
@@ -114,10 +142,18 @@ st.markdown("""
 # ============================================================
 
 GROQ_MODELS = [
-    "openai/gpt-oss-120b",
-    "openai/gpt-oss-20b",
-    "qwen/qwen3.6-27b"
+    "llama-3.3-70b-versatile",      # 1 - Sabse best, fast + smart
+    "llama-3.1-8b-instant",         # 2 - Sabse tez, fallback ke liye
+    "openai/gpt-oss-120b",         # 3 - Tera wala purana
+    "openai/gpt-oss-20b",          # 4 - Tera wala purana
+    "qwen/qwen3-32b",              # 5 - Qwen ka naya, qwen3.6 se better chalta hai
+    "meta-llama/llama-4-maverick-17b-128e-instruct", # 6 - Llama 4 naya wala
+    "meta-llama/llama-4-scout-17b-16e-instruct",     # 7 - Llama 4 chota wala
+    "deepseek-r1-distill-llama-70b", # 8 - Coding ke liye best
+    "gemma2-9b-it",                # 9 - Google ka, halka fulka sawal ke liye
+    "mixtral-8x7b-32768"           # 10 - Last backup
 ]
+
 
 QUESTIONS_PER_LEVEL = 10
 
@@ -529,9 +565,7 @@ DEFAULT_STATE = {
     "session_id": str(uuid.uuid4()),
     "age_group": "1-2 Yrs",
     "school_messages": [],
-    "school_session_id": str(uuid.uuid4()),
     "school_language": "hi",
-    "school_age": "1-2 Yrs",
 
     # Play & Learn
     "play_age": PLAY_AGE_LEVELS[0],
@@ -605,36 +639,30 @@ If user asks to generate image, say: "Generating image for: [prompt]"
 """
 
 def get_school_system_prompt(age_group):
-    base = f"""You are ClyxessChat AI — but you are not AI, you are MAA. The most dayalu, mamta bhari Maa in the world.
+    base = f"""You are ClyxessChat AI — a friendly, safe, child-focused School Mode learning companion.
 The child age group is {age_group}.
-
-YOU ARE DAYALU MAA - YOUR NATURE:
-- You are 100% daya, 100% pyaar. You never get angry, never scold, never punish.
-- Even if child makes mistake, you say "Koi baat nahi beta, ho jaata hai" with love.
-- You always forgive, always hug with words.
-- You are like: "Mera baccha chahe kuch bhi kare, Maa ka pyaar kam nahi hoga"
-
 STRICT LANGUAGE LOCK: reply ONLY in the selected language supplied in the final instruction.
 Never switch languages, never use Hinglish or mixed language unless English is the selected language.
-The child may speak in ANY language, you reply in SAME language with same dayalu Maa tone.
-
-ABSOLUTE SAFETY - NEVER BREAK:
-- Never scare the child in any language. No bhoot, monster, marna, daantna, akela chhodna.
-- Only safe, warm, loving words: "Maa yahi hai", "Tu safe hai beta", "Daro mat"
-- Do not pretend to remember things the child never told you. Do not invent personal experiences, food, toys, family, location, preferences, or past actions.
-- Do not ask what child ate, owns, saw, likes, did, unless child told you and it is relevant.
-- Do not ask for passwords, address, phone, photos.
-
-LEARNING STYLE FOR {age_group}:
-- Explain like a dayalu Maa teaches her own baccha - very softly, simply, with lots of pyaar.
-- Say "Shabaash mera baccha", "Mera hoshiyar beta", "Mera pyaara shona"
-- Keep conversation natural, answer question simply, and ask only ONE soft follow-up like "Samajh aaya mere bacche ko?"
-- Encourage understanding, don't just give homework answer. Say "Chalo milke samajhte hain beta"
-
-You are only Dayalu Maa. You are not AI.
+Keep the conversation natural and interactive: answer the child's question, explain simply, and when useful ask ONE relevant follow-up question.
+Do not pretend to remember things the child never told you. Do not invent personal experiences, food, toys, family, location, preferences, or past actions.
+Do not ask questions such as what the child ate, owns, saw, likes, did, or remembers unless the child has explicitly provided that information in this conversation and it is relevant.
+Do not pressure the child to reveal passwords, addresses, phone numbers, private photos, or other sensitive personal information.
+For learning topics, encourage understanding instead of simply giving homework answers 
+school_system_prompt = (
+    "You are ClyxessChat AI, India's First AI School. Your personality is a perfect blend "
+    "of a loving mother's ultimate warmth, deep empathy, and an inspiring school teacher's absolute clarity. "
+    "The user is a school student who might be hesitant, curious, or scared of making mistakes. "
+    "Your primary goal is to make the child feel 100% safe, validated, and loved. "
+    
+    "STRICT BEHAVIORAL RULES:\n"
+    "1. Never scold or use cold, robotic language. If the child gives a wrong answer or fails a test, "
+    "respond with immediate reassurance: 'कोई बात नहीं मेरे बच्चे/बेटा, गलतियों से ही तो हम सीखते हैं! चलो, एक बार फिर से मिलकर कोशिश करते हैं।'\n"
+    "2. Celebrate every small win with genuine pride: 'वाह! मुझे तुम पर बहुत गर्व है। तुमने आज कमाल कर दिया!'\n"
+    "3. Use warm and affectionate Indian formatting words like 'बेटा', 'बच्चे', or local dialect context respectfully.\n"
+    "4. If a child expresses sadness, fear, or says 'मुझे समझ नहीं आ रहा', pause the educational topic and comfort them first, just like a mother would hug a crying child.\n"
+    "5. Always match the user's language (Hindi, Hinglish, Chhattisgarhi, Marwadi, Sindhi) with a very polite, soft, and human-like tone. Keep sentences short, sweet, and comforting."
+).
 """
-    return base
-    return base
     if "1-2" in age_group:
         return base + "Use extremely short, cheerful, concrete sentences; simple words; colors, shapes, animals, sounds, counting, greetings and very basic concepts. Avoid abstract or complex explanations."
     if "3-4" in age_group:
@@ -1557,36 +1585,18 @@ def render_timetable():
 
 def render_homework_test():
     st.title("📝 Interactive Homework & Test")
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        homework_age = st.selectbox("👶 Age", PLAY_AGE_LEVELS, key="homework_age")
-    with c2:
-        homework_label = st.selectbox("🌐 Language", list(PLAY_LANGUAGES.keys()), key="homework_language")
-        homework_language = PLAY_LANGUAGES[homework_label]
-    with c3:
-        subjects = get_play_subjects(homework_age)
-        subject = st.selectbox("📚 Subject", subjects, key="homework_subject")
-
-    st.caption(f"Homework will be generated for {homework_age} in {homework_label}.")
-    if st.button("Generate Test", type="primary", use_container_width=True):
-        st.session_state.homework_questions = generate_ai_questions(
-            client, homework_age, homework_language, subject, 5
-        )
-        st.session_state.homework_answers = {}
-        st.session_state.homework_result = None
-
-    qs = st.session_state.get("homework_questions", [])
+    subject=st.selectbox("Subject",sorted(set(sum(AGE_SUBJECTS.values(),[]))))
+    if st.button("Generate Test",type="primary"):
+        st.session_state.homework_questions=generate_ai_questions(client,"8–10 Years","en",subject,5)
+        st.session_state.homework_answers={}
+        st.session_state.homework_result=None
+    qs=st.session_state.get("homework_questions",[])
     if qs:
-        for i, q in enumerate(qs):
-            st.session_state.homework_answers[i] = st.radio(
-                q["question"], q["options"], key=f"hw_{i}"
-            )
-        if st.button("Submit Test", use_container_width=True):
-            score = sum(
-                st.session_state.homework_answers.get(i) == q["answer"]
-                for i, q in enumerate(qs)
-            )
-            st.session_state.homework_result = f"{score}/{len(qs)}"
+        for i,q in enumerate(qs):
+            st.session_state.homework_answers[i]=st.radio(q["question"],q["options"],key=f"hw_{i}")
+        if st.button("Submit Test"):
+            score=sum(st.session_state.homework_answers[i]==q["answer"] for i,q in enumerate(qs))
+            st.session_state.homework_result=f"{score}/{len(qs)}"
             st.success(f"Score: {st.session_state.homework_result}")
 
 def learning_report():
@@ -1639,7 +1649,9 @@ with st.sidebar:
     mode = st.radio("Select Mode", [
         "Normal Chat",
         "Creative Lab (School Mode)",
-        "🎮 Play & Learn",
+        "🎮 Play & Learn", 
+        "🤖 Agentic AI ",
+        "🤖 AI Coding Lab ",
         "🎨 Creative AI Image Generator",
         "📷 Vision Lab",
         "🎭 Peer Roleplay Modes",
@@ -1652,8 +1664,6 @@ with st.sidebar:
     if st.button("+ New Chat", use_container_width=True):
         st.session_state.messages=[]
         st.session_state.session_id=str(uuid.uuid4())
-        st.session_state.school_messages=[]
-        st.session_state.school_session_id=str(uuid.uuid4())
         st.rerun()
     st.caption("🇮🇳 India live time: "+get_india_datetime_context().replace("Current India date: ",""))
 
@@ -1675,174 +1685,86 @@ if mode == "📝 Interactive Homework & Test":
 if mode == "🎮 Play & Learn":
     render_play_and_learn(client); st.stop()
 
-# ============================================================
-# NORMAL CHAT / CREATIVE LAB — SEPARATE CHAT HISTORIES
-# ============================================================
-def _explicit_image_request(text):
-    low = text.lower().strip()
-    phrases = [
-        "generate image", "create image", "make an image", "draw an image",
-        "generate a picture", "create a picture", "make a picture",
-        "image banao", "image bana", "photo banao", "picture banao",
-        "poster banao", "चित्र बनाओ", "तस्वीर बनाओ", "फोटो बनाओ"
-    ]
-    return any(x in low for x in phrases)
+def get_school_system_prompt(age_group):
+    base = f"""You are ClyxessChat AI — a friendly, safe, child-focused School Mode learning companion.
+The child age group is {age_group}.
+STRICT LANGUAGE LOCK: reply ONLY in the selected language supplied in the final instruction.
+Never switch languages, never use Hinglish or mixed language unless English is the selected language.
+Keep the conversation natural and interactive: answer the child's question, explain simply, and when useful ask ONE relevant follow-up question.
+Do not pretend to remember things the child never told you. Do not invent personal experiences, food, toys, family, location, preferences, or past actions.
+Do not ask questions such as what the child ate, owns, saw, likes, did, or remembers unless the child has explicitly provided that information in this conversation and it is relevant.
+Do not pressure the child to reveal passwords, addresses, phone numbers, private photos, or other sensitive personal information.
+For learning topics, encourage understanding instead of simply giving homework answers.
+"""
+    if "1-2" in age_group:
+        return base + "Use extremely short, cheerful, concrete sentences; simple words; colors, shapes, animals, sounds, counting, greetings and very basic concepts. Avoid abstract or complex explanations."
+    if "3-4" in age_group:
+        return base + "Use short playful explanations, simple stories, counting, shapes, colors, animals, language and basic logic."
+    if "5-6" in age_group:
+        return base + "Use simple examples, stories, early maths, science basics, reading, logic and creativity."
+    if "6-8" in age_group:
+        return base + "Use clear school-level explanations, examples, simple reasoning, maths, science, English, technology and general knowledge."
+    if "10-11" in age_group:
+        return base + "Use practical school-level explanations with step-by-step maths, science, technology, coding logic and problem solving."
+    return base + "Use age-appropriate secondary-school explanations with deeper reasoning, AI literacy, coding, technology, financial literacy, cyber safety, entrepreneurship and critical thinking."
 
-def _render_chat_history(messages):
-    for message in messages:
-        with st.chat_message(message["role"]):
-            if "image_url" in message:
-                st.markdown('<div class="media-card">', unsafe_allow_html=True)
-                st.image(message["image_url"], caption=message.get("image_caption", ""), width=420)
-                st.markdown('</div>', unsafe_allow_html=True)
-            else:
-                st.markdown(message["content"])
+# ---- Normal Chat ----
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        if "image_url" in message:
+            st.markdown('<div class="media-card">',unsafe_allow_html=True)
+            st.image(message["image_url"],caption=message.get("image_caption",""),width=520)
+            st.markdown('</div>',unsafe_allow_html=True)
+        else:
+            st.markdown(message["content"])
 
-def _chat_voice_input(key):
-    if not mic_recorder:
-        return ""
-    audio = mic_recorder(
-        start_prompt="🎙️",
-        stop_prompt="⏹️",
-        key=key
-    )
+voice_prompt=""
+if mic_recorder:
+    audio=mic_recorder(start_prompt="🔴 Start Recording",stop_prompt="⏹️ Stop & Send",key="chat_mic_final")
     if audio:
-        return transcribe_audio_with_groq(client, audio.get("bytes", b""))
-    return ""
+        voice_prompt=transcribe_audio_with_groq(client,audio.get("bytes",b""))
 
-def render_normal_chat():
-    st.title("💬 Normal Chat")
-    st.caption("Your normal-chat conversation is kept separate from School Mode.")
-    _render_chat_history(st.session_state.messages)
+prompt=st.chat_input("Ask ClyxessChat AI")
+if not prompt and voice_prompt: prompt=voice_prompt
 
-    voice_prompt = _chat_voice_input("normal_chat_mic")
-    prompt = st.chat_input("Search / ask ClyxessChat AI…", key="normal_chat_input")
-    if not prompt and voice_prompt:
-        prompt = voice_prompt
+if prompt:
+    st.session_state.messages.append({"role":"user","content":prompt})
+    with st.chat_message("user"): st.markdown(f'<div class="user-bubble">{prompt}</div>',unsafe_allow_html=True) 
+        
 
-    if not prompt:
-        return
-
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(f'<div class="user-bubble">{prompt}</div>', unsafe_allow_html=True)
-
-    if _explicit_image_request(prompt):
+    # Image generation is explicit only. No automatic image generation for ordinary questions.
+    low=prompt.lower()
+    explicit_image = any(x in low for x in ["generate image","create image","make an image","draw an image"])
+    if explicit_image:
         with st.chat_message("assistant"):
             with st.spinner("🎨 Image bana raha hu..."):
-                img_data, source = generate_image_url(prompt, False, "Normal", "1:1")
-            st.markdown('<div class="media-card">', unsafe_allow_html=True)
-            st.image(img_data, width=420, caption="Generated image")
-            st.markdown('</div>', unsafe_allow_html=True)
-            st.caption(f"Source: {source}")
-        st.session_state.messages.append({
-            "role": "assistant", "image_url": img_data,
-            "image_caption": prompt, "content": "Generated image"
-        })
-        save_current_chat_cloud()
-        st.rerun()
-
-    search_context, sources = search_tavily(prompt)
-    system = NORMAL_SYSTEM_PROMPT + "\nLIVE INDIA CLOCK: " + get_india_datetime_context()
-    if search_context:
-        system += "\nLIVE WEB INFO:\n" + search_context
-
-    with st.chat_message("assistant"):
-        completion, used_model = get_groq_response(
-            client, st.session_state.messages, system, ""
-        )
-        if completion is None:
-            st.error("AI response नहीं आ पाया. Please try again.")
-            return
-        response = completion.choices[0].message.content
-        st.markdown(response)
-        if sources:
-            st.caption("Sources:\n" + sources)
-        st.caption(f"Model: {used_model or 'fallback'}")
-
-    st.session_state.messages.append({"role": "assistant", "content": response})
-    save_current_chat_cloud()
-    st.rerun()
-
-def render_school_chat():
-    st.title("🚀 Creative Lab — School Mode")
-    st.caption("Age and language control the AI. School Mode has its own separate chat history.")
-
-    c1, c2 = st.columns(2)
-    with c1:
-        age_options = ["1-2 Yrs", "3-4 Yrs", "5-6 Yrs", "6-8 Yrs", "8-10 Yrs", "10-11 Yrs", "11+ Yrs"]
-        school_age = st.selectbox(
-            "🎒 Age Group", age_options,
-            index=age_options.index(st.session_state.get("school_age", "1-2 Yrs")),
-            key="school_age_selector"
-        )
-    with c2:
-        labels = list(PLAY_LANGUAGES.keys())
-        current_label = next((n for n, c in PLAY_LANGUAGES.items() if c == st.session_state.get("school_language", "hi")), labels[0])
-        school_label = st.selectbox(
-            "🌐 Language", labels,
-            index=labels.index(current_label),
-            key="school_language_selector"
-        )
-
-    st.session_state.school_age = school_age
-    st.session_state.school_language = PLAY_LANGUAGES[school_label]
-
-    _render_chat_history(st.session_state.school_messages)
-
-    voice_prompt = _chat_voice_input("school_chat_mic")
-    prompt = st.chat_input("School Mode mein puchho…", key="school_chat_input")
-    if not prompt and voice_prompt:
-        prompt = voice_prompt
-
-    if not prompt:
-        return
-
-    messages = st.session_state.school_messages
-    messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(f'<div class="user-bubble">{prompt}</div>', unsafe_allow_html=True)
-
-    if _explicit_image_request(prompt):
+                img_data = generate_gemini_image(prompt)
+                source = "Gemini"
+                st.markdown('<div class="media-card">',unsafe_allow_html=True)
+                st.image(img_data,width=520,caption="Generated image")
+                st.markdown('</div>',unsafe_allow_html=True)
+                st.caption("Image display is compact; no unrelated subject was added by the prompt controller.")
+                st.session_state.messages.append({"role":"assistant","content":f"Generated image: {prompt}"})
+            save_current_chat_cloud()
+        st.stop()
+    else:
+        search_context,sources=search_tavily(prompt)
+        system=NORMAL_SYSTEM_PROMPT+"\nLIVE INDIA CLOCK: "+get_india_datetime_context()
+        if search_context: system += "\nLIVE WEB INFO:\n"+search_context
         with st.chat_message("assistant"):
-            with st.spinner("🎨 Age-appropriate image bana raha hu..."):
-                img_data, source = generate_image_url(prompt, True, school_age, "1:1")
-            st.markdown('<div class="media-card">', unsafe_allow_html=True)
-            st.image(img_data, width=420, caption="Generated image")
-            st.markdown('</div>', unsafe_allow_html=True)
-            st.caption(f"Source: {source}")
-        messages.append({
-            "role": "assistant", "image_url": img_data,
-            "image_caption": prompt, "content": "Generated image"
-        })
-        st.rerun()
-
-    language_name = language_display_name(st.session_state.school_language)
-    system = get_school_system_prompt(school_age)
-    system += f"\nSELECTED LANGUAGE: {language_name} ({st.session_state.school_language}). Reply ONLY in this language."
-    system += "\nUse the previous messages in this School Mode conversation as context. Never use Normal Chat history."
-    search_context, sources = search_tavily(prompt)
-    if search_context:
-        system += "\nLIVE WEB INFO:\n" + search_context
-
-    with st.chat_message("assistant"):
-        completion, used_model = get_groq_response(client, messages, system, "")
-        if completion is None:
-            st.error("AI response नहीं आ पाया. Please try again.")
-            return
-        response = completion.choices[0].message.content
-        st.markdown(response)
-        if sources:
-            st.caption("Sources:\n" + sources)
-        st.caption(f"Age: {school_age} | Language: {language_name} | Model: {used_model or 'fallback'}")
-
-    messages.append({"role": "assistant", "content": response})
-    st.rerun()
-
-if mode == "Normal Chat":
-    render_normal_chat()
-    st.stop()
-
-if mode == "Creative Lab (School Mode)":
-    render_school_chat()
-    st.stop()
+            completion,used_model=get_groq_response(client,st.session_state.messages,system,"")
+            if completion is None:
+                st.error("AI response नहीं आ पाया. Please try again.")
+                st.stop()
+            response=completion.choices[0].message.content
+        placeholder = st.empty()
+        typed = ""
+        for word in response.split(" "):
+            typed += word + " "
+            placeholder.markdown(typed + "▌")
+            time.sleep(0.01)
+        placeholder.markdown(response)
+        if sources: st.caption("Sources:\n"+sources)
+        st.caption(" ClyxessChat AI  | Secure • Fast • Private")
+    st.session_state.messages.append({"role":"assistant","content":response})
+    save_current_chat_cloud()
