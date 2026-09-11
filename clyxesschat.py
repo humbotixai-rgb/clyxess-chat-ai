@@ -626,19 +626,7 @@ def generate_image_url(prompt, is_school_mode, age, aspect="1:1"):
         f"?width={width}&height={height}&nologo=true&seed={uuid.uuid4().int % 100000}"
     )
     return url, "pollinations"
-def get_india_datetime_context():
-    now = datetime.datetime.now()
-    return now.strftime("%d %B %Y, %A")
 
-def get_live_festival_date(query):
-    try:
-        client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
-        result = client.search(f"{query} date", max_results=1)
-        data = result['results'][0]
-        return f"{data['content']}\nSource: {data['url']}"
-    except:
-        return None 
-        
 # ============================================================
 # PROMPTS
 # ============================================================
@@ -647,9 +635,7 @@ NORMAL_SYSTEM_PROMPT = """
 You are ClyxessChat AI, created by ClyxessChat AI Technology.
 CORE RULE: REPLY ONLY IN THE SAME LANGUAGE AS USER.
 Your name is ClyxessChat AI. Friendly, intelligent, calm.
-If user asks festival date, answer from the LIVE DATA provided below, do not hallucinate.
-
-LIVE DATA: {live_data}
+If user asks to generate image, say: "Generating image for: [prompt]"
 """
 
 def get_school_system_prompt(age_group):
@@ -1758,8 +1744,8 @@ if prompt:
                 st.image(img_data,width=520,caption="Generated image")
                 st.markdown('</div>',unsafe_allow_html=True)
                 st.caption("Image display is compact; no unrelated subject was added by the prompt controller.")
-                st.session_state.messages.append({"role":"assistant","content":f"Generated image: {prompt}"})
-            save_current_chat_cloud()
+                st.session_state.messages.append({"role":"assistant","image_url":img_data,"image_caption":prompt,"content":"Generated image"})
+                save_current_chat_cloud()
         st.stop()
     else:
         search_context,sources=search_tavily(prompt)
