@@ -626,7 +626,19 @@ def generate_image_url(prompt, is_school_mode, age, aspect="1:1"):
         f"?width={width}&height={height}&nologo=true&seed={uuid.uuid4().int % 100000}"
     )
     return url, "pollinations"
+def get_india_datetime_context():
+    now = datetime.datetime.now()
+    return now.strftime("%d %B %Y, %A")
 
+def get_live_festival_date(query):
+    try:
+        client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
+        result = client.search(f"{query} date", max_results=1)
+        data = result['results'][0]
+        return f"{data['content']}\nSource: {data['url']}"
+    except:
+        return None 
+        
 # ============================================================
 # PROMPTS
 # ============================================================
