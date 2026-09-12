@@ -795,7 +795,7 @@ def search_tavily(query):
             "api_key": st.secrets["TAVILY_API_KEY"],
             "query": query,
             "search_depth": "advanced",
-            "max_results": 5,
+            "max_results": 3,
             "include_answer": True
         }
 
@@ -839,7 +839,7 @@ def search_tavily(query):
             source_items.append(
                 f"{i}. {title}\n"
                 f"URL: {result_url}\n"
-                f"Source information: {content[:2000]}"
+                f"Source information: {content[:200]}"
             )
 
         sources = "\n\n".join(source_items)
