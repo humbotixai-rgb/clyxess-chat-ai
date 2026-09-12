@@ -710,20 +710,87 @@ def language_display_name(code):
     return next((name.split(" ", 1)[-1] for name, value in PLAY_LANGUAGES.items() if value == code), "English")
 
 # ============================================================
-# TAVILY
+# TAVILY - SMART LIVE WEB SEARCH
 # ============================================================
 
 def search_tavily(query):
+    query_lower = (query or "").lower().strip()
+
+    # Tavily will be used for current / time-sensitive / verifiable
+    # information instead of relying only on the model's memory.
     search_words = [
-        "news", "mausam", "weather", "rate", "price",
-        "score", "aaj", "kal", "today", "latest", "breaking"
+        # Current information
+        "news", "latest", "breaking", "today", "tomorrow",
+        "yesterday", "aaj", "kal", "abhi", "vartaman",
+        "current", "recent", "update", "updates",
+
+        # Weather
+        "mausam", "weather", "temperature", "forecast",
+        "rain", "baarish", "बारिश", "मौसम",
+
+        # Prices / rates
+        "rate", "price", "cost", "कीमत", "दाम",
+        "petrol", "diesel", "gold", "silver",
+
+        # Sports
+        "score", "match", "live score", "result",
+        "cricket", "football", "tennis", "ipl",
+
+        # Festivals / holidays
+        "festival", "festivals", "त्योहार", "त्यौहार",
+        "diwali", "deepavali", "दिवाली", "दीपावली",
+        "holi", "होली",
+        "navratri", "नवरात्रि",
+        "dussehra", "दशहरा",
+        "durga puja", "दुर्गा पूजा",
+        "ganesh chaturthi", "गणेश चतुर्थी",
+        "janmashtami", "जन्माष्टमी",
+        "raksha bandhan", "रक्षा बंधन",
+        "eid", "ईद",
+        "christmas", "क्रिसमस",
+        "guru nanak jayanti",
+        "makar sankranti", "मकर संक्रांति",
+        "pongal", "onam",
+        "buddha purnima",
+        "holiday", "holidays", "public holiday",
+        "छुट्टी", "अवकाश",
+
+        # Websites / official links
+        "website", "official website",
+        "official site", "official link",
+        "link", "url", "वेबसाइट", "लिंक",
+        "official", "आधिकारिक",
+
+        # Government / organizations
+        "government", "govt", "सरकार",
+        "notification", "नोटिफिकेशन",
+        "official announcement",
+
+        # Events / schedules
+        "event", "events", "कार्यक्रम",
+        "schedule", "समय", "तारीख", "date",
+        "dates", "when is", "कब है",
+        "opening", "launch",
+
+        # Current technology / products
+        "new model", "new version", "release",
+        "released", "launch", "api update",
+        "latest version", "latest model"
     ]
 
-    if not any(word in query.lower() for word in search_words):
+    # Search only when the question needs live/current/verified
+    # information. Normal conversation remains fast.
+    needs_live_search = any(
+        word in query_lower
+        for word in search_words
+    )
+
+    if not needs_live_search:
         return "", ""
 
     try:
         url = "https://api.tavily.com/search"
+
         payload = {
             "api_key": st.secrets["TAVILY_API_KEY"],
             "query": query,
@@ -738,18 +805,60 @@ def search_tavily(query):
             timeout=15
         )
 
+        response.raise_for_status()
+
         data = response.json()
 
-        context = data.get("answer", "")
+        # Tavily's synthesized answer
+        context = data.get("answer", "") or ""
 
-        sources = "\n".join([
-            f"{i+1}. [{r['title']}]({r['url']})"
-            for i, r in enumerate(data.get("results", [])[:3])
-        ])
+        # Build verified source list
+        source_items = []
+
+        for i, result in enumerate(
+            data.get("results", [])[:5],
+            start=1
+        ):
+            title = str(
+                result.get("title", "")
+            ).strip()
+
+            result_url = str(
+                result.get("url", "")
+            ).strip()
+
+            content = str(
+                result.get("content", "")
+            ).strip()
+
+            if not result_url:
+                continue
+
+            # Give the model the source title + URL + useful
+            # source content so it can verify the answer.
+            source_items.append(
+                f"{i}. {title}\n"
+                f"URL: {result_url}\n"
+                f"Source information: {content[:2000]}"
+            )
+
+        sources = "\n\n".join(source_items)
+
+        # Extra verification instruction is passed along with
+        # Tavily data so Groq knows these are live search results.
+        if context or sources:
+            context = (
+                "LIVE WEB SEARCH RESULTS FROM TAVILY.\n"
+                "Use these sources for current information.\n"
+                "Do not invent facts or URLs.\n\n"
+                f"Tavily answer:\n{context}\n\n"
+                f"Sources:\n{sources}"
+            )
 
         return context, sources
 
-    except Exception:
+    except Exception as e:
+        # Do not break the whole chatbot if Tavily fails.
         return "", ""
 
 # ============================================================
