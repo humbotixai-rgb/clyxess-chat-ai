@@ -698,7 +698,7 @@ Example: Sanjha ke basi sangvari abbad mitha lagte he ga.
 Footer: Aur kauno madad chaahi ka ga sangvari?
 
 RULE 5: ENDING LINE
-Har jawab ke last me, ek line chhod ke, user ki hi language me puchh:
+   Har jawab ke last me, ek line chhod ke, user ki hi language me puchh:
    Marwadi - Aur kai madad chahije ka sa?
    Sindhi - Wadhik kai madad ghurje sa?
    Chhattisgarhi - Au kono madad chahi ka ga sangvari?
