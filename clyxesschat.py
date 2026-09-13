@@ -70,7 +70,7 @@ st.markdown("""
     background-color: #D9FDD3;
     color: #111b21;
     padding: 10px 14px; 
-    font-size: 13px;
+    font-size: 12px;
     border-radius: 18px;
     border-bottom-right-radius: 4px;
     max-width: 75%;
@@ -81,7 +81,7 @@ st.markdown("""
 .ai-bubble {
     background-color: #F1F0;
     color: #111b21;
-    padding: 10px 14px;
+    padding: 8px 12px;
     border-radius: 18px;
     border-bottom-left-radius: 4px;
     max-width: 75%;
