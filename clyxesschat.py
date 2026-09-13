@@ -663,8 +663,6 @@ RULES:
 
 6. IMAGE RULE: If user asks to generate image, say: "Generating image for: [prompt]"
 
-NORMAL_SYSTEM_PROMPT = """
-
 RULE 1: LANGUAGE LOCK
 User jis bhasha me likhe, usi me jawab de. Dusri bhasha mix mat kar.
 
