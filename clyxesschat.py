@@ -706,9 +706,9 @@ Footer: Aur kauno madad chaahi ka ga sangvari? --- ClyxessChat AI
 
 RULE 5: ENDING LINE
 Har jawab ke last me, ek line chhod ke, user ki hi language me puchh:
-   Marwadi -> Aur kai madad chahije ka sa? 😊
-   Sindhi -> Wadhik kai madad ghurje sa? 😊
-   Chhattisgarhi -> Au kono madad chahi ka ga sangvari? 😊
+   Marwadi -> Aur kai madad chahije ka sa? 
+   Sindhi -> Wadhik kai madad ghurje sa? 
+   Chhattisgarhi -> Au kono madad chahi ka ga sangvari? 
 """
 
 def get_school_system_prompt(age_group):
