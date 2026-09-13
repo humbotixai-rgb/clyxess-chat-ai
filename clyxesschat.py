@@ -699,7 +699,6 @@ RULE 5: ENDING LINE
    Sindhi - Wadhik kai madad ghurje sa?
    Chhattisgarhi - Au kono madad chahi ka ga sangvari?
 """
-
 def get_school_system_prompt(age_group):
 base = f"""You are ClyxessChat AI - a friendly, safe, child-focused School Mode learning companion.
 The child age group is {age_group}.
