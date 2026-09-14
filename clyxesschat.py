@@ -69,8 +69,8 @@ st.markdown("""
 .user-bubble {
     background-color: #D9FDD3;
     color: #111b21;
-    padding: 8px 12px; 
-    font-size: 12px;
+    padding: 10px 14px; 
+    font-size: 13px;
     border-radius: 18px;
     border-bottom-right-radius: 4px;
     max-width: 75%;
@@ -81,7 +81,7 @@ st.markdown("""
 .ai-bubble {
     background-color: #F1F0;
     color: #111b21;
-    padding: 8px 12px;
+    padding: 10px 14px;
     border-radius: 18px;
     border-bottom-left-radius: 4px;
     max-width: 75%;
@@ -632,126 +632,23 @@ def generate_image_url(prompt, is_school_mode, age, aspect="1:1"):
 # ============================================================
 
 NORMAL_SYSTEM_PROMPT = """
-You are ClyxessChat AI, created by NeuroClyx Technology.
-Your name is ClyxessChat AI. Friendly, intelligent, calm.
-
+You are ClyxessChat AI, created by ClyxessChat AI Technology.
 CORE RULE: REPLY ONLY IN THE SAME LANGUAGE AS USER.
-
-You are ClyxessChat AI - Ek pyaara, samajhdar, aam insan jaisa dost.
-
-RULES:
-1. LANGUAGE MIRROR: User jis language me puche (English, Hindi, Chhattisgarhi) tu 100% usi me jawab dega. Tone bhi same.
-
-2. HUMAN LIKE & FUNNY: Tu ek aam insan hai. Pyaar se, hansi-majak ke saath baat kar. Agar user masti kare to tu bhi masti kar. Bina gali-galauj ke.
-
-3. EMOJI FEEL (ChatGPT Jaisa - All Language):
-   - Bematalab har baat me emoji mat laga. Hamesha wala rule hata.
-   - User jis language me jis feel me baat kare, usi hisab se 1 emoji lagana.
-   - Hansi-majak kare TABHI -> 😂 warna mat laga.
-   - Congratulation / Badhai ka kaam ho TABHI -> 🎉🎊
-   - Hath jodna / Thanks bole TABHI -> 🙏
-   - Khushi / Pyaar wali baat ho TABHI -> 😊❤️
-   - Rona / Dukhi wali baat ho TABHI -> 😢
-   - Sochna ho TABHI -> 🤔
-   - Normal baat me 0 ya max 1 emoji, zyada mat bharna. Natural lage.
-
-4. SMART CHAT:
-   - Sirf baat kar raha hai to sirf baat kar, chhota jawab.
-   - Likhne / code / madad mange to puri madad kar.
-
-5. GALTI SUDHARE TO: "Haan bhai sahi bola 🙏, mere se galti ho gayi. Aage se dhyan rakhunga."
-
-6. IMAGE RULE: If user asks to generate image, say: "Generating image for: [prompt]"
-
-RULE 1: LANGUAGE LOCK
-User jis bhasha me likhe, usi me jawab de. Dusri bhasha mix mat kar.
-RULE 2: MARWARI MODE - GHANI KHAMMA
-Greeting: Khamma ghani sa! Ram-ram sa!
-Tone: Ijjat-daar, meetho, har vakya me sa lagana.
-Words: Mharo=mera, Tharo=tumhara, Ghano=bahut, Chokho=accha.
-Sawal: The kiya ho sa? Tharo naam kai hai sa?
-Jawab: Mhe theek hu sa, Sab chokho hai sa, Chinta mati karo sa.
-Example: Mharo Rajasthan ghano pyaro hai sa, kabhi aavo sa.
-Footer: Aur kai sewa karu sa?
-
-RULE 3: SINDHI MODE - JAI JHULELAL
-Greeting: Jai Jhulelal! Kihan aahiyo sa?
-Tone: Dil se, garam josh wala, apnapan wala.
-Rishte: Mao=mata, Piu=pita, Bhau=bhai, Bhen=behen
-Sawal: Cha peya kariyo sa? Khana khadho sa?
-Jawab: Maan theek aahiya sa, Sab chokho aahe sa.
-Example: Sindhi boli me mithaas ghani aahe sa.
-Footer: Wadhik kai madad ghurje sa?
-
-RULE 4: CHHATTISGARHI MODE - JAI JOHAR SANGVARI
-Greeting: Jai Johar sangvari! Kaise has ga?
-Tone: Gaon wala, ga, sangvari, mor, tor wala pyar.
-Words: Mor=mera, Tor=tumhara, Tain=tu, Kaabar=kab, Katta=kaha.
-Time: Bihaniya=subah, Sanjha=sham, Ratiya=raat.
-Sawal: Tain ka karat has ga? Khana kha le has ka ga?
-Jawab: Mor sab badiya hai ga, Tor bata ga.
-Example: Sanjha ke basi sangvari abbad mitha lagte he ga.
-Footer: Au kono madad chaahi ta bata debe sangwari?
+Your name is ClyxessChat AI. Friendly, intelligent, calm.
+If user asks to generate image, say: "Generating image for: [prompt]"
 """
-# RULE 5: ENDING LINE
-INTELLIGENCE_PROMPT = """
-You are ClyxessChat AI - an intelligent, natural, helpful and
-general-purpose AI assistant.
-Understand the user's actual intention and answer according to
-their context, knowledge level and selected language. Adapt your
-role automatically: teacher for education, expert developer for
-coding, analyst for business/research, creative partner for ideas,
-and friendly assistant for everyday conversations.
 
-Be accurate, practical and honest. Never invent facts, sources,
-links, capabilities or results. If information may be outdated,
-say so or verify it when a search tool is available.
-
-For coding, never claim a fixed maximum number of lines. Practical
-output depends on context and response limits. For large projects,
-break the work into files/modules and maintain consistent
-architecture, imports, APIs, database fields and dependencies
-across all parts.
-
-Answer directly when the request is clear. Ask only when an
-important detail is genuinely missing. Do not unnecessarily repeat
-questions or generic phrases.
-
-When modifying existing code, preserve working features and change
-only what is necessary.
-
-For complex questions, organize the answer clearly and explain
-the important reasoning without exposing private chain-of-thought.
-
-Be conversational and human-like, but do not sacrifice accuracy
-for friendliness.
-
-Never pretend to have performed an action, accessed data, website,
-file, account or tool unless you actually have.
-
-For safety-sensitive situations, respond empathetically and
-prioritize the user's safety.
-
-CORE GOAL:
-Understand -> Reason -> Answer -> Help the user take the next step.
-You are ClyxessChat AI. Be intelligent, natural, practical and
-trustworthy.
-Har jawab ke last me, ek line chhod ke, user ki hi language me puchh:
-Marwadi - Aur kai madad chahije ka sa?
-Sindhi - Wadhik kai madad ghurje sa?
-Chhattisgarhi - Au kono madad chaahi ta bata debe sangvari?
-"""
 def get_school_system_prompt(age_group):
-    base = f"""You are ClyxessChat AI - a friendly, safe, child-focused School Mode learning companion.
-    The child age group is {age_group}.
-    STRICT LANGUAGE LOCK: reply ONLY in the selected language supplied in the final instruction.
-    Never switch languages, never use Hinglish or mixed language unless English is the selected language.
-    Keep the conversation natural and interactive: answer the child's question, explain simply, and when useful ask ONE relevant follow-up question.
-    Do not pretend to remember things the child never told you. Do not invent personal experiences, food, toys, family, location, preferences, or past actions.
-    Do not ask questions such as what the child ate, owns, saw, likes, did, or remembers unless the child has explicitly provided that information in this conversation and it is relevant.
-    Do not pressure the child to reveal passwords, addresses, phone numbers, private photos, or other sensitive personal information.
-    For learning topics, encourage understanding instead of simply giving homework answers 
-    school_system_prompt = (
+    base = f"""You are ClyxessChat AI — a friendly, safe, child-focused School Mode learning companion.
+The child age group is {age_group}.
+STRICT LANGUAGE LOCK: reply ONLY in the selected language supplied in the final instruction.
+Never switch languages, never use Hinglish or mixed language unless English is the selected language.
+Keep the conversation natural and interactive: answer the child's question, explain simply, and when useful ask ONE relevant follow-up question.
+Do not pretend to remember things the child never told you. Do not invent personal experiences, food, toys, family, location, preferences, or past actions.
+Do not ask questions such as what the child ate, owns, saw, likes, did, or remembers unless the child has explicitly provided that information in this conversation and it is relevant.
+Do not pressure the child to reveal passwords, addresses, phone numbers, private photos, or other sensitive personal information.
+For learning topics, encourage understanding instead of simply giving homework answers 
+school_system_prompt = (
     "You are ClyxessChat AI, India's First AI School. Your personality is a perfect blend "
     "of a loving mother's ultimate warmth, deep empathy, and an inspiring school teacher's absolute clarity. "
     "The user is a school student who might be hesitant, curious, or scared of making mistakes. "
@@ -813,92 +710,25 @@ def language_display_name(code):
     return next((name.split(" ", 1)[-1] for name, value in PLAY_LANGUAGES.items() if value == code), "English")
 
 # ============================================================
-# TAVILY - SMART LIVE WEB SEARCH
+# TAVILY
 # ============================================================
 
 def search_tavily(query):
-    query_lower = (query or "").lower().strip()
-
-    # Tavily will be used for current / time-sensitive / verifiable
-    # information instead of relying only on the model's memory.
     search_words = [
-        # Current information
-        "news", "latest", "breaking", "today", "tomorrow",
-        "yesterday", "aaj", "kal", "abhi", "vartaman",
-        "current", "recent", "update", "updates",
-
-        # Weather
-        "mausam", "weather", "temperature", "forecast",
-        "rain", "baarish", "बारिश", "मौसम",
-
-        # Prices / rates
-        "rate", "price", "cost", "कीमत", "दाम",
-        "petrol", "diesel", "gold", "silver",
-
-        # Sports
-        "score", "match", "live score", "result",
-        "cricket", "football", "tennis", "ipl",
-
-        # Festivals / holidays
-        "festival", "festivals", "त्योहार", "त्यौहार",
-        "diwali", "deepavali", "दिवाली", "दीपावली",
-        "holi", "होली",
-        "navratri", "नवरात्रि",
-        "dussehra", "दशहरा",
-        "durga puja", "दुर्गा पूजा",
-        "ganesh chaturthi", "गणेश चतुर्थी",
-        "janmashtami", "जन्माष्टमी",
-        "raksha bandhan", "रक्षा बंधन",
-        "eid", "ईद",
-        "christmas", "क्रिसमस",
-        "guru nanak jayanti",
-        "makar sankranti", "मकर संक्रांति",
-        "pongal", "onam",
-        "buddha purnima",
-        "holiday", "holidays", "public holiday",
-        "छुट्टी", "अवकाश",
-
-        # Websites / official links
-        "website", "official website",
-        "official site", "official link",
-        "link", "url", "वेबसाइट", "लिंक",
-        "official", "आधिकारिक",
-
-        # Government / organizations
-        "government", "govt", "सरकार",
-        "notification", "नोटिफिकेशन",
-        "official announcement",
-
-        # Events / schedules
-        "event", "events", "कार्यक्रम",
-        "schedule", "समय", "तारीख", "date",
-        "dates", "when is", "कब है",
-        "opening", "launch",
-
-        # Current technology / products
-        "new model", "new version", "release",
-        "released", "launch", "api update",
-        "latest version", "latest model"
+        "news", "mausam", "weather", "rate", "price",
+        "score", "aaj", "kal", "today", "latest", "breaking"
     ]
 
-    # Search only when the question needs live/current/verified
-    # information. Normal conversation remains fast.
-    needs_live_search = any(
-        word in query_lower
-        for word in search_words
-    )
-
-    if not needs_live_search:
+    if not any(word in query.lower() for word in search_words):
         return "", ""
 
     try:
         url = "https://api.tavily.com/search"
-
         payload = {
             "api_key": st.secrets["TAVILY_API_KEY"],
             "query": query,
             "search_depth": "advanced",
-            "max_results": 3,
+            "max_results": 5,
             "include_answer": True
         }
 
@@ -908,60 +738,18 @@ def search_tavily(query):
             timeout=15
         )
 
-        response.raise_for_status()
-
         data = response.json()
 
-        # Tavily's synthesized answer
-        context = data.get("answer", "") or ""
+        context = data.get("answer", "")
 
-        # Build verified source list
-        source_items = []
-
-        for i, result in enumerate(
-            data.get("results", [])[:2],
-            start=1
-        ):
-            title = str(
-                result.get("title", "")
-            ).strip()
-
-            result_url = str(
-                result.get("url", "")
-            ).strip()
-
-            content = str(
-                result.get("content", "")
-            ).strip()
-
-            if not result_url:
-                continue
-
-            # Give the model the source title + URL + useful
-            # source content so it can verify the answer.
-            source_items.append(
-                f"{i}. {title}\n"
-                f"URL: {result_url}\n"
-                f"Source information: {content[:200]}"
-            )
-
-        sources = "\n\n".join(source_items)
-
-        # Extra verification instruction is passed along with
-        # Tavily data so Groq knows these are live search results.
-        if context or sources:
-            context = (
-                "LIVE WEB SEARCH RESULTS FROM TAVILY.\n"
-                "Use these sources for current information.\n"
-                "Do not invent facts or URLs.\n\n"
-                f"Tavily answer:\n{context}\n\n"
-                f"Sources:\n{sources}"
-            )
+        sources = "\n".join([
+            f"{i+1}. [{r['title']}]({r['url']})"
+            for i, r in enumerate(data.get("results", [])[:3])
+        ])
 
         return context, sources
 
-    except Exception as e:
-        # Do not break the whole chatbot if Tavily fails.
+    except Exception:
         return "", ""
 
 # ============================================================
@@ -990,32 +778,14 @@ def get_groq_response(
         }
     ] + recent_messages
 
-       # --- GPT-4 Jaisa Dynamic Logic ---
-    last_user_msg = ""
-    if messages_to_send:
-        # last message se user ka sawal nikal rahe hain
-        last_user_msg = str(messages_to_send[-1].get("content", "")).lower()
-
-    if any(w in last_user_msg for w in ["code", "website", "html", "python", "app", "program", "css", "javascript"]):
-        final_tokens = 4000
-        final_temp = 0.4
-    elif any(w in last_user_msg for w in ["kab hai", "date", "festival", "mausam", "weather", "time", "kab"]):
-        final_tokens = 700
-        final_temp = 0.3
-    else:
-        final_tokens = 1200
-        final_temp = 0.7
-
     for model in GROQ_MODELS:
         try:
             completion = client.chat.completions.create(
                 model=model,
                 messages=messages_to_send,
-                temperature=final_temp,
-                max_tokens=final_tokens
+                temperature=0.7,
+                max_tokens=4000
             )
-
-            return completion, model
 
             return completion, model
 
