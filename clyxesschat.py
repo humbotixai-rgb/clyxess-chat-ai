@@ -1711,7 +1711,8 @@ def _chat_voice_input(key):
     return ""
 
 def render_normal_chat():
- 
+    st.title("💬 Normal Chat")
+    st.caption("Your normal-chat conversation is kept separate from School Mode.")
     _render_chat_history(st.session_state.messages)
 
     voice_prompt = _chat_voice_input("normal_chat_mic")
