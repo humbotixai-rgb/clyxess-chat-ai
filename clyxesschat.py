@@ -731,28 +731,28 @@ def get_groq_response(
 
     recent_messages = messages[-6:]
 
-messages_to_send = [
+    messages_to_send = [
   {
       "role": "system",
       "content": final_system
   }
 ] + recent_messages
 
-  # --- GPT-4 Jaisa Dynamic Logic ---
-  last_user_msg = ""
-  if messages_to_send:
+# --- GPT-4 Jaisa Dynamic Logic ---
+last_user_msg = ""
+if messages_to_send:
       # last message se user ka sawal nikal rahe hain
       last_user_msg = str(messages_to_send[-1].get("content", "")).lower()
 
-  if any(w in last_user_msg for w in ["code", "website", "html", "python", "app", "program", "css", "javascript"]):
+if any(w in last_user_msg for w in ["code", "website", "html", "python", "app", "program", "css", "javascript"]):
       final_tokens = 4000
       final_temp = 0.4
-  elif any(w in last_user_msg for w in ["kab hai", "date", "festival", "mausam", "weather", "time", "kab"]):
+elif any(w in last_user_msg for w in ["kab hai", "date", "festival", "mausam", "weather", "time", "kab"]):
       final_tokens = 700
       final_temp = 0.3
-  else:
-      final_tokens = 1200
-      final_temp = 0.7
+else:
+    final_tokens = 1200
+    final_temp = 0.7
 
   for model in GROQ_MODELS:
       try:
