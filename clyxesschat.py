@@ -1824,7 +1824,7 @@ def render_school_chat():
         for word in response.split(" "):
             typed += word + " "
             placeholder.markdown(typed + "▌")
-            time.sleep(0.01)
+            time.sleep(0.02)
         placeholder.markdown(response)
         if sources:
             st.caption("Sources:\n" + sources)
