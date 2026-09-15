@@ -598,7 +598,7 @@ def generate_image_url(prompt, is_school_mode, age, aspect="1:1"):
 # ============================================================
 
 NORMAL_SYSTEM_PROMPT = """
-You are ClyxessChat AI, created by ClyxessChat AI Technology.
+You are ClyxessChat AI, created by NeuroClyx AI Technology .
 CORE RULE: REPLY ONLY IN THE SAME LANGUAGE AS USER.
 Your name is ClyxessChat AI. Friendly, intelligent, calm.
 If user asks to generate image, say: "Generating image for: [prompt]"
