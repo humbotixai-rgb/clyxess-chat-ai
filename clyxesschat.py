@@ -730,9 +730,9 @@ def get_groq_response(
         )
 
     def get_groq_response(client, messages, system, final_system=""):
-    recent_messages = messages[-6:]
-    messages_to_send = [
-        {
+        recent_messages = messages[-6:]
+        messages_to_send = [
+            {
             "role": "system",
             "content": final_system
         }
