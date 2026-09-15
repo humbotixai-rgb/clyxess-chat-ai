@@ -1770,7 +1770,7 @@ def render_school_chat():
     _render_chat_history(st.session_state.school_messages)
 
     voice_prompt = _chat_voice_input("school_chat_mic")
-    prompt = st.chat_input("School Mode mein puchho…", key="school_chat_input")
+    prompt = st.chat_input("Ask School Mode…", key="school_chat_input")
     if not prompt and voice_prompt:
         prompt = voice_prompt
 
