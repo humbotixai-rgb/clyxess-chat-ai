@@ -31,7 +31,9 @@ try:
     st.write("Groq Client: OK")
 except Exception as e:
     st.error(f"Client Error: {e}")
-    st.stop()
+    st.stop() 
+    st.markdown("""
+<style>
 .main {max-width: 850px; margin: auto;}
 
 .header {
@@ -1844,7 +1846,7 @@ def render_school_chat():
         for word in response.split(" "):
             typed += word + " "
             placeholder.markdown(typed + "▌")
-            time.sleep(0.02)
+            time.sleep(0.03)
         placeholder.markdown(response)
         if sources:
             st.caption("Sources:\n" + sources)
