@@ -16,23 +16,22 @@ try:
 except Exception:
     mic_recorder = None
 
-# ============================================================
-# CLYXESSCHAT AI
-# NORMAL CHAT + CREATIVE LAB + PLAY & LEARN
-# ============================================================
-
+# --- PAGE CONFIG SABSE PEHLE ---
 st.set_page_config(
     page_title="ClyxessChat AI",
     page_icon="💬",
     layout="wide"
 )
 
-# ============================================================
-# CSS
-# ============================================================
+# --- DEBUG LINES YAHAN ---
+st.write("Key Loaded:", "gsk_" in st.secrets.get("GROQ_API_KEY", ""))
 
-st.markdown("""
-<style>
+try:
+    client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+    st.write("Groq Client: OK")
+except Exception as e:
+    st.error(f"Client Error: {e}")
+    st.stop()
 .main {max-width: 850px; margin: auto;}
 
 .header {
