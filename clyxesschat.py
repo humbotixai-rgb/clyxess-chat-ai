@@ -736,7 +736,7 @@ def get_groq_response(
             "role": "system",
             "content": final_system
         }
-    ] + recent_messages
+        ] + recent_messages
 
     # --- GPT-4 Jaisa Dynamic Logic ---
     last_user_msg = ""
