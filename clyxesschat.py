@@ -3,10 +3,7 @@ from groq import Groq
 from supabase import create_client
 import datetime, uuid, requests, time, re, os, json, random, base64, urllib.parse
 from typing import Dict, List, Any
-from fpdf import FPDF 
-import google.generativeai as genai
-from PIL import Image
-import io
+from fpdf import FPDF
 try:
     from zoneinfo import ZoneInfo
 except Exception:
@@ -14,29 +11,16 @@ except Exception:
 try:
     from streamlit_mic_recorder import mic_recorder
 except Exception:
-       mic_recorder = None
+    mic_recorder = None
 
-genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-
-def generate_gemini_image(prompt):
-    try:
-        model = genai.GenerativeModel("gemini-2.0-flash-preview-image-generation")
-        response = model.generate_content(prompt)
-        # image byte nikal ke PIL image banana
-        image_bytes = response.candidates[0].content.parts[0].inline_data.data
-        return Image.open(io.BytesIO(image_bytes))
-    except Exception as e:
-        st.error(f"Image Error: {e}")
-        return None
-
-# =========================================================
+# ============================================================
 # CLYXESSCHAT AI
 # NORMAL CHAT + CREATIVE LAB + PLAY & LEARN
 # ============================================================
 
 st.set_page_config(
     page_title="ClyxessChat AI",
-    page_icon="",
+    page_icon="💬",
     layout="wide"
 )
 
@@ -69,8 +53,7 @@ st.markdown("""
 .user-bubble {
     background-color: #D9FDD3;
     color: #111b21;
-    padding: 10px 14px; 
-    font-size: 13px;
+    padding: 10px 14px;
     border-radius: 18px;
     border-bottom-right-radius: 4px;
     max-width: 75%;
@@ -78,18 +61,7 @@ st.markdown("""
     margin-bottom: 10px;
     text-align: right;
 }
-.ai-bubble {
-    background-color: #F1F0;
-    color: #111b21;
-    padding: 10px 14px;
-    border-radius: 18px;
-    border-bottom-left-radius: 4px;
-    max-width: 75%;
-    margin-right: auto;
-    margin-bottom: 10px;
-    text-align: left;
-    font-size: 13px;
-}
+
 .gradient-text {
     background: linear-gradient(90deg, #ff00cc, #3333ff, #00ffcc);
     -webkit-background-clip: text;
@@ -142,18 +114,10 @@ st.markdown("""
 # ============================================================
 
 GROQ_MODELS = [
-    "llama-3.3-70b-versatile",      # 1 - Sabse best, fast + smart
-    "llama-3.1-8b-instant",         # 2 - Sabse tez, fallback ke liye
-    "openai/gpt-oss-120b",         # 3 - Tera wala purana
-    "openai/gpt-oss-20b",          # 4 - Tera wala purana
-    "qwen/qwen3-32b",              # 5 - Qwen ka naya, qwen3.6 se better chalta hai
-    "meta-llama/llama-4-maverick-17b-128e-instruct", # 6 - Llama 4 naya wala
-    "meta-llama/llama-4-scout-17b-16e-instruct",     # 7 - Llama 4 chota wala
-    "deepseek-r1-distill-llama-70b", # 8 - Coding ke liye best
-    "gemma2-9b-it",                # 9 - Google ka, halka fulka sawal ke liye
-    "mixtral-8x7b-32768"           # 10 - Last backup
+    "openai/gpt-oss-120b",
+    "openai/gpt-oss-20b",
+    "qwen/qwen3.6-27b"
 ]
-
 
 QUESTIONS_PER_LEVEL = 10
 
@@ -1649,9 +1613,7 @@ with st.sidebar:
     mode = st.radio("Select Mode", [
         "Normal Chat",
         "Creative Lab (School Mode)",
-        "🎮 Play & Learn", 
-        "🤖 Agentic AI ",
-        "🤖 AI Coding Lab ",
+        "🎮 Play & Learn",
         "🎨 Creative AI Image Generator",
         "📷 Vision Lab",
         "🎭 Peer Roleplay Modes",
@@ -1729,24 +1691,21 @@ if not prompt and voice_prompt: prompt=voice_prompt
 
 if prompt:
     st.session_state.messages.append({"role":"user","content":prompt})
-    with st.chat_message("user"): st.markdown(f'<div class="user-bubble">{prompt}</div>',unsafe_allow_html=True) 
-        
+    with st.chat_message("user"): st.markdown(f'<div class="user-bubble">{prompt}</div>',unsafe_allow_html=True)
 
     # Image generation is explicit only. No automatic image generation for ordinary questions.
     low=prompt.lower()
-    explicit_image = any(x in low for x in ["generate image","create image","make an image","draw an image"])
+    explicit_image = any(x in low for x in ["generate image","create image","make an image","draw an image","image banao","image bana","poster banao","photo banao","चित्र बनाओ","तस्वीर बनाओ"])
     if explicit_image:
         with st.chat_message("assistant"):
             with st.spinner("🎨 Image bana raha hu..."):
-                img_data = generate_gemini_image(prompt)
-                source = "Gemini"
-                st.markdown('<div class="media-card">',unsafe_allow_html=True)
-                st.image(img_data,width=520,caption="Generated image")
-                st.markdown('</div>',unsafe_allow_html=True)
-                st.caption("Image display is compact; no unrelated subject was added by the prompt controller.")
-                st.session_state.messages.append({"role":"assistant","content":f"Generated image: {prompt}"})
+                img_data,source=generate_image_url(prompt,False,"Normal","1:1")
+            st.markdown('<div class="media-card">',unsafe_allow_html=True)
+            st.image(img_data,width=520,caption="Generated image")
+            st.markdown('</div>',unsafe_allow_html=True)
+            st.caption("Image display is compact; no unrelated subject was added by the prompt controller.")
+            st.session_state.messages.append({"role":"assistant","image_url":img_data,"image_caption":prompt,"content":"Generated image"})
             save_current_chat_cloud()
-        st.stop()
     else:
         search_context,sources=search_tavily(prompt)
         system=NORMAL_SYSTEM_PROMPT+"\nLIVE INDIA CLOCK: "+get_india_datetime_context()
@@ -1757,14 +1716,8 @@ if prompt:
                 st.error("AI response नहीं आ पाया. Please try again.")
                 st.stop()
             response=completion.choices[0].message.content
-        placeholder = st.empty()
-        typed = ""
-        for word in response.split(" "):
-            typed += word + " "
-            placeholder.markdown(typed + "▌")
-            time.sleep(0.01)
-        placeholder.markdown(response)
-        if sources: st.caption("Sources:\n"+sources)
-        st.caption(" ClyxessChat AI  | Secure • Fast • Private")
-    st.session_state.messages.append({"role":"assistant","content":response})
-    save_current_chat_cloud()
+            st.markdown(response)
+            if sources: st.caption("Sources:\n"+sources)
+            st.caption(f"Model: {used_model or 'fallback'}")
+        st.session_state.messages.append({"role":"assistant","content":response})
+        save_current_chat_cloud()
