@@ -729,37 +729,43 @@ def get_groq_response(
             f"\n\nLive Web Info:\n{search_context}"
         )
 
-    def get_groq_response(client, messages, system, final_system=""):
-        recent_messages = messages[-6:]
-        messages_to_send = [
-            {
+def get_groq_response(client, messages, system_prompt, extra=""):
+    final_system = system_prompt
+    recent_messages = messages[-6:]
+    messages_to_send = [
+        {
             "role": "system",
             "content": final_system
         }
-        ] + recent_messages
+    ] + recent_messages
 
     # --- GPT-4 Jaisa Dynamic Logic ---
     last_user_msg = ""
     if messages_to_send:
-        last_user_msg = str(messages_to_send[-1].get("content", "")).lower()
+        try:
+            last_user_msg = str(messages_to_send[-1].get("content", "") if isinstance(messages_to_send[-1], dict) else messages_to_send[-1])
+        except:
+            last_user_msg = ""
 
-    if any(w in last_user_msg for w in ["code", "website", "html", "python", "app", "program", "css", "javascript"]):
+    if any(w in last_user_msg.lower() for w in ["code", "explain", "detail"]):
         final_tokens = 4000
         final_temp = 0.4
-    elif any(w in last_user_msg for w in ["kab hai", "date", "festival", "mausam", "weather", "time", "kab"]):
+    elif any(w in last_user_msg.lower() for w in ["kab", "hi", "hello"]):
         final_tokens = 700
         final_temp = 0.3
     else:
         final_tokens = 1200
         final_temp = 0.7
 
+    GROQ_MODELS = ["llama-3.3-70b-versatile", "llama-3.1-70b-versatile", "mixtral-8x7b-32768"]
+    
     for model in GROQ_MODELS:
         try:
             completion = client.chat.completions.create(
                 model=model,
                 messages=messages_to_send,
-                temperature=final_temp,
-                max_tokens=final_tokens
+                max_tokens=final_tokens,
+                temperature=final_temp
             )
             return completion, model
         except Exception as e:
