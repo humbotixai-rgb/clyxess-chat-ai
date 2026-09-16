@@ -1521,7 +1521,10 @@ def render_vision_lab():
     if f:
         st.markdown('<div class="media-card">',unsafe_allow_html=True); st.image(f,width=480); st.markdown('</div>',unsafe_allow_html=True)
         if st.button("🧠 Analyze Image",type="primary",use_container_width=True):
-            st.write(analyze_image_with_groq(f.getvalue(),f.type,question,PLAY_LANGUAGES[label]))
+            st.write(analyze_image_with_groq(f.getvalue(),f.type,question,PLAY_LANGUAGES[label])) 
+            
+def render_coding_lab(): 
+    show_coding_lab()
 
 def render_roleplay():
     st.title("🎭 Peer Roleplay Modes")
