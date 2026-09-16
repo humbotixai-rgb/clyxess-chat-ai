@@ -1631,7 +1631,7 @@ def render_coding_lab():
         try:
             import qrcode
             from io import BytesIO
-           qr_data = "https://clyxesschat.streamlit.app/"  # Yahan apna app link daal dena
+            qr_data = "https://clyxesschat.streamlit.app/"  # Yahan apna app link daal dena
             qr = qrcode.make(qr_data)
             buf = BytesIO()
             qr.save(buf, format="PNG")
