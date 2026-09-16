@@ -1633,7 +1633,7 @@ with st.sidebar:
         "📋 AI Daily Timetable",
         "📝 Interactive Homework & Test",
         "👨‍👩‍👦 Parent Dashboard", 
-        "👨‍👩‍👦 Parent Dashboard", 
+        "👨‍👩‍👦 Write Coding", 
         "🔐 Login / Sign Up"
     ])
     st.markdown("---")
