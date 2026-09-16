@@ -1650,7 +1650,7 @@ def render_homework_test():
             )
             st.session_state.homework_result = f"{score}/{len(qs)}"
             st.success(f"Score: {st.session_state.homework_result}")
-    ])
+    
 def learning_report():
     best=max(st.session_state.play_best_scores.values(),default=0)
     return "\n".join([
