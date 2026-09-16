@@ -1522,7 +1522,7 @@ def render_vision_lab():
         if st.button("🧠 Analyze Image",type="primary",use_container_width=True):
             st.write(analyze_image_with_groq(f.getvalue(),f.type,question,PLAY_LANGUAGES[label])) 
             
-elif "Coding Lab" in mode:
+def render_coding_lab():
     st.markdown("""
     <style>
     .coding-header { background:#0e1117; padding:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; }
