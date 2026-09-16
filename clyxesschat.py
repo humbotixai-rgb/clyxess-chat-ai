@@ -1522,41 +1522,80 @@ def render_vision_lab():
         if st.button("🧠 Analyze Image",type="primary",use_container_width=True):
             st.write(analyze_image_with_groq(f.getvalue(),f.type,question,PLAY_LANGUAGES[label])) 
             
-def show_coding_lab():
-    st.subheader("💻 Clyxess Coding Lab - No Age Limit")
+elif "Coding Lab" in mode:
+    st.markdown("""
+    <style>
+    .coding-header { background:#0e1117; padding:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; }
+    .stTabs [data-baseweb="tab-list"] { background:#1e1e2f; }
+    </style>
+    """, unsafe_allow_html=True)
 
-    col1, col2 = st.columns(2)
-    with col1:
-        age = st.selectbox("🎂 Age:", ["5-8 Saal", "9-12 Saal", "13-17 Saal", "18+"], key="age_lab")
-    with col2:
-        lang = st.selectbox("💾 Language:", ["HTML", "CSS", "JavaScript", "Python", "Java", "PHP"], key="lang_lab")
+    # --- Top Bar ---
+    c1, c2 = st.columns([6, 2])
+    with c1:
+        st.markdown("### </> CODING LAB")
+    with c2:
+        st.button("▶️ Run", type="primary", use_container_width=True)
 
-    left, right = st.columns([1, 1])
+    # --- Initialize code in session ---
+    if "html_code" not in st.session_state:
+        st.session_state.html_code = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Grocery Delivery</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header class="header">
+  <div class="logo">🛒 FreshCart</div>
+  <nav class="nav">
+    <a href="#">Home</a>
+    <a href="#">Categories</a>
+    <a href="#">Offers</a>
+  </nav>
+</header>
+<div class="hero">
+  <h1>Groceries<br><span>Delivered</span><br>Fast & Fresh</h1>
+  <p>Get your daily essentials delivered to your doorstep in minutes.</p>
+  <button>Shop Now</button>
+</div>
+</body>
+</html>"""
+    if "css_code" not in st.session_state:
+        st.session_state.css_code = "body{font-family:sans-serif; background:#f9fff9;} .header{display:flex; justify-content:space-between; background:#16a34a; color:white; padding:10px;} .hero{padding:40px;} .hero span{color:#16a34a;} button{background:#16a34a; color:white; padding:10px 20px; border:none; border-radius:5px;}"
+    if "js_code" not in st.session_state:
+        st.session_state.js_code = "console.log('FreshCart Live');"
+
+    # --- Main Layout ---
+    left, mid, right = st.columns([1, 2, 2.2])
 
     with left:
-        if lang == "HTML":
-            default_code = "<h1>Hello Clyxess</h1>\n<p>Mera pehla website</p>"
-        elif lang == "Python":
-            default_code = "print('Hello Clyxess')"
-        else:
-            default_code = f"// {lang} code here"
+        age = st.selectbox("Select Age", ["Select Age","5 Years","6 Years","7 Years","8 Years","9 Years","10 Years","11 Years","12 Years","13 Years","14 Years","15 Years","16 Years","17 Years","18+ Years"], key="c_age")
+        lang = st.selectbox("Select Language", ["HTML","CSS","JavaScript","Python","Java","C","C++","C#","PHP","Ruby","Swift","Kotlin","Go","TypeScript","Dart","Rust","R","Scala","Perl","SQL","MATLAB","Scratch","Shell"], key="c_lang")
+        st.info(f"Mode: {lang} | Age: {age}")
 
-        user_code = st.text_area("Code Likho:", value=default_code, height=350, key="code_input")
-        check_btn = st.button("🔍 Check & Fix Karo", use_container_width=True)
+    with mid:
+        tab1, tab2, tab3 = st.tabs(["index.html", "style.css", "script.js"])
+        with tab1:
+            st.session_state.html_code = st.text_area("html", value=st.session_state.html_code, height=350, label_visibility="collapsed", key="html_area")
+        with tab2:
+            st.session_state.css_code = st.text_area("css", value=st.session_state.css_code, height=350, label_visibility="collapsed", key="css_area")
+        with tab3:
+            st.session_state.js_code = st.text_area("js", value=st.session_state.js_code, height=350, label_visibility="collapsed", key="js_area")
+        
+        st.markdown("**Console**")
+        st.code("✅ Live preview is running...", language="bash")
 
     with right:
-        st.write(f"👀 Live Preview - {lang}")
-        if lang in ["HTML", "CSS", "JavaScript"]:
-            html_to_show = f"<style>{user_code}</style>" if lang == "CSS" else user_code
-            components.html(html_to_show, height=350, scrolling=True)
-        else:
-            st.info(f"{lang} ka output check karne ke liye button dabao")
-
-        if check_btn and user_code:
-            client = Groq(api_key=st.secrets["GROQ_API_KEY"])
-            prompt = f"Age {age}, Lang {lang}. Is code me galti batao aur sahi karo, Hindi me bacche ko samjhao: {user_code}"
-            res = client.chat.completions.create(model="qwen/qwen3-32b", messages=[{"role":"user","content":prompt}], temperature=0.5)
-            st.success(res.choices[0].message.content)
+        st.markdown("**● Live Preview**")
+        import streamlit.components.v1 as components
+        full_code = f"""
+        <style>{st.session_state.css_code}</style>
+        {st.session_state.html_code}
+        <script>{st.session_state.js_code}</script>
+        """
+        components.html(full_code, height=600, scrolling=True)
 
 def render_roleplay():
     st.title("🎭 Peer Roleplay Modes")
