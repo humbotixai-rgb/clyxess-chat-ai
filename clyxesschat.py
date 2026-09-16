@@ -1523,34 +1523,123 @@ def render_vision_lab():
             st.write(analyze_image_with_groq(f.getvalue(),f.type,question,PLAY_LANGUAGES[label])) 
             
 def render_coding_lab():
-    st.markdown("### </> CODING LAB")
-    
+    import streamlit.components.v1 as components
+    import base64
+
+    # --- CSS ---
+    st.markdown("""
+    <style>
+    div[data-testid="stTextArea"] textarea { background:#0d1117!important; color:#e6edf3!important; font-family: 'Consolas', monospace!important; font-size:14px!important; }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # --- DATA ---
+    AGE_LIST = ["5 Years","6 Years","7 Years","8 Years","9 Years","10 Years","11 Years","12 Years","13 Years","14 Years","15 Years","16 Years","17 Years","18+ Years"]
+    LANG_LIST = ["HTML","CSS","JavaScript","Python","Java","C","C++","C#","PHP","Ruby","Swift","Kotlin","Go","TypeScript","Dart","Rust","R","Scala","Perl","Objective-C","SQL","MATLAB","Visual Basic","Scratch","Shell","Racket"]
+
     if "html_code" not in st.session_state:
-        st.session_state.html_code = "<h1>FreshCart</h1><p>Groceries Delivered Fast & Fresh</p><button>Shop Now</button>"
+        st.session_state.html_code = "<h1>Start Coding 🚀</h1><p>Select a template from below</p>"
     if "css_code" not in st.session_state:
-        st.session_state.css_code = "body{font-family:sans-serif; background:#f9fff9;} h1{color:#16a34a;}"
+        st.session_state.css_code = "body{font-family:sans-serif; padding:20px; background:#f9fff9;} h1{color:#16a34a;}"
     if "js_code" not in st.session_state:
-        st.session_state.js_code = "console.log('FreshCart Live');"
+        st.session_state.js_code = "console.log('Lab Ready');"
+    if "preview_device" not in st.session_state:
+        st.session_state.preview_device = "desktop"
+    if "console_logs" not in st.session_state:
+        st.session_state.console_logs = "✅ Lab Ready... No errors yet."
 
-    left, mid, right = st.columns([1, 2, 2.2])
+    # --- TOP BAR ---
+    c1, c2, c3, c4, c5 = st.columns([1.1, 1.4, 2.2, 1, 1])
+    with c1:
+        age = st.selectbox("Age", AGE_LIST, label_visibility="collapsed", key="age_final")
+    with c2:
+        lang = st.selectbox("Language", LANG_LIST, label_visibility="collapsed", key="lang_final")
+    with c3:
+        st.markdown("### </> CODING LAB")
+    with c4:
+        full_save = f"<html><head><style>{st.session_state.css_code}</style></head><body>{st.session_state.html_code}<script>{st.session_state.js_code}</script></body></html>"
+        st.download_button("💾 Save", data=full_save, file_name="index.html", mime="text/html", use_container_width=True)
+    with c5:
+        if st.button("▶️ Run", type="primary", use_container_width=True):
+            st.session_state.console_logs = "✅ Preview Updated at " + str(st.session_state.get('html_code','')[:20]) + "..."
+            st.toast("Live Preview Updated!", icon="✅")
+
+    # --- 1. TEMPLATE FUNCTION ---
+    st.caption("Starter Templates for Kids:")
+    t_col1, t_col2, t_col3, t_col4, t_col5 = st.columns(5)
+    with t_col1:
+        if st.button("🚗 Car Website", use_container_width=True):
+            st.session_state.html_code = """<header style="background:black;color:white;padding:15px;display:flex;justify-content:space-between;"><b>🚙 THAR</b><nav>Home | Models | Book</nav></header><section style="padding:40px;text-align:center;"><h1 style="font-size:40px;">Adventure Begins<br>With Thar</h1><p>The Ultimate Off-Roader</p><button style="background:red;color:white;padding:12px 20px;border:none;border-radius:8px;">Book Test Drive</button><div style="font-size:60px;margin-top:20px;">🚙💨</div></section>"""
+            st.session_state.css_code = "body{margin:0;font-family:sans-serif}"; st.session_state.js_code = "console.log('Car Loaded')"
+    with t_col2:
+        if st.button("🛒 FreshCart", use_container_width=True):
+            st.session_state.html_code = """<div style="background:#16a34a;color:white;padding:15px;">🛒 FreshCart</div><div style="padding:40px;"><h1>Groceries Delivered Fast & Fresh</h1><button style="background:#16a34a;color:white;padding:10px 20px;border:none;border-radius:8px;">Shop Now</button></div>"""
+    with t_col3:
+        if st.button("👨‍💻 Portfolio", use_container_width=True):
+            st.session_state.html_code = """<div style="padding:40px;"><h1>Hi, I'm Alex 👋</h1><p>Web Developer | Age: 12 Years</p><button>My Projects</button></div>"""
+    with t_col4:
+        if st.button("🍔 Food App", use_container_width=True):
+            st.session_state.html_code = """<h1 style="text-align:center;">🍔 Burger King</h1><p style="text-align:center;">Delicious Burger in 10 mins</p><div style="text-align:center;"><button style="background:orange;color:white;padding:10px 20px;border:none;border-radius:20px;">Order Now</button></div>"""
+    with t_col5:
+        if st.button("🧹 Clear All", use_container_width=True):
+            st.session_state.html_code = "<h1>Start Fresh</h1>"; st.session_state.css_code = ""; st.session_state.js_code = ""
+
+    st.divider()
+
+    # --- MAIN ---
+    left, right = st.columns([1.5, 1])
+
     with left:
-        st.selectbox("Select Age", ["5 Years","10 Years","15 Years"], key="c_age")
-        st.selectbox("Select Language", ["HTML","CSS","JavaScript"], key="c_lang")
-
-    with mid:
         tab1, tab2, tab3 = st.tabs(["index.html", "style.css", "script.js"])
         with tab1:
-            st.session_state.html_code = st.text_area("html", value=st.session_state.html_code, height=300, label_visibility="collapsed", key="html_area")
+            st.session_state.html_code = st.text_area("h", value=st.session_state.html_code, height=450, label_visibility="collapsed", key="h_final")
         with tab2:
-            st.session_state.css_code = st.text_area("css", value=st.session_state.css_code, height=300, label_visibility="collapsed", key="css_area")
+            st.session_state.css_code = st.text_area("c", value=st.session_state.css_code, height=450, label_visibility="collapsed", key="c_final")
         with tab3:
-            st.session_state.js_code = st.text_area("js", value=st.session_state.js_code, height=300, label_visibility="collapsed", key="js_area")
+            st.session_state.js_code = st.text_area("j", value=st.session_state.js_code, height=450, label_visibility="collapsed", key="j_final")
+
+        # --- 2. CONSOLE FUNCTION ---
+        with st.expander("Console / Output", expanded=True):
+            st.code(st.session_state.console_logs, language="javascript")
+            st.caption(f"Age: {age} | Language: {lang} | Status: Live")
 
     with right:
-        st.markdown("**● Live Preview**")
-        import streamlit.components.v1 as components
-        full_code = f"<style>{st.session_state.css_code}</style>{st.session_state.html_code}<script>{st.session_state.js_code}</script>"
-        components.html(full_code, height=500, scrolling=True)
+        # --- DEVICE SWITCHER ---
+        d1, d2, d3, d4 = st.columns([3, 1, 1, 1])
+        with d1: st.markdown("**● Live Preview**")
+        with d2:
+            if st.button("🖥️", key="d1"): st.session_state.preview_device = "desktop"
+        with d3:
+            if st.button("📱", key="d2"): st.session_state.preview_device = "mobile"
+        with d4:
+            if st.button("🔲", key="d3"): st.session_state.preview_device = "tablet"
+
+        device = st.session_state.preview_device
+        if device == "mobile":
+            h, style = 650, "max-width:390px; margin:auto; border:12px solid #111; border-radius:30px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.3);"
+        elif device == "tablet":
+            h, style = 650, "max-width:600px; margin:auto; border:8px solid #222; border-radius:16px; overflow:hidden;"
+        else:
+            h, style = 700, "width:100%; border:1px solid #30363d; border-radius:12px; overflow:hidden;"
+
+        final_html = f"""<div style="{style}"><style>{st.session_state.css_code}</style>{st.session_state.html_code}<script>try{{{st.session_state.js_code}}}catch(e){{document.body.innerHTML+='<div style=\\'color:red;padding:10px\\'>Error: '+e.message+'</div>'}}</script></div>"""
+        components.html(final_html, height=h, scrolling=True)
+
+        # --- 3. QR CODE FOR MOBILE TESTING ---
+        st.markdown("---")
+        st.markdown("**📱 Mobile me Test Karo (Only for Learning)**")
+        try:
+            import qrcode
+            from io import BytesIO
+            qr_data = "https://your-app-name.streamlit.app" # Yahan apna app link daal dena
+            qr = qrcode.make(qr_data)
+            buf = BytesIO()
+            qr.save(buf, format="PNG")
+            b64 = base64.b64encode(buf.getvalue()).decode()
+            st.markdown(f'<img src="data:image/png;base64,{b64}" width="120" style="border-radius:8px;"/><p style="font-size:12px;">Scan karke isi lab ko phone me kholo aur 📱 button se test karo.</p>', unsafe_allow_html=True)
+        except:
+            st.info("QR ke liye `pip install qrcode` karna padega. Abhi baccha link ko direct phone me khol ke test kar sakta hai.")
+            st.code("pip install qrcode[pil]", language="bash")
 
 def render_roleplay():
     st.title("🎭 Peer Roleplay Modes")
