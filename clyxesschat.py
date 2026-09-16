@@ -4,7 +4,6 @@ from supabase import create_client
 import datetime, uuid, requests, time, re, os, json, random, base64, urllib.parse
 from typing import Dict, List, Any
 from fpdf import FPDF 
-from lab import show_coding_lab
 try:
     from zoneinfo import ZoneInfo
 except Exception:
