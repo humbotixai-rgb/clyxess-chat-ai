@@ -1632,7 +1632,8 @@ with st.sidebar:
         "🎭 Peer Roleplay Modes",
         "📋 AI Daily Timetable",
         "📝 Interactive Homework & Test",
-        "👨‍👩‍👦 Parent Dashboard",
+        "👨‍👩‍👦 Parent Dashboard", 
+        "👨‍👩‍👦 Parent Dashboard", 
         "🔐 Login / Sign Up"
     ])
     st.markdown("---")
