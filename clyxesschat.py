@@ -2299,10 +2299,10 @@ def render_school_chat():
     system += "\nUse the previous messages in this School Mode conversation as context. Never use Normal Chat history."
     search_context, sources = search_tavily(prompt)
 
-  if search_context:
-      system += "\nLIVE WEB INFO:\n" + search_context
+    if search_context:
+        system += "\nLIVE WEB INFO:\n" + search_context
 
-  with st.chat_message("assistant"):
+    with st.chat_message("assistant"):
         completion, used_model = get_groq_response(client, messages, system, "")
         if completion is None:
             st.error("AI response नहीं आ पाया. Please try again.")
