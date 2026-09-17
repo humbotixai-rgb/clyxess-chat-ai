@@ -1633,7 +1633,7 @@ def render_coding_lab():
     with right:
         # --- DEVICE SWITCHER ---
         d1, d2, d3, d4 = st.columns([3, 1, 1, 1])
-        with d1: st.markdown("**● Live Preview**")
+        with d1: st.markdown("** 🟢Live Preview**")
         with d2:
             if st.button("🖥️", key="d1"): st.session_state.preview_device = "desktop"
         with d3:
