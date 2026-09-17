@@ -1779,7 +1779,11 @@ with st.sidebar:
         "📋 AI Daily Timetable",
         "📝 Interactive Homework & Test",
         "👨‍👩‍👦 Parent Dashboard", 
-        "🖥️ Coding Lab", 
+        "🖥️ Coding Lab",  
+        "🖥️ Math Lab", 
+        "🖥️ Physics Lab", 
+        "🖥️ Data Science Lab", 
+        "🖥️ Lern Finance",
         "🔐 Login / Sign Up"
     ])
     st.markdown("---")
