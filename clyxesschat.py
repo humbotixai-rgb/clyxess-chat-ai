@@ -828,7 +828,7 @@ def search_tavily(query):
 
     except Exception as e:
         # Do not break the whole chatbot if Tavily fails.
-        return "", "" ये कैसा है
+        return "", ""
 def get_school_system_prompt(age_group, lang="Auto 🟢 (Maa khud samajh jayegi)", persona="Maa + Teacher", subject="General"):
     
     # Language Logic Setup
