@@ -682,11 +682,36 @@ You are ClyxessChat AI. Be intelligent, natural, practical and trustworthy.
 # TAVILY - SMART LIVE WEB SEARCH
 # ============================================================
 
+# ============================================================
+# TAVILY - SMART LIVE WEB SEARCH - SOLID FIX BY CLYXESS
+# ============================================================
+
 def search_tavily(query):
     query_lower = (query or "").lower().strip()
+    if not query_lower:
+        return "", ""
 
-    # Tavily will be used for current / time-sensitive / verifiable
-    # information instead of relying only on the model's memory.
+    # --- 1. FUZZY TYPO FIX - Adam bhai ke liye ---
+    # User chahe divali, dipawali, deewali kuch bhi likhe, samajh jao Diwali hai
+    diwali_typos = ["diwali", "divali", "dipawali", "deepawali", "deepavali", "deewali", "diwalee", "दिवाली", "दीपावली", "दिपावली"]
+    
+    # Check if query is about diwali even with typo
+    is_diwali_query = False
+    for typo in diwali_typos:
+        if typo in query_lower:
+            is_diwali_query = True
+            break
+    
+    # Extra fuzzy check: diw/div/dip + kab/date
+    if not is_diwali_query:
+        if (("diw" in query_lower or "div" in query_lower or "dip" in query_lower) and ("kab" in query_lower or "date" in query_lower or "tarikh" in query_lower or "कब" in query_lower)):
+            is_diwali_query = True
+
+    # Auto 2026 add karo agar user ne year nahi likha
+    final_query = query
+    if is_diwali_query and "2026" not in query_lower:
+        final_query = query + " 2026 festival date"
+
     search_words = [
         # Current information
         "news", "latest", "breaking", "today", "tomorrow",
@@ -705,9 +730,10 @@ def search_tavily(query):
         "score", "match", "live score", "result",
         "cricket", "football", "tennis", "ipl",
 
-        # Festivals / holidays
+        # Festivals / holidays - SOLID LIST
         "festival", "festivals", "त्योहार", "त्यौहार",
-        "diwali", "deepavali", "दिवाली", "दीपावली",
+        "diwali", "divali", "dipawali", "deepawali", "deepavali", "deewali", "diwalee",
+        "दिवाली", "दीपावली", "दिपावली",
         "holi", "होली",
         "navratri", "नवरात्रि",
         "dussehra", "दशहरा",
@@ -748,13 +774,57 @@ def search_tavily(query):
     ]
 
     # Search only when the question needs live/current/verified
-    # information. Normal conversation remains fast.
-    needs_live_search = any(
-        word in query_lower
-        for word in search_words
-    )
+    needs_live_search = any(word in query_lower for word in search_words) or is_diwali_query
 
     if not needs_live_search:
+        return "", ""
+
+    try:
+        url = "https://api.tavily.com/search"
+        payload = {
+            "api_key": st.secrets["TAVILY_API_KEY"],
+            "query": final_query,  # Yahan final_query use karo
+            "search_depth": "advanced",
+            "max_results": 5,
+            "include_answer": True
+        }
+        response = requests.post(url, json=payload, timeout=15)
+        response.raise_for_status()
+        data = response.json()
+
+        context = data.get("answer", "") or ""
+        source_items = []
+        for i, result in enumerate(data.get("results", [])[:5], start=1):
+            title = str(result.get("title", "")).strip()
+            result_url = str(result.get("url", "")).strip()
+            content = str(result.get("content", "")).strip()
+            if not result_url:
+                continue
+            source_items.append(
+                f"{i}. {title}\nURL: {result_url}\nSource information: {content[:2000]}"
+            )
+
+        sources = "\n\n".join(source_items)
+
+        if context or sources:
+            # SOLID INSTRUCTION FOR GROQ
+            extra_instruction = ""
+            if is_diwali_query:
+                extra_instruction = "\nCRITICAL: Real Diwali 2026 date is Sunday, 8 November 2026. Verified by Drik Panchang. Do NOT say 11 Oct.\n"
+            
+            context = (
+                "LIVE WEB SEARCH RESULTS FROM TAVILY.\n"
+                "Use these sources for current information.\n"
+                "Do not invent facts or URLs.\n"
+                f"{extra_instruction}\n"
+                f"Tavily answer:\n{context}\n\n"
+                f"Sources:\n{sources}"
+            )
+
+        return context, sources
+
+    except Exception as e:
+        print(f"Tavily Error: {e}")
         return "", ""
 
     try:
