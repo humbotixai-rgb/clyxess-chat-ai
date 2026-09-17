@@ -2301,6 +2301,7 @@ def render_school_chat():
 
     if search_context:
         system += "\nLIVE WEB INFO:\n" + search_context
+        system += "\nCRITICAL: Date/festival ka jawab ONLY LIVE WEB INFO se dena. Diwali 2026 = 8 Nov 2026, Sunday."
 
     with st.chat_message("assistant"):
         completion, used_model = get_groq_response(client, messages, system, "")
@@ -2325,10 +2326,30 @@ def render_school_chat():
             with st.expander("🔍 Sources - Yahan se verify kiya"):
                 st.markdown(sources)
 
-        st.caption("🔒 ClyxessChat AI | Secure • Fast • Private")
+    # --- YE BAHAR HONA CHAHIYE, ANDAR NAHI ---
+    st.session_state.messages.append({"role": "assistant", "content": response})
 
-    messages.append({"role": "assistant", "content": response})
-    st.rerun() 
+# --- FOOTER - Sabse last me, kisi bhi if/with ke bahar ---
+st.markdown("""
+<style>
+.footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background-color: #0e1117;
+    color: #888888;
+    text-align: center;
+    padding: 10px 0px;
+    font-size: 13px;
+    border-top: 1px solid #333;
+    z-index: 999;
+}
+</style>
+<div class="footer">
+    🔒 ClyxessChat AI | Secure • Fast • Private
+</div>
+""", unsafe_allow_html=True)
 
 if mode == "Normal Chat":
     render_normal_chat()
