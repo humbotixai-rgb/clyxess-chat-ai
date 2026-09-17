@@ -2301,16 +2301,30 @@ def render_school_chat():
     if search_context:
         system += "\nLIVE WEB INFO:\n" + search_context
 
-    with st.chat_message("assistant"):
+   with st.chat_message("assistant"):
         completion, used_model = get_groq_response(client, messages, system, "")
         if completion is None:
             st.error("AI response नहीं आ पाया. Please try again.")
             return
+
         response = completion.choices[0].message.content
-        st.markdown(response)
-        if sources:
-            st.caption("Sources:\n" + sources)
-        st.caption(f"Age: {school_age} | Language: {language_name} | Model: {used_model or 'fallback'}")
+
+        # --- TYPEWRITER EFFECT - FIXED ---
+        placeholder = st.empty()
+        typed = ""
+        # Letter by letter zyada smooth lagta hai
+        for char in response:
+            typed += char
+            placeholder.markdown(typed + "▌")
+            time.sleep(0.012)
+        placeholder.markdown(response)
+
+        # --- SOURCE FIX - Clickable link ke saath ---
+        if sources and sources.strip():
+            with st.expander("🔍 Sources - Yahan se verify kiya"):
+                st.markdown(sources)
+
+        st.caption("🔒 ClyxessChat AI | Secure • Fast • Private")
 
     messages.append({"role": "assistant", "content": response})
     st.rerun()
