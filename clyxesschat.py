@@ -143,6 +143,7 @@ PLAY_AGE_LEVELS = [
 ]
 
 PLAY_LANGUAGES = {
+    # --- INDIAN LANGUAGES ---
     "🇮🇳 हिंदी": "hi",
     "🇮🇳 मराठी": "mr",
     "🇮🇳 বাংলা": "bn",
@@ -152,9 +153,49 @@ PLAY_LANGUAGES = {
     "🇮🇳 ಕನ್ನಡ": "kn",
     "🇮🇳 മലയാളം": "ml",
     "🇮🇳 ଓଡ଼ିଆ": "or",
+    "🇮🇳 ਪੰਜਾਬੀ": "pa",
+    "🇮🇳 অসমীয়া": "as",
+    "🇮🇳 اردو": "ur",
+    "🇮🇳 छत्तीसगढ़ी": "hns",
+    "🇮🇳 भोजपुरी": "bho",
+    "🇮🇳 संस्कृत": "sa",
+    "🇮🇳 कोंकणी": "kok",
+    "🇮🇳 नेपाली": "ne",
+
+    # --- WORLD TOP LANGUAGES ---
     "🇬🇧 English": "en",
+    "🇺🇸 English (US)": "en-US",
     "🇨🇳 中文": "zh",
-    "🇯🇵 日本語": "ja"
+    "🇯🇵 日本語": "ja",
+    "🇰🇷 한국어": "ko",
+    "🇪🇸 Español": "es",
+    "🇫🇷 Français": "fr",
+    "🇩🇪 Deutsch": "de",
+    "🇸🇦 العربية": "ar",
+    "🇵🇹 Português": "pt",
+    "🇷🇺 Русский": "ru",
+    "🇮🇹 Italiano": "it",
+    "🇹🇷 Türkçe": "tr",
+    "🇮🇩 Bahasa Indonesia": "id",
+    "🇲🇾 Bahasa Melayu": "ms",
+    "🇹🇭 ไทย": "th",
+    "🇻🇳 Tiếng Việt": "vi",
+    "🇳🇱 Nederlands": "nl",
+    "🇵🇱 Polski": "pl",
+    "🇺🇦 Українська": "uk",
+    "🇮🇷 فارسی": "fa",
+    "🇵🇭 Tagalog": "tl",
+    "🇲🇲 မြန်မာ": "my",
+    "🇬🇷 Ελληνικά": "el",
+    "🇸🇪 Svenska": "sv",
+    "🇳🇴 Norsk": "no",
+    "🇩🇰 Dansk": "da",
+    "🇫🇮 Suomi": "fi",
+    "🇷🇴 Română": "ro",
+    "🇭🇺 Magyar": "hu",
+    "🇨🇿 Čeština": "cs",
+    "🇧🇷 Português (Brasil)": "pt-BR",
+    "🇵🇰 اردو (PK)": "ur-PK"
 }
 
 AGE_SUBJECTS = {
