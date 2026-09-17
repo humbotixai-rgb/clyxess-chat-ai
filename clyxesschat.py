@@ -1780,10 +1780,11 @@ with st.sidebar:
         "📝 Interactive Homework & Test",
         "👨‍👩‍👦 Parent Dashboard", 
         "🖥️ Coding Lab",  
-        "🖥️ Math Lab", 
+        "🖥️ Learn AI", 
         "🖥️ Physics Lab", 
         "🖥️ Data Science Lab", 
-        "🖥️ Lern Finance",
+        "🖥️ Math Lab", 
+        "🖥️ Learn Finance",
         "🔐 Login / Sign Up"
     ])
     st.markdown("---")
