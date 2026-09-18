@@ -1387,7 +1387,7 @@ def get_groq_response(
     system_prompt,
     search_context=""
 ):
-   final_system = system_prompt
+    final_system = system_prompt
 
     from datetime import datetime
     live_date = datetime.now().strftime("%A, %d %B %Y")
