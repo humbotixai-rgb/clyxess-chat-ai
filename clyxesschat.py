@@ -2681,7 +2681,7 @@ def render_school_chat():
         for char in response:
             typed += char
             placeholder.markdown(typed + "▌")
-            time.sleep(0.01)
+            time.sleep(0.05)
         placeholder.markdown(response)
 
         # --- SOURCE FIX - Clickable link ke saath ---
