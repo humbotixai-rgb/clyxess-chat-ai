@@ -897,11 +897,12 @@ def search_tavily(query):
 
       
         ist = pytz.timezone('Asia/Kolkata')
-        live_date = datetime.now(ist).strftime("%A, %d %B %Y")
+        live_date = datetime.datetime.now(ist).strftime("%A, %d %B %Y")
 
-        search_arguments["query"] = f"{final_query} Today date is {live_date}"
-        search_arguments["include_answer"] = True
+        search_arguments["query"] = f"{final_query} 2026 Indian festival date Panchang"
+        search_arguments["include_answer"] = False # Tavily ka AI answer mat lo, sirf raw content lo
         search_arguments["include_raw_content"] = True
+        search_arguments["search_depth"] = "advanced"
 
         if time_range and time_range in ["day", "week", "month", "year"]:
             search_arguments["time_range"] = time_range
