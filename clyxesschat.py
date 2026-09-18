@@ -894,8 +894,19 @@ def search_tavily(query):
             "include_raw_content": False
         }
 
-        if time_range:
+      from datetime import datetime
+        import pytz
+        ist = pytz.timezone('Asia/Kolkata')
+        live_date = datetime.now(ist).strftime("%A, %d %B %Y")
+
+        search_arguments["query"] = f"{final_query} Today date is {live_date}"
+        search_arguments["include_answer"] = True
+        search_arguments["include_raw_content"] = True
+
+        if time_range and time_range in ["day", "week", "month", "year"]:
             search_arguments["time_range"] = time_range
+        else:
+            search_arguments["time_range"] = "year"
 
         response = tavily_client.search(**search_arguments)
 
@@ -903,10 +914,14 @@ def search_tavily(query):
             return "", "Tavily returned an invalid response."
 
         results = response.get("results", []) or []
+        if not results:
+            search_arguments.pop("time_range", None)
+            response = tavily_client.search(**search_arguments)
+            results = response.get("results", []) or []
 
         if not results:
             return (
-                "Live search mein reliable information nahi mili.",
+                "Live search mein reliable information nahi mili, Sangvari.",
                 ""
             )
 
