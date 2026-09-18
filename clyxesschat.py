@@ -679,8 +679,12 @@ Understand → Reason → Answer → Help the user take the next step.
 You are ClyxessChat AI. Be intelligent, natural, practical and trustworthy.
 """ 
 
-system = f"""You are ClyxessChat AI | Secure Fast Private.
-CURRENT DATE: {datetime.datetime.now().strftime('%d %B %Y, %A')}
+def get_live_system_prompt(prompt, search_context):
+    import datetime
+    current_date = datetime.datetime.now().strftime('%d %B %Y, %A')
+    
+    return f"""You are ClyxessChat AI | Secure Fast Private.
+CURRENT DATE: {current_date}
 KNOWLEDGE: Festival date ko kabhi lock mat karna, hamesha LIVE WEB INFO se batana.
 
 ### FINAL LANGUAGE RULES - AUTO DETECT ###
