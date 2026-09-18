@@ -756,154 +756,54 @@ LIVE WEB INFO: {search_context}
 # ============================================================
 
 # ============================================================
-# TAVILY - SMART LIVE WEB SEARCH - SOLID FIX BY CLYXESS
+# TAVILY - SMART LIVE WEB SEARCH
 # ============================================================
 
 def search_tavily(query):
     import re
     from datetime import datetime
+    from urllib.parse import quote_plus
 
-    query_lower = (query or "").lower().strip()
+    query = (query or "").strip()
 
-    if not query_lower:
+    if not query:
         return "", ""
 
+    query_lower = query.lower()
+
     # ========================================================
-    # CURRENT YEAR / DATE
+    # CURRENT YEAR - INDIA
     # ========================================================
     current_year = datetime.now().year
-    current_date = datetime.now().strftime("%d %B %Y")
 
     # ========================================================
-    # 1. FUZZY TYPO FIX - DIWALI
-    # ========================================================
-    diwali_typos = [
-        "diwali",
-        "divali",
-        "dipawali",
-        "deepawali",
-        "deepavali",
-        "deewali",
-        "diwalee",
-        "दिवाली",
-        "दीपावली",
-        "दिपावली"
-    ]
-
-    is_diwali_query = False
-
-    for typo in diwali_typos:
-        if typo in query_lower:
-            is_diwali_query = True
-            break
-
-    # Extra fuzzy check
-    if not is_diwali_query:
-        if (
-            ("diw" in query_lower or
-             "div" in query_lower or
-             "dip" in query_lower)
-            and
-            (
-                "kab" in query_lower or
-                "date" in query_lower or
-                "tarikh" in query_lower or
-                "कब" in query_lower or
-                "तारीख" in query_lower
-            )
-        ):
-            is_diwali_query = True
-
-    # ========================================================
-    # 2. ALL IMPORTANT FESTIVALS
+    # FESTIVAL DETECTION
     # ========================================================
     festival_words = [
-        # Diwali
-        "diwali", "divali", "dipawali",
+        "diwali", "diwali", "divali", "dipawali",
         "deepawali", "deepavali", "deewali",
-        "diwalee", "दिवाली", "दीपावली", "दिपावली",
+        "दिवाली", "दीपावली", "दिपावली",
 
-        # Holi
         "holi", "होली",
-
-        # Navratri
-        "navratri", "navaratri",
-        "नवरात्रि", "नवरात्र",
-
-        # Dussehra
-        "dussehra", "dussera",
-        "vijayadashami", "vijay dashami",
-        "दशहरा", "विजयदशमी",
-
-        # Durga Puja
+        "navratri", "navaratri", "नवरात्रि", "नवरात्र",
+        "dussehra", "vijayadashami", "दशहरा", "विजयदशमी",
         "durga puja", "दुर्गा पूजा",
-
-        # Ganesh
-        "ganesh chaturthi", "ganesh utsav",
-        "गणेश चतुर्थी", "गणेश उत्सव",
-
-        # Janmashtami
-        "janmashtami", "janmashtami",
-        "जन्माष्टमी",
-
-        # Raksha Bandhan
-        "raksha bandhan", "rakhi",
-        "रक्षा बंधन", "राखी",
-
-        # Eid
-        "eid", "eid ul fitr", "eid al fitr",
-        "eid ul adha", "bakrid",
-        "ईद", "बकरीद",
-
-        # Christmas
+        "ganesh chaturthi", "गणेश चतुर्थी",
+        "janmashtami", "जन्माष्टमी",
+        "raksha bandhan", "rakhi", "रक्षा बंधन", "राखी",
+        "eid", "bakrid", "ईद", "बकरीद",
         "christmas", "क्रिसमस",
-
-        # Guru Nanak
-        "guru nanak jayanti",
-        "gurpurab",
-        "गुरु नानक जयंती",
-
-        # Makar Sankranti
-        "makar sankranti",
-        "मकर संक्रांति",
-
-        # Pongal
-        "pongal", "पोंगल",
-
-        # Onam
-        "onam", "ओणम",
-
-        # Buddha Purnima
-        "buddha purnima",
-        "बुद्ध पूर्णिमा",
-
-        # Mahavir Jayanti
-        "mahavir jayanti",
-        "महावीर जयंती",
-
-        # Shivratri
-        "maha shivratri",
-        "shivratri",
-        "महाशिवरात्रि",
-
-        # Ram Navami
-        "ram navami",
-        "राम नवमी",
-
-        # Holi related
-        "rang panchami",
-        "रंग पंचमी",
-
-        # Other
-        "festival",
-        "festivals",
-        "त्योहार",
-        "त्यौहार",
-        "holiday",
-        "holidays",
-        "public holiday",
-        "छुट्टी",
-        "अवकाश"
+        "guru nanak jayanti", "gurpurab",
+        "makar sankranti", "मकर संक्रांति",
+        "pongal", "onam",
+        "maha shivratri", "shivratri", "महाशिवरात्रि",
+        "ram navami", "राम नवमी",
+        "mahavir jayanti", "महावीर जयंती",
+        "buddha purnima", "बुद्ध पूर्णिमा",
+        "festival", "festivals",
+        "त्योहार", "त्यौहार",
+        "holiday", "holidays",
+        "public holiday", "छुट्टी", "अवकाश"
     ]
 
     is_festival_query = any(
@@ -911,250 +811,201 @@ def search_tavily(query):
     )
 
     # ========================================================
-    # 3. YEAR DETECTION
+    # NEWS DETECTION
     # ========================================================
-    year_match = re.search(r"\b(20\d{2})\b", query_lower)
-
-    requested_year = None
-
-    if year_match:
-        requested_year = int(year_match.group(1))
-
-    # ========================================================
-    # 4. SMART FESTIVAL YEAR
-    # ========================================================
-    final_query = query
-
-    if is_festival_query:
-
-        # User ne year diya hai
-        if requested_year:
-            final_query = (
-                f"{query} festival date "
-                f"India {requested_year}"
-            )
-
-        # "next / upcoming / agli" type query
-        elif any(word in query_lower for word in [
-            "next",
-            "upcoming",
-            "agli",
-            "agla",
-            "aane wala",
-            "aane wali",
-            "अगला",
-            "अगली",
-            "आने वाला",
-            "आने वाली"
-        ]):
-            final_query = (
-                f"{query} upcoming festival date "
-                f"India {current_year}"
-            )
-
-        # User ne year nahi diya
-        else:
-            final_query = (
-                f"{query} festival date "
-                f"India {current_year}"
-            )
-
-    # ========================================================
-    # 5. LIVE SEARCH WORDS
-    # ========================================================
-    search_words = [
-
-        # Current information
-        "news", "latest", "breaking",
-        "today", "tomorrow", "yesterday",
-        "aaj", "kal", "abhi",
-        "vartaman", "current",
-        "recent", "update", "updates",
-
-        # Date / time
-        "date", "dates",
-        "time", "samay",
-        "तारीख", "दिनांक",
-        "समय",
-
-        # Weather
-        "mausam", "weather",
-        "temperature", "forecast",
-        "rain", "baarish",
-        "बारिश", "मौसम",
-
-        # Prices / rates
-        "rate", "price", "cost",
-        "कीमत", "दाम",
-        "petrol", "diesel",
-        "gold", "silver",
-
-        # Sports
-        "score", "match",
-        "live score", "result",
-        "cricket", "football",
-        "tennis", "ipl",
-
-        # Festivals / holidays
-        "festival", "festivals",
-        "त्योहार", "त्यौहार",
-        "holiday", "holidays",
-        "public holiday",
-        "छुट्टी", "अवकाश",
-
-        # Websites / official links
-        "website", "official website",
-        "official site", "official link",
-        "link", "url",
-        "वेबसाइट", "लिंक",
-        "official", "आधिकारिक",
-
-        # Government / organizations
-        "government", "govt",
-        "सरकार",
-        "notification",
-        "नोटिफिकेशन",
-        "official announcement",
-
-        # Events / schedules
-        "event", "events",
-        "कार्यक्रम",
-        "schedule", "समय",
-        "तारीख", "date",
-        "when is", "कब है",
-        "opening", "launch",
-
-        # Current technology / products
-        "new model", "new version",
-        "release", "released",
-        "api update",
-        "latest version",
-        "latest model"
+    news_words = [
+        "news", "latest news", "breaking news",
+        "आज की खबर", "आज की न्यूज़",
+        "समाचार", "ताजा खबर", "ताज़ा खबर",
+        "current news", "recent news",
+        "headlines", "खबरें", "news today"
     ]
 
+    is_news_query = any(
+        word in query_lower for word in news_words
+    )
+
     # ========================================================
-    # 6. LIVE SEARCH DECISION
+    # LIVE INFORMATION DETECTION
     # ========================================================
+    live_words = [
+        "today", "tomorrow", "yesterday",
+        "aaj", "kal", "abhi",
+        "आज", "कल", "अभी",
+        "current", "latest", "live",
+        "date", "time", "when",
+        "kab", "कब", "तारीख", "दिनांक", "समय",
+        "price", "rate", "कीमत", "दाम",
+        "weather", "mausam", "मौसम",
+        "score", "match", "result",
+        "official", "website", "link", "url"
+    ]
+
     needs_live_search = (
-        any(word in query_lower for word in search_words)
-        or is_festival_query
-        or is_diwali_query
+        is_festival_query
+        or is_news_query
+        or any(word in query_lower for word in live_words)
     )
 
     if not needs_live_search:
         return "", ""
 
     # ========================================================
-    # 7. TAVILY SEARCH
+    # YEAR DETECTION
+    # ========================================================
+    year_match = re.search(r"\b20\d{2}\b", query)
+    requested_year = year_match.group(0) if year_match else str(current_year)
+
+    # ========================================================
+    # SEARCH QUERY PREPARATION
+    # ========================================================
+    if is_festival_query:
+        final_query = (
+            f"{query} India {requested_year} "
+            f"exact festival date day and local timing "
+            f"reliable calendar source"
+        )
+        search_topic = "general"
+        time_range = None
+
+    elif is_news_query:
+        final_query = (
+            f"{query} latest verified news India "
+            f"today {current_year}"
+        )
+        search_topic = "news"
+        time_range = "week"
+
+    else:
+        final_query = query
+        search_topic = "general"
+        time_range = None
+
+    # ========================================================
+    # TAVILY SEARCH
     # ========================================================
     try:
+        search_arguments = {
+            "query": final_query,
+            "search_depth": "advanced",
+            "topic": search_topic,
+            "max_results": 8,
+            "include_answer": False,
+            "include_raw_content": False
+        }
 
-        # ----------------------------------------------------
-        # Existing Tavily client ko use karo
-        # ----------------------------------------------------
-        # IMPORTANT:
-        # Agar tumhare code mein tavily_client already bana hua hai,
-        # wahi automatically use hoga.
-        # ----------------------------------------------------
+        if time_range:
+            search_arguments["time_range"] = time_range
 
-        response = tavily_client.search(
-            query=final_query,
-            search_depth="advanced",
-            max_results=8,
-            include_answer=True,
-            include_raw_content=False
-        )
+        response = tavily_client.search(**search_arguments)
 
-        # ====================================================
-        # 8. ANSWER
-        # ====================================================
-        answer = ""
+        if not isinstance(response, dict):
+            return "", "Tavily returned an invalid response."
 
-        if isinstance(response, dict):
+        results = response.get("results", []) or []
 
-            answer = response.get(
-                "answer",
+        if not results:
+            return (
+                "Live search mein reliable information nahi mili.",
                 ""
-            ) or ""
+            )
 
         # ====================================================
-        # 9. SEARCH RESULTS
+        # BUILD SEARCH CONTEXT
         # ====================================================
-        results = []
+        context_parts = []
 
-        if isinstance(response, dict):
-            results = response.get(
-                "results",
-                []
-            ) or []
-
-        # ====================================================
-        # 10. BUILD SOURCE LINKS
-        # ====================================================
-        sources = []
-
-        for item in results:
-
+        for index, item in enumerate(results[:6], start=1):
             if not isinstance(item, dict):
                 continue
 
-            title = (
-                item.get("title")
-                or "Source"
+            title = str(item.get("title", "")).strip()
+            content = str(item.get("content", "")).strip()
+            url = str(item.get("url", "")).strip()
+
+            if not content:
+                continue
+
+            context_parts.append(
+                f"SOURCE {index}\n"
+                f"TITLE: {title}\n"
+                f"CONTENT: {content}\n"
+                f"URL: {url}"
             )
 
-            url = (
-                item.get("url")
-                or ""
-            )
-
-            if url:
-
-                sources.append(
-                    f"🔗 {title}\n{url}"
-                )
+        search_context = "\n\n".join(context_parts)
 
         # ====================================================
-        # 11. YOUTUBE SOURCE
-        # ====================================================
-        # Direct YouTube result mila to use karo.
-        # Agar nahi mila to YouTube search link provide karo.
-        # ====================================================
-
-        youtube_url = (
-            "https://www.youtube.com/results?search_query="
-            + final_query.replace(" ", "+")
-        )
-
-        # ====================================================
-        # 12. WEBSITE SOURCE
+        # SELECT REAL WEBSITE SOURCE
         # ====================================================
         website_url = ""
 
-        if sources:
-            first_source = results[0]
+        for item in results:
+            if not isinstance(item, dict):
+                continue
 
-            if isinstance(first_source, dict):
-                website_url = (
-                    first_source.get("url")
-                    or ""
-                )
+            url = str(item.get("url", "")).strip()
+
+            if (
+                url
+                and "youtube.com" not in url.lower()
+                and "youtu.be" not in url.lower()
+            ):
+                website_url = url
+                break
 
         # ====================================================
-        # 13. SOURCE SECTION
+        # SELECT REAL YOUTUBE SOURCE
+        # ========================================================
+        youtube_url = ""
+
+        for item in results:
+            if not isinstance(item, dict):
+                continue
+
+            url = str(item.get("url", "")).strip()
+
+            if (
+                "youtube.com/watch" in url.lower()
+                or "youtu.be/" in url.lower()
+            ):
+                youtube_url = url
+                break
+
+        # If Tavily does not return a YouTube video,
+        # provide a clearly labelled YouTube search link.
+        if not youtube_url:
+            youtube_url = (
+                "https://www.youtube.com/results?search_query="
+                + quote_plus(final_query)
+            )
+
+        # ====================================================
+        # SOURCE LINKS - MAXIMUM 2
         # ====================================================
         source_text = ""
 
         if website_url:
-
             source_text += (
                 "\n\n🔗 Website Source:\n"
-                f"{website_url}"
+                + website_url
             )
 
-        source_text += (
-            "\n\n▶️ YouTube Source:\n"
-            f"{youtube_url}"
+        if youtube_url:
+            source_text += (
+                "\n\n▶️ YouTube Search/Video Source:\n"
+                + youtube_url
+            )
+
+        # ====================================================
+        # FINAL RETURN
+        # ====================================================
+        return search_context, source_text
+
+    except Exception as error:
+        return (
+            "",
+            "Tavily search error: " + str(error)
         )
 
         # ====================================================
