@@ -2,7 +2,8 @@ import streamlit as st
 from groq import Groq
 from supabase import create_client
 import datetime, uuid, requests, time, re, os, json, random, base64, urllib.parse
-from typing import Dict, List, Any
+from typing import Dict, List, Any 
+import pytz
 from fpdf import FPDF 
 try:
     from zoneinfo import ZoneInfo
