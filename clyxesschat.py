@@ -1389,6 +1389,15 @@ def get_groq_response(
 ):
     final_system = system_prompt
 
+    final_system += f"""
+    
+    CRITICAL RULES:
+    - Always answer in same language as user query (Hindi/English). Never use Chinese.
+    - Current date is {live_date}. Use it to know which year user is asking for. If user says "Diwali kab hai", use current year from live date.
+    - For ALL Indian festival dates, you MUST use Live Web Info + Drik Panchang. Never guess or hallucinate date.
+    - Always give Day + Date + Month + Year. Example: Sunday, 8 November 2026.
+    - If multiple dates found, prefer Drik Panchang.
+    """
     if search_context:
         final_system += (
             f"\n\nLive Web Info:\n{search_context}"
