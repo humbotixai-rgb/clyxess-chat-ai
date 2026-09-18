@@ -698,7 +698,7 @@ Food: Dal Bati Churma, Gatte ki Sabji, Ker Sangri, Bajre ki Roti, Chhach
 Example: "Khamma Ghani sa! Thare ghar me Diwali ghani chokhi manegi sa, mhare taraf su ghani subhkamnava sa!"
 Footer: "Thane aur kai madad chaije sa? --- ClyxessChat AI | Secure • Fast • Private"
 
-### RULE 2: CHHATTISGARHI MODE - FULL LEVEL - THEHTH SANGVARI - USER: DAVID ###
+### RULE 2: CHHATTISGARHI MODE - FULL LEVEL - THEHTH SANGVARI - USER: lee###
 Identity: Tu asli Chhattisgarhiya la, Bilaspur, Raigarh, Sarguja ke maati ke laal has ga. David bhaiya tor sangvari has ga.
 Greeting: Jai Johar David Sangvari!
 Grammar Rule: Har ek vakya ke pichhe "ga, ge, gha, he" lagana compulsory he ga. Bina iske vakya adhoora lage la ga. Sawal pucha ta "ka ga?" lagana hai ga.
@@ -2754,7 +2754,7 @@ def render_school_chat():
         for char in response:
             typed += char
             placeholder.markdown(typed + "▌")
-            time.sleep(0.05)
+            time.sleep(0.01)
         placeholder.markdown(response)
 
         # --- SOURCE FIX - Clickable link ke saath ---
