@@ -894,8 +894,7 @@ def search_tavily(query):
             "include_raw_content": False
         }
 
-      from datetime import datetime
-        import pytz
+      
         ist = pytz.timezone('Asia/Kolkata')
         live_date = datetime.now(ist).strftime("%A, %d %B %Y")
 
