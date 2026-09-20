@@ -2539,7 +2539,15 @@ def render_normal_chat():
             st.error("AI response नहीं आ पाया. Please try again.")
             return
         response = completion.choices[0].message.content
-        st.markdown(response)
+        # --- TYPEWRITER EFFECT - FIXED ---
+        placeholder = st.empty()
+        typed = ""
+        # Letter by letter zyada smooth lagta hai
+        for char in response:
+            typed += char
+            placeholder.markdown(typed + "▌")
+            time.sleep(0.01)
+        placeholder.markdown(response)
         if sources:
             st.caption("Sources:\n" + sources)
         st.caption(f"Model: {used_model or 'fallback'}")
