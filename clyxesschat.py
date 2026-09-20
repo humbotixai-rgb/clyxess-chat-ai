@@ -2081,7 +2081,9 @@ def render_play_and_learn(client):
 # ============================================================
 # EXTRA FEATURES — integrated without creating duplicate core modes
 # ============================================================
-def analyze_image_with_groq(image_bytes, mime, question, selected_language="English"):
+def analyze_image_with_groq(image_bytes, mime, question, selected_language="English"): 
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
     from openai import OpenAI
     import base64
     import streamlit as st
@@ -2124,7 +2126,9 @@ Ab shuru karo jaise class me samjha rahe ho, sirf {selected_language} me.
                 {"type":"image_url","image_url":{"url":f"data:{mime};base64,{b64}"}}
             ]}], temperature=0.4, max_tokens=1500
         )
-        return completion.choices[0].message.content
+       answer = completion.choices[0].message.content
+        st.session_state.chat_history.append(f"Q: {question}")
+        return answer
     except Exception as e:
         return f"Error: {e}"
 
