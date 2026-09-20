@@ -2546,7 +2546,7 @@ def render_normal_chat():
         for char in response:
             typed += char
             placeholder.markdown(typed + "▌")
-            time.sleep(0.00)
+            time.sleep(0.01)
         placeholder.markdown(response)
         if sources:
             st.caption("Sources:\n" + sources)
