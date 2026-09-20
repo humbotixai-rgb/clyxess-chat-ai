@@ -100,7 +100,7 @@ st.markdown("""
 
 .small-muted {
     color: #64748b;
-    font-size: 13px;
+    font-size: 11px;
 }
 
 .media-card {max-width:560px;margin:12px auto;}
