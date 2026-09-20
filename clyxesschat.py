@@ -2082,16 +2082,21 @@ def render_play_and_learn(client):
 # EXTRA FEATURES — integrated without creating duplicate core modes
 # ============================================================
 def analyze_image_with_groq(image_bytes, mime, question, selected_language="English"):
-    if not client:
-        return "Groq API key missing."
+    from openai import OpenAI
+    import base64
+    import streamlit as st
+    vision_client = OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=st.secrets["OPENROUTER_API_KEY"]
+    )
     try:
         b64 = base64.b64encode(image_bytes).decode("utf-8")
-        completion = client.chat.completions.create(
-          model="qwen/qwen3.6-27b",
+        completion = vision_client.chat.completions.create(
+            model="qwen/qwen2.5-vl-72b-instruct",
             messages=[{"role":"user","content":[
                 {"type":"text","text":f"Reply only in {selected_language}. {question}"},
                 {"type":"image_url","image_url":{"url":f"data:{mime};base64,{b64}"}}
-            ]}], temperature=0.4, max_completion_tokens=1500
+            ]}], temperature=0.4, max_tokens=1500
         )
         return completion.choices[0].message.content
     except Exception as e:
