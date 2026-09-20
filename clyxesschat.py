@@ -2082,16 +2082,12 @@ def render_play_and_learn(client):
 # EXTRA FEATURES — integrated without creating duplicate core modes
 # ============================================================
 def analyze_image_with_groq(image_bytes, mime, question, selected_language="English"):
-    from openai import OpenAI
-    import streamlit as st
-    vision_client = OpenAI(
-        base_url="https://openrouter.ai/api/v1",
-        api_key=st.secrets["OPENROUTER_API_KEY"]
-    )
+    if not client:
+        return "Groq API key missing."
     try:
         b64 = base64.b64encode(image_bytes).decode("utf-8")
-        completion = vision_client.chat.completions.create(
-            model="qwen/qwen2.5-vl-72b-instruct",
+        completion = client.chat.completions.create(
+            model="meta-llama/llama-4-scout-17b-16e-instruct",
             messages=[{"role":"user","content":[
                 {"type":"text","text":f"Reply only in {selected_language}. {question}"},
                 {"type":"image_url","image_url":{"url":f"data:{mime};base64,{b64}"}}
@@ -2099,7 +2095,7 @@ def analyze_image_with_groq(image_bytes, mime, question, selected_language="Engl
         )
         return completion.choices[0].message.content
     except Exception as e:
-        return f"Vision error: {e}"
+        return f"Error: {e}"
 
 def save_current_chat_cloud():
     if not supabase or not st.session_state.messages:
