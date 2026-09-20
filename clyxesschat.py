@@ -2449,7 +2449,7 @@ if "Coding Lab" in mode:
     render_coding_lab(); st.stop()
 if mode == "🎨 Creative AI Image Generator":
     render_image_generator(); st.stop()
-if mode == "📷 Vision Lab":
+if "Vision Lab" in mode:   # <-- Ye sahi hai
     render_vision_lab(); st.stop()
 if mode == "🎭 Peer Roleplay Modes":
     render_roleplay(); st.stop()
