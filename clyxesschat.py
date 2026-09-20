@@ -2081,12 +2081,9 @@ def render_play_and_learn(client):
 # ============================================================
 # EXTRA FEATURES — integrated without creating duplicate core modes
 # ============================================================
-def analyze_image_with_groq(image_bytes, mime, question, selected_language="English"): 
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = []
+def analyze_image_with_groq(image_bytes, mime, question, selected_language="English"):
     from openai import OpenAI
     import base64
-    import streamlit as st
     vision_client = OpenAI(
         base_url="https://openrouter.ai/api/v1",
         api_key=st.secrets["OPENROUTER_API_KEY"]
