@@ -9,3 +9,4 @@ tavily-python
 qrcode[pil]
 Pillow
 pytz
+openai
