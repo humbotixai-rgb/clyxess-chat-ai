@@ -2087,7 +2087,7 @@ def analyze_image_with_groq(image_bytes, mime, question, selected_language="Engl
     try:
         b64 = base64.b64encode(image_bytes).decode("utf-8")
         completion = client.chat.completions.create(
-          model="meta-llama/llama-4-maverick-17b-128e-instruct",
+          model="qwen/qwen3.6-27b",
             messages=[{"role":"user","content":[
                 {"type":"text","text":f"Reply only in {selected_language}. {question}"},
                 {"type":"image_url","image_url":{"url":f"data:{mime};base64,{b64}"}}
