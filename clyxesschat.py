@@ -2126,7 +2126,7 @@ Ab shuru karo jaise class me samjha rahe ho, sirf {selected_language} me.
                 {"type":"image_url","image_url":{"url":f"data:{mime};base64,{b64}"}}
             ]}], temperature=0.4, max_tokens=1500
         )
-       answer = completion.choices[0].message.content
+        answer = completion.choices[0].message.content
         st.session_state.chat_history.append(f"Q: {question}")
         return answer
     except Exception as e:
