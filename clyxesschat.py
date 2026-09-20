@@ -2649,7 +2649,7 @@ st.markdown("""
     color: #888888;
     text-align: center;
     padding: 10px 0px;
-    font-size: 13px;
+    font-size: 10px;
     border-top: 1px solid #333;
     z-index: 999;
 }
