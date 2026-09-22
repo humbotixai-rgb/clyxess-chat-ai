@@ -1319,18 +1319,21 @@ def india_clock_text():
 def transcribe_audio_with_groq(client, audio_bytes):
     if not audio_bytes:
         return ""
+
     try:
         path = "temp_audio_school.wav"
         with open(path, "wb") as f:
             f.write(audio_bytes)
+
         with open(path, "rb") as audio_file:
             result = client.audio.transcriptions.create(
                 file=audio_file,
                 model="whisper-large-v3",
-                prompt="The speaker may use Hindi, Hinglish, English, Marathi, Bengali, Tamil, Telugu, Gujarati, Kannada, Malayalam, Odia, Chinese or Japanese."
+                temperature=0.0
             )
         return result.text.strip()
-    except Exception:
+    except Exception as e:
+        print(f"Mic Error: {e}")
         return ""
 
 def language_display_name(code):
