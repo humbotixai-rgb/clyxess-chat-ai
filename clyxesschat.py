@@ -2544,55 +2544,40 @@ def _chat_voice_input(key):
 def render_normal_chat():
     _render_chat_history(st.session_state.messages)
 
-    # CSS - isse bar neeche chipka rahega
     st.markdown("""
     <style>
-    [data-testid="stBottom"] { bottom: 10px; }
+    div[data-testid="stForm"]{
+        position: fixed !important;
+        bottom: 15px !important;
+        left: 310px !important;
+        right: 15px !important;
+        z-index: 99999 !important;
+        background: #22242f !important;
+        border-radius: 30px !important;
+        padding: 6px 10px !important;
+        border: 1px solid #3a3a3a !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-    # Neeche ka bar - + aur Mic ke saath
-    with st.container():
-        c1, c2 = st.columns([1, 11])
+    with st.form("bottom_bar", clear_on_submit=True, border=False):
+        c1, c2, c3, c4 = st.columns([1, 8, 1, 1])
         with c1:
             with st.popover("+"):
                 uploaded_file = st.file_uploader("File", type=["pdf","jpg","png","jpeg"], label_visibility="collapsed", key="f1")
                 camera_capture = st.camera_input("Camera", label_visibility="collapsed", key="c1")
         with c2:
-            voice_prompt = _chat_voice_input("normal_chat_mic")
+            prompt = st.text_input("p", placeholder="Search / ask ClyxessChat AI..", label_visibility="collapsed")
+        with c3:
+            _chat_voice_input("normal_chat_mic")
+        with c4:
+            submitted = st.form_submit_button("↑")
 
-    prompt = st.chat_input("Search / ask ClyxessChat AI..", key="normal_chat_input")
-
-    if not prompt and voice_prompt:
-        prompt = voice_prompt
-
-    file_context = ""
-    final_file = None
-    if 'camera_capture' in locals() and camera_capture:
-        final_file = camera_capture
-    elif 'uploaded_file' in locals() and uploaded_file:
-        final_file = uploaded_file
-
-    if final_file is not None:
-        if final_file.type == "application/pdf":
-            import PyPDF2
-            reader = PyPDF2.PdfReader(final_file)
-            for page in reader.pages:
-                file_context += (page.extract_text() or "") + "\n"
-        else:
-            file_context = f"[Image uploaded: {final_file.name}]"
-        if not prompt:
-            prompt = f"Is file ka jawab do: {final_file.name}"
-
-    if not prompt and not file_context:
+    if not submitted or not prompt:
         return
-
-    full_prompt = f"{prompt}\n\nFile Content:\n{file_context}" if file_context else prompt
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(f'<div class="user-bubble">{prompt}</div>', unsafe_allow_html=True)
-        if final_file and final_file.type != "application/pdf":
-            st.image(final_file)
 
     if _explicit_image_request(prompt):
         with st.chat_message("assistant"):
