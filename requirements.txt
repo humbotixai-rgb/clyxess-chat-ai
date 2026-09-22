@@ -10,3 +10,5 @@ qrcode[pil]
 Pillow
 pytz
 openai
+bcrypt
+streamlit-cookies-manager
