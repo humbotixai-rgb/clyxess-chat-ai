@@ -11,5 +11,3 @@ Pillow
 pytz
 openai
 bcrypt
-streamlit-cookies-manager
-streamlit-mic-recorder
