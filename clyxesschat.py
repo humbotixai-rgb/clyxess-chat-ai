@@ -2542,7 +2542,6 @@ def _chat_voice_input(key):
     return ""
 
 def render_normal_chat():
-   
     _render_chat_history(st.session_state.messages)
      with st.popover("+"):
         uploaded_file = st.file_uploader("File", type=["pdf","jpg","png"], label_visibility="collapsed", key="f1")
