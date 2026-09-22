@@ -2543,41 +2543,63 @@ def _chat_voice_input(key):
 
 def render_normal_chat():
     _render_chat_history(st.session_state.messages)
+
     with st.container():
         c1, c2, c3 = st.columns([1, 8, 1])
+        uploaded_file = None
+        camera_capture = None
+        
         with c1:
             with st.popover("+"):
                 uploaded_file = st.file_uploader("File", type=["pdf","jpg","png","jpeg"], label_visibility="collapsed", key="f1")
                 camera_capture = st.camera_input("Camera", label_visibility="collapsed", key="c1")
+        
         with c2:
             prompt = st.text_input("prompt", placeholder="Search / ask ClyxessChat AI..", label_visibility="collapsed", key="normal_chat_input")
+        
         with c3:
             voice_prompt = _chat_voice_input("normal_chat_mic")
             if voice_prompt:
                 prompt = voice_prompt
 
+    # --- YAHI MISSING THA ---
     file_context = ""
-    final_file = camera_capture if 'camera_capture' in locals() and camera_capture else uploaded_file
+    final_file = camera_capture if camera_capture else uploaded_file
+
     if final_file is not None:
         if final_file.type == "application/pdf":
             import PyPDF2
             reader = PyPDF2.PdfReader(final_file)
             for page in reader.pages:
-                file_context += (page.extract_text() or "") + "\n"
-        else:
-            file_context = f"[Image uploaded: {final_file.name}]"
+                file_context += page.extract_text() + "\n"
+        else: # Image hai
+            file_context = "[User ne ek image upload ki hai, iska analysis karo]"
+            st.session_state.last_image = final_file  # image ko save kar liya
+        # File ka naam bhi prompt me jod de
         if not prompt:
             prompt = f"Is file ka jawab do: {final_file.name}"
 
     if not prompt and not file_context:
         return
 
-    full_prompt = f"{prompt}\n\nFile Content:\n{file_context}" if file_context else prompt
+    # Final prompt banao
+    full_prompt = prompt
+    if file_context:
+        full_prompt = f"{prompt}\n\nFile Content:\n{file_context}"
+
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
-        st.markdown(f'<div class="user-bubble">{prompt}</div>', unsafe_allow_html=True)
+        st.markdown(prompt)
         if final_file and final_file.type != "application/pdf":
             st.image(final_file)
+
+    # Yaha tera AI call ayega
+    with st.chat_message("assistant"):
+        # example: response = get_ai_response(full_prompt, image=st.session_state.get('last_image'))
+        # st.markdown(response)
+        st.markdown(f"File mil gayi! Ab iska jawab dunga: {full_prompt[:200]}")
+    
+    st.session_state.messages.append({"role": "assistant", "content": "Response..."})
 
     if _explicit_image_request(prompt):
         with st.chat_message("assistant"):
