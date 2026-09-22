@@ -3,9 +3,10 @@ groq
 supabase
 requests
 fpdf2
+python-dotenv
 google-generativeai
 tavily-python
-qrcode
+qrcode[pil]
 Pillow
 pytz
 openai
