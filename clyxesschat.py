@@ -2543,17 +2543,15 @@ def _chat_voice_input(key):
 
 def render_normal_chat():
     _render_chat_history(st.session_state.messages)
-     with st.popover("+"):
+    with st.popover("+"):
         uploaded_file = st.file_uploader("File", type=["pdf","jpg","png"], label_visibility="collapsed", key="f1")
         camera_capture = st.camera_input("Camera", label_visibility="collapsed", key="c1")
-     voice_prompt = _chat_voice_input("normal_chat_mic")
-     prompt = st.chat_input("Search / ask ClyxessChat AI…", key="normal_chat_input")
-     if not prompt and voice_prompt:
+    voice_prompt = _chat_voice_input("normal_chat_mic")
+    prompt = st.chat_input("Search / ask ClyxessChat AI..", key="normal_chat_input")
+    if not prompt and voice_prompt:
         prompt = voice_prompt
-
     if not prompt:
         return
-
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(f'<div class="user-bubble">{prompt}</div>', unsafe_allow_html=True)
