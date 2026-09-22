@@ -2717,6 +2717,6 @@ if mode == "Normal Chat":
     render_normal_chat()
     st.stop()
 
-if mode == "(School Mode)":
+if mode == "Creative Lab (School Mode)":
     render_school_chat()
     st.stop()
