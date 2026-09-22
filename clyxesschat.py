@@ -2545,274 +2545,126 @@ def render_normal_chat():
     _render_chat_history(st.session_state.messages)
 
     # =========================================================
-    # CLYXESSCHAT AI - GEMINI STYLE BOTTOM SEARCH BAR
+    # EXACT BOTTOM CHAT BAR
     # =========================================================
     st.markdown("""
     <style>
+    /* Keep ONLY the native Streamlit chat input at bottom */
+    [data-testid="stChatInput"] {
+        position: fixed !important;
+        bottom: 12px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
 
-    /* Bottom fixed area */
-    [data-testid="stBottom"] {
-        bottom: 8px !important;
+        width: min(94vw, 1450px) !important;
+        z-index: 9999 !important;
+    }
+
+    /* Screenshot-style dark pill */
+    [data-testid="stChatInput"] > div {
+        background: #191919 !important;
+        border: 1px solid #3a3a3a !important;
+        border-radius: 38px !important;
+        min-height: 70px !important;
+        box-shadow: 0 5px 28px rgba(0,0,0,.45) !important;
+    }
+
+    /* Input text */
+    [data-testid="stChatInput"] textarea {
         background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-    }
-
-    /* Main bar */
-    .clyxess-input-wrap {
-        width: 100%;
-        max-width: 1450px;
-        margin: auto;
-        height: 70px;
-        border-radius: 38px;
-        background: #191919;
-        border: 1px solid #383838;
-        display: flex;
-        align-items: center;
-        padding: 6px 10px;
-        box-shadow: 0 4px 25px rgba(0,0,0,.45);
-    }
-
-    /* Plus button */
-    .plus-btn button {
-        width: 56px !important;
-        height: 56px !important;
-        min-height: 56px !important;
-        border-radius: 50% !important;
-        background: #202020 !important;
-        border: 1px solid #3b3b3b !important;
-        color: #eeeeee !important;
-        font-size: 32px !important;
-        padding: 0 !important;
-        line-height: 1 !important;
-    }
-
-    .plus-btn button:hover {
-        background: #292929 !important;
-    }
-
-    /* Text input */
-    .clyxess-text input {
-        height: 56px !important;
-        background: transparent !important;
-        border: none !important;
-        outline: none !important;
-        box-shadow: none !important;
         color: #eeeeee !important;
         font-size: 20px !important;
-        padding: 0 12px !important;
+        padding-left: 72px !important;
+        padding-right: 125px !important;
+        min-height: 58px !important;
+        border: none !important;
     }
 
-    .clyxess-text input::placeholder {
-        color: #999999 !important;
+    [data-testid="stChatInput"] textarea::placeholder {
+        color: #999 !important;
         opacity: 1 !important;
     }
 
-    .clyxess-text div {
-        border: none !important;
-        background: transparent !important;
-        box-shadow: none !important;
-    }
-
-    /* Mic */
-    .mic-btn button {
+    /* Native send button */
+    [data-testid="stChatInput"] button {
+        border-radius: 50% !important;
         width: 54px !important;
         height: 54px !important;
-        min-height: 54px !important;
-        border-radius: 50% !important;
-        background: transparent !important;
-        border: none !important;
-        color: #bbbbbb !important;
-        font-size: 26px !important;
-        padding: 0 !important;
-    }
-
-    .mic-btn button:hover {
-        background: #252525 !important;
-        color: white !important;
-    }
-
-    /* Send */
-    .send-btn button {
-        width: 56px !important;
-        height: 56px !important;
-        min-height: 56px !important;
-        border-radius: 50% !important;
+        margin-right: 7px !important;
         background: #20c7b7 !important;
-        border: none !important;
         color: white !important;
-        font-size: 32px !important;
-        font-weight: 600 !important;
-        padding: 0 !important;
-    }
-
-    .send-btn button:hover {
-        background: #24d7c5 !important;
-    }
-
-    /* Remove default button text spacing */
-    .send-btn button p,
-    .plus-btn button p,
-    .mic-btn button p {
-        margin: 0 !important;
+        border: none !important;
     }
 
     /* Mobile */
     @media (max-width: 700px) {
-
-        .clyxess-input-wrap {
-            height: 62px;
-            border-radius: 32px;
-            padding: 4px 6px;
+        [data-testid="stChatInput"] {
+            width: 96vw !important;
+            bottom: 8px !important;
         }
 
-        .plus-btn button {
-            width: 48px !important;
-            height: 48px !important;
-            min-height: 48px !important;
-            font-size: 28px !important;
+        [data-testid="stChatInput"] > div {
+            min-height: 62px !important;
+            border-radius: 32px !important;
         }
 
-        .mic-btn button {
-            width: 44px !important;
-            height: 44px !important;
-            min-height: 44px !important;
-        }
-
-        .send-btn button {
-            width: 48px !important;
-            height: 48px !important;
-            min-height: 48px !important;
-            font-size: 28px !important;
-        }
-
-        .clyxess-text input {
+        [data-testid="stChatInput"] textarea {
             font-size: 17px !important;
+            padding-left: 58px !important;
+            padding-right: 105px !important;
+        }
+
+        [data-testid="stChatInput"] button {
+            width: 48px !important;
+            height: 48px !important;
         }
     }
-
     </style>
     """, unsafe_allow_html=True)
 
     # =========================================================
-    # FILE / CAMERA VARIABLES
+    # PLUS + MIC OVERLAY
+    # These stay visually inside the native chat bar.
     # =========================================================
 
-    uploaded_file = None
-    camera_capture = None
+    with st.container():
+        c1, c2 = st.columns([1, 1])
+
+        with c1:
+            with st.popover("＋"):
+                uploaded_file = st.file_uploader(
+                    "File",
+                    type=["pdf", "jpg", "png", "jpeg"],
+                    label_visibility="collapsed",
+                    key="normal_file_upload"
+                )
+
+                camera_capture = st.camera_input(
+                    "Camera",
+                    label_visibility="collapsed",
+                    key="normal_camera"
+                )
+
+        with c2:
+            voice_prompt = _chat_voice_input("normal_chat_mic")
 
     # =========================================================
-    # SEARCH BAR
+    # NATIVE CHAT INPUT — THIS IS THE ONLY TEXT BOX
     # =========================================================
 
-    st.markdown('<div class="clyxess-input-wrap">', unsafe_allow_html=True)
-
-    c1, c2, c3, c4 = st.columns(
-        [0.8, 7.8, 1.0, 1.0],
-        vertical_alignment="center"
+    prompt = st.chat_input(
+        "Search / ask ClyxessChat AI..",
+        key="normal_chat_input"
     )
-
-    # ---------------------------------------------------------
-    # PLUS
-    # ---------------------------------------------------------
-
-    with c1:
-
-        st.markdown(
-            '<div class="plus-btn">',
-            unsafe_allow_html=True
-        )
-
-        with st.popover("+"):
-
-            uploaded_file = st.file_uploader(
-                "File",
-                type=[
-                    "pdf",
-                    "jpg",
-                    "png",
-                    "jpeg"
-                ],
-                label_visibility="collapsed",
-                key="normal_file_upload"
-            )
-
-            camera_capture = st.camera_input(
-                "Camera",
-                label_visibility="collapsed",
-                key="normal_camera"
-            )
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    # ---------------------------------------------------------
-    # TEXT
-    # ---------------------------------------------------------
-
-    with c2:
-
-        st.markdown(
-            '<div class="clyxess-text">',
-            unsafe_allow_html=True
-        )
-
-        prompt = st.text_input(
-            "message",
-            placeholder="Search / ask ClyxessChat AI..",
-            label_visibility="collapsed",
-            key="normal_chat_input"
-        )
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    # ---------------------------------------------------------
-    # MIC
-    # ---------------------------------------------------------
-
-    with c3:
-
-        st.markdown(
-            '<div class="mic-btn">',
-            unsafe_allow_html=True
-        )
-
-        voice_prompt = _chat_voice_input(
-            "normal_chat_mic"
-        )
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    # ---------------------------------------------------------
-    # SEND
-    # ---------------------------------------------------------
-
-    with c4:
-
-        st.markdown(
-            '<div class="send-btn">',
-            unsafe_allow_html=True
-        )
-
-        send = st.button(
-            "↑",
-            key="normal_chat_send"
-        )
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    # =========================================================
-    # VOICE
-    # =========================================================
 
     if not prompt and voice_prompt:
         prompt = voice_prompt
 
     # =========================================================
-    # FILE
+    # FILE / CAMERA
     # =========================================================
 
+    file_context = ""
     final_file = None
 
     if camera_capture:
@@ -2821,43 +2673,30 @@ def render_normal_chat():
     elif uploaded_file:
         final_file = uploaded_file
 
-    file_context = ""
-
     if final_file is not None:
 
         if final_file.type == "application/pdf":
 
             import PyPDF2
 
-            reader = PyPDF2.PdfReader(
-                final_file
-            )
+            reader = PyPDF2.PdfReader(final_file)
 
             for page in reader.pages:
-
                 file_context += (
                     page.extract_text() or ""
                 ) + "\n"
 
         else:
-
             file_context = (
                 f"[Image uploaded: {final_file.name}]"
             )
 
         if not prompt:
-
-            prompt = (
-                f"Is file ka jawab do: "
-                f"{final_file.name}"
-            )
+            prompt = f"Is file ka jawab do: {final_file.name}"
 
     # =========================================================
     # NOTHING TO SEND
     # =========================================================
-
-    if not send and not voice_prompt and not final_file:
-        return
 
     if not prompt and not file_context:
         return
@@ -2872,19 +2711,12 @@ def render_normal_chat():
         else prompt
     )
 
-    # =========================================================
-    # USER MESSAGE
-    # =========================================================
-
-    st.session_state.messages.append(
-        {
-            "role": "user",
-            "content": full_prompt
-        }
-    )
+    st.session_state.messages.append({
+        "role": "user",
+        "content": full_prompt
+    })
 
     with st.chat_message("user"):
-
         st.markdown(
             f'<div class="user-bubble">{prompt}</div>',
             unsafe_allow_html=True
@@ -2896,23 +2728,9 @@ def render_normal_chat():
         ):
             st.image(final_file)
 
-    # =========================================================
-    # IMPORTANT:
-    # YAHAN SE TUMHARA EXISTING AI RESPONSE CODE
-    # CONTINUE HOGA.
-    #
-    # Example:
-    #
-    # search_context, sources = search_tavily(prompt)
-    #
-    # completion, model = get_groq_response(
-    #     client,
-    #     st.session_state.messages,
-    #     SYSTEM_PROMPT,
-    #     search_context
-    # )
-    #
-    # =========================================================
+    # ---------------------------------------------------------
+    # YAHAN TUMHARA EXISTING AI RESPONSE CODE RAHEGA
+    # ---------------------------------------------------------
 
     if _explicit_image_request(prompt):
         with st.chat_message("assistant"):
