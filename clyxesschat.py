@@ -1328,10 +1328,19 @@ def transcribe_audio_with_groq(client, audio_bytes):
         with open(path, "rb") as audio_file:
             result = client.audio.transcriptions.create(
                 file=audio_file,
-                model="whisper-large-v3",
+                model="whisper-large-v3-turbo",
                 temperature=0.0
             )
-        return result.text.strip()
+        text = result.text.strip()
+        
+        # Namaste Namaste repeat hatane ka logic
+        words = text.split()
+        cleaned = []
+        for w in words:
+            if not cleaned or w.lower() != cleaned[-1].lower():
+                cleaned.append(w)
+        return " ".join(cleaned)
+
     except Exception as e:
         print(f"Mic Error: {e}")
         return ""
