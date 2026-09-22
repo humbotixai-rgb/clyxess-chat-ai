@@ -2549,7 +2549,7 @@ def render_normal_chat():
         camera_capture = st.camera_input("Camera", label_visibility="collapsed", key="c1")
      voice_prompt = _chat_voice_input("normal_chat_mic")
      prompt = st.chat_input("Search / ask ClyxessChat AI…", key="normal_chat_input")
-    if not prompt and voice_prompt:
+     if not prompt and voice_prompt:
         prompt = voice_prompt
 
     if not prompt:
