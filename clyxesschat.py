@@ -2544,33 +2544,45 @@ def _chat_voice_input(key):
 def render_normal_chat():
     _render_chat_history(st.session_state.messages)
 
-    # + button ko neeche lane ke liye
+    # Bottom bar ko ek hi line me lane ka CSS
     st.markdown("""
     <style>
-    div[data-testid="stPopover"]{
+    div[data-testid="stForm"]{
         position: fixed !important;
-        bottom: 35px !important;
-        left: 20px !important;
-        z-index: 99999 !important;
+        bottom: 25px !important;
+        left: 50% !important;
+        transform: translateX(-40%) !important;
+        width: 60% !important;
+        z-index: 999999 !important;
+        background: #2a2d3a !important;
+        border-radius: 30px !important;
+        padding: 8px 12px !important;
+        border: 1px solid #444 !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
-    with st.popover("+"):
-        uploaded_file = st.file_uploader("File", type=["pdf","jpg","png","jpeg"], label_visibility="collapsed", key="f1")
-        camera_capture = st.camera_input("Camera", label_visibility="collapsed", key="c1")
+    with st.form("final_bottom_bar", clear_on_submit=True, border=False):
+        c1, c2, c3, c4 = st.columns([0.8, 7, 0.8, 0.8])
+        with c1:
+            with st.popover("+", use_container_width=True):
+                uploaded_file = st.file_uploader("File", type=["pdf","jpg","png","jpeg"], label_visibility="collapsed", key="f1")
+                camera_capture = st.camera_input("Camera", label_visibility="collapsed", key="c1")
+        with c2:
+            prompt = st.text_input("p", placeholder="Search / ask ClyxessChat AI..", label_visibility="collapsed", key="final_prompt")
+        with c3:
+            st.markdown("🎤")
+        with c4:
+            submitted = st.form_submit_button("↑", use_container_width=True)
 
-    voice_prompt = _chat_voice_input("normal_chat_mic")
-    prompt = st.chat_input("Search / ask ClyxessChat AI..", key="normal_chat_input")
-
-    if not prompt and voice_prompt:
-        prompt = voice_prompt
-    if not prompt:
+    if not submitted and not prompt:
         return
 
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(f'<div class="user-bubble">{prompt}</div>', unsafe_allow_html=True)
+        if 'final_file' in locals() and final_file:
+            st.image(final_file)
 
     if _explicit_image_request(prompt):
         with st.chat_message("assistant"):
