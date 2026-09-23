@@ -1,0 +1,12 @@
+streamlit
+groq
+supabase
+requests
+fpdf2
+python-dotenv
+google-generativeai
+tavily-python
+qrcode[pil]
+Pillow
+pytz
+openai
