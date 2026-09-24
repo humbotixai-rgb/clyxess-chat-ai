@@ -758,10 +758,6 @@ LIVE WEB INFO: {search_context}
 # TAVILY - SMART LIVE WEB SEARCH
 # ============================================================
 
-# ============================================================
-# TAVILY - SMART LIVE WEB SEARCH
-# ============================================================
-
 def search_tavily(query):
     import re
     from datetime import datetime
