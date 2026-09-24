@@ -1283,9 +1283,7 @@ Age: {age_group} | Language: {lang} | Style: {persona} | Subject: {subject}
     - If {lang} is Auto: Jo bhasha me upar jawab diya hai, usi me translate karo.
 - HARD CHECK: Last line ki bhasha = Upar ke jawab ki bhasha = {lang}. 100% same hona chahiye. Nahi to fail hai.
 """
-    return base
-    return base
-    return base
+   
     if "1-2" in age_group:
         return base + "Use extremely short, cheerful, concrete sentences; simple words; colors, shapes, animals, sounds, counting, greetings and very basic concepts. Avoid abstract or complex explanations."
     if "3-4" in age_group:
